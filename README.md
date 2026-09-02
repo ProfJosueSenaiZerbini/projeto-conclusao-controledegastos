@@ -52,8 +52,8 @@ O Verdanz organiza a vida financeira do usuário em torno de quatro pilares:
 
 ```
 projeto-conclusao-controledegastos/
-├── backend/          # API em Node.js + Express + Prisma
-├── frontend/         # Interface em HTML, CSS, JS e Tailwind
+├── src/          # API em Node.js + Express + Prisma
+├── view/         # Interface em HTML, CSS, JS e Tailwind
 └── Docs/             # Documentação do projeto
     ├── Diagramas/            # Diagramas conceitual, lógico e de classes (brModelo)
     ├── Scripts Banco Dados/  # Scripts SQL de criação do banco
@@ -114,7 +114,7 @@ A API ficará disponível em `http://localhost:3000` (ou na porta definida em `P
 ### 3. Configurar o front-end
 
 ```bash
-cd ../frontend
+cd ../view
 ```
 
 Como o front-end é feito em HTML, CSS e JavaScript com Tailwind, abra o arquivo `index.html` diretamente no navegador ou sirva a pasta com uma extensão como o [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) no VS Code.
