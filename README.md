@@ -7,6 +7,14 @@ Aplicação web de gestão financeira pessoal, desenvolvida como Trabalho de Con
 ![MySQL](https://img.shields.io/badge/Banco%20de%20Dados-MySQL-4479A1?logo=mysql&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/CSS-Tailwind-06B6D4?logo=tailwindcss&logoColor=white)
 
+## Equipe
+
+- Nicolas Oliveira
+- Marcelo Bryan
+- Victor Hugo Ismerio
+- Guilherme Gonçalves
+- Cauã Pereira
+
 ## Sobre o projeto
 
 O Verdanz é uma aplicação web de gestão financeira pessoal criada para oferecer ao usuário clareza e compreensão sobre o que acontece com seu dinheiro, reunindo em um único ambiente as informações essenciais do seu dia a dia financeiro.
@@ -128,13 +136,6 @@ npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
 - [Wireframes](./Docs/Wireframes) — protótipos de baixa/alta fidelidade
 - [Trabalho de Conclusão](./Docs/Trabalho%20Conclusão) — documento do TCC
 
-## Equipe
-
-- Nicolas Oliveira
-- Marcelo Bryan
-- Victor Hugo Ismerio
-- Guilherme Gonçalves
-- Cauã Pereira
 
 ## Contexto acadêmico
 
