@@ -1,0 +1,178 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================
+// PERFIL
+// ================================
+model Perfil {
+  id_perfil                 Int      @id @default(autoincrement())
+  nome_perfil                String   @unique @db.VarChar(50)
+  descricao                  String?  @db.VarChar(200)
+  regra_economica_sugerida   String?  @db.VarChar(200)
+
+  usuarios   UsuarioPerfil[]
+  perguntas  PerguntaFormulario[]
+
+  @@map("perfil")
+}
+
+// ================================
+// USUARIO
+// ================================
+model Usuario {
+  id_usuario     Int      @id @default(autoincrement())
+  nome_usuario   String   @db.VarChar(100)
+  cpf_cnpj       String   @unique @db.VarChar(20)
+  email          String   @unique @db.VarChar(100)
+  senha          String   @db.VarChar(255)
+  data_cadastro  DateTime @default(now())
+
+  perfis       UsuarioPerfil[]
+  contas       Conta[]
+  transacoes   Transacao[]
+  metas        Meta[]
+  formularios  FormularioPerfil[]
+
+  @@map("usuario")
+}
+
+// ================================
+// USUARIO_PERFIL (associativa N:N)
+// ================================
+model UsuarioPerfil {
+  id_usuario    Int
+  id_perfil     Int
+  data_selecao  DateTime @default(now())
+
+  usuario  Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  perfil   Perfil  @relation(fields: [id_perfil], references: [id_perfil], onDelete: Cascade)
+
+  @@id([id_usuario, id_perfil])
+  @@map("usuario_perfil")
+}
+
+// ================================
+// PERGUNTA_FORMULARIO
+// ================================
+model PerguntaFormulario {
+  id_pergunta     Int    @id @default(autoincrement())
+  texto_pergunta  String @db.VarChar(300)
+  id_perfil       Int
+
+  perfil     Perfil               @relation(fields: [id_perfil], references: [id_perfil])
+  respostas  RespostaFormulario[]
+
+  @@map("pergunta_formulario")
+}
+
+// ================================
+// FORMULARIO_PERFIL
+// ================================
+model FormularioPerfil {
+  id_formulario       Int      @id @default(autoincrement())
+  data_preenchimento  DateTime @default(now())
+  id_usuario          Int
+
+  usuario    Usuario              @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  respostas  RespostaFormulario[]
+
+  @@map("formulario_perfil")
+}
+
+// ================================
+// RESPOSTA_FORMULARIO
+// ================================
+model RespostaFormulario {
+  id_resposta      Int    @id @default(autoincrement())
+  id_formulario    Int
+  id_pergunta      Int
+  resposta_texto   String @db.VarChar(255)
+
+  formulario  FormularioPerfil    @relation(fields: [id_formulario], references: [id_formulario], onDelete: Cascade)
+  pergunta    PerguntaFormulario  @relation(fields: [id_pergunta], references: [id_pergunta])
+
+  @@map("resposta_formulario")
+}
+
+// ================================
+// CATEGORIA (com autorrelacionamento)
+// ================================
+model Categoria {
+  id_categoria      Int     @id @default(autoincrement())
+  nome_categoria    String  @db.VarChar(100)
+  tipo              String  @db.VarChar(50)
+  descricao         String? @db.VarChar(200)
+  id_categoria_pai  Int?
+
+  categoriaPai      Categoria?  @relation("SubCategorias", fields: [id_categoria_pai], references: [id_categoria])
+  subcategorias     Categoria[] @relation("SubCategorias")
+  transacoes        Transacao[]
+
+  @@map("categoria")
+}
+
+// ================================
+// CONTA
+// ================================
+model Conta {
+  id_conta         Int       @id @default(autoincrement())
+  nome             String    @db.VarChar(100)
+  tipo             String    @db.VarChar(50)
+  saldo            Decimal?  @default(0.00) @db.Decimal(12, 2)
+  valor            Decimal?  @db.Decimal(12, 2)
+  data_vencimento  DateTime? @db.Date
+  status           String    @default("ativo") @db.VarChar(20)
+  id_usuario       Int
+
+  usuario     Usuario     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  transacoes  Transacao[]
+
+  @@map("conta")
+}
+
+// ================================
+// TRANSACAO
+// ================================
+model Transacao {
+  id_transacao     Int      @id @default(autoincrement())
+  tipo_transacao   String   @db.VarChar(50)
+  valor_transacao  Decimal  @db.Decimal(12, 2)
+  data_transacao   DateTime @db.Date
+  recebedor        String?  @db.VarChar(100)
+  id_categoria     Int
+  id_conta         Int
+  id_usuario       Int
+
+  categoria  Categoria @relation(fields: [id_categoria], references: [id_categoria])
+  conta      Conta     @relation(fields: [id_conta], references: [id_conta], onDelete: Cascade)
+  usuario    Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_usuario, data_transacao])
+  @@map("transacao")
+}
+
+// ================================
+// META
+// ================================
+model Meta {
+  id_meta       Int      @id @default(autoincrement())
+  titulo        String   @db.VarChar(100)
+  valor_alvo    Decimal  @db.Decimal(12, 2)
+  valor_atual   Decimal  @default(0.00) @db.Decimal(12, 2)
+  data_limite   DateTime @db.Date
+  status        String   @default("em_progresso") @db.VarChar(20)
+  id_usuario    Int
+
+  usuario  Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_usuario, status])
+  @@map("meta")
+}
