@@ -119,15 +119,6 @@ cd ../view
 
 Como o front-end é feito em HTML, CSS e JavaScript com Tailwind, abra o arquivo `index.html` diretamente no navegador ou sirva a pasta com uma extensão como o [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) no VS Code.
 
-Caso o Tailwind esteja configurado via CLI (em vez do CDN), gere o CSS antes de abrir a página:
-
-```bash
-npm install
-npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
-```
-
-> Ajuste os caminhos acima conforme a configuração final do Tailwind adotada pela equipe.
-
 ## Documentação do projeto
 
 - [Diagramas](./Docs/Diagramas) — diagrama conceitual, lógico e de classes
