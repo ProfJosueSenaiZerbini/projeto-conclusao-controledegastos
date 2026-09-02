@@ -85,7 +85,7 @@ cd projeto-conclusao-controledegastos
 ### 2. Configurar o back-end
 
 ```bash
-cd backend
+cd verdanz
 npm install
 ```
 
