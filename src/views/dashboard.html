@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verdanz Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Gráfico de rosca usando conic-gradient */
+        .donut-chart {
+            background: conic-gradient(
+                #3b82f6 0% 30%,   /* Azul - Moradia */
+                #ef4444 30% 50%,  /* Vermelho - Alimentação */
+                #22c55e 50% 70%,  /* Verde - Transporte */
+                #eab308 70% 85%,  /* Amarelo - Lazer */
+                #f97316 85% 100%  /* Laranja - Saúde/Outros */
+            );
+        }
+    </style>
+</head>
+<body class="bg-[#f8faff] h-screen flex overflow-hidden text-gray-800">
+
+    <aside class="w-64 bg-[#f8faff] flex flex-col justify-between hidden md:flex h-full border-r border-gray-100">
+        <div>
+            <div class="p-6 flex items-center gap-3 cursor-pointer">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center
+                             text-white text-3xl font-bold shadow-lg">
+                        V
+                    </div>
+                <div>
+                   <h1 class="text-4xl font-bold text-[#071b3a]">
+                        Verdan<span class="text-green-500">z</span>
+                    </h1>
+                    <p class="text-[10px] text-gray-500">Seu dinheiro, seu futuro</p>
+                </div>
+            </div>
+
+            <nav class="px-4 space-y-1 mt-2">
+                <a href="#" class="flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl font-medium shadow-sm shadow-blue-200">
+                    <i class="fa-solid fa-house-chimney w-5 text-center"></i> Dashboard
+                </a>
+                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-regular fa-credit-card w-5 text-center"></i> Contas
+                </a>
+                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Transações
+                </a>
+                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-bullseye w-5 text-center"></i> Metas
+                </a>
+                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-gear w-5 text-center"></i> Configurações
+                </a>
+            </nav>
+        </div>
+
+        <div class="p-4 mb-4">
+            <div class="bg-gradient-to-br from-white to-blue-50 border border-blue-100 p-4 rounded-2xl relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-sm font-semibold text-gray-700">Seu progresso</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">75%</p>
+                    <p class="text-xs text-gray-500 mt-1">Continue assim!</p>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-3">
+                        <div class="bg-blue-600 h-1.5 rounded-full" style="width: 75%"></div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-leaf absolute -bottom-2 -right-2 text-6xl text-green-200/50 -rotate-12"></i>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f8faff]">
+        
+        <header class="flex justify-between items-start mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Olá, <span id="nomeUsuario">...</span>! 👋</h2>
+                <p class="text-gray-500 text-sm mt-1">Aqui está o resumo da sua vida financeira.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="text-gray-400 hover:text-gray-600"><i class="fa-regular fa-bell text-xl"></i></button>
+                <button class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-gear text-xl"></i></button>
+                <button id="botaoSair" title="Sair" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-right-from-bracket text-xl"></i></button>
+                <img id="avatarUsuario" src="https://ui-avatars.com/api/?name=%20&background=0D8ABC&color=fff" alt="Perfil" class="w-10 h-10 rounded-full border-2 border-white shadow-sm cursor-pointer">
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <p class="text-gray-500 text-sm mb-2">Saldo atual</p>
+                <h3 class="text-2xl font-bold text-green-600">R$ 2.350,45</h3>
+                <p class="text-xs text-green-600 mt-2 font-medium"><i class="fa-solid fa-arrow-trend-up"></i> 12% vs mês anterior</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <p class="text-gray-500 text-sm mb-2">Receitas</p>
+                <h3 class="text-2xl font-bold text-gray-900">R$ 4.500,00</h3>
+                <p class="text-xs text-gray-400 mt-2">Este mês</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <p class="text-gray-500 text-sm mb-2">Despesas</p>
+                <h3 class="text-2xl font-bold text-red-500">R$ 2.149,55</h3>
+                <p class="text-xs text-gray-400 mt-2">Este mês</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <p class="text-gray-500 text-sm mb-2">Metas ativas</p>
+                <h3 class="text-2xl font-bold text-green-600">3</h3>
+                <p class="text-xs text-gray-400 mt-2">Em andamento</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h4 class="font-bold text-gray-900">Gastos por categoria</h4>
+                        <p class="text-xs text-gray-400">Este mês</p>
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+                
+                <div class="flex items-center gap-8 flex-1">
+                    <div class="relative w-36 h-36 rounded-full donut-chart flex-shrink-0 shadow-inner">
+                        <div class="absolute inset-0 m-auto w-24 h-24 bg-white rounded-full flex flex-col items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
+                            <span class="text-sm font-bold text-gray-800">R$ 2.149,55</span>
+                            <span class="text-[10px] text-gray-500">Total</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 space-y-2.5 w-full">
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span><span class="text-gray-600">Moradia</span></div>
+                            <div class="flex gap-4"><span class="font-medium text-gray-900">30%</span><span class="text-gray-400 w-12 text-right">R$ 644,91</span></div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><span class="text-gray-600">Alimentação</span></div>
+                            <div class="flex gap-4"><span class="font-medium text-gray-900">20%</span><span class="text-gray-400 w-12 text-right">R$ 429,91</span></div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span><span class="text-gray-600">Transporte</span></div>
+                            <div class="flex gap-4"><span class="font-medium text-gray-900">15%</span><span class="text-gray-400 w-12 text-right">R$ 322,43</span></div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span><span class="text-gray-600">Lazer</span></div>
+                            <div class="flex gap-4"><span class="font-medium text-gray-900">10%</span><span class="text-gray-400 w-12 text-right">R$ 214,95</span></div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span><span class="text-gray-600">Saúde</span></div>
+                            <div class="flex gap-4"><span class="font-medium text-gray-900">10%</span><span class="text-gray-400 w-12 text-right">R$ 214,95</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 text-center text-blue-600 text-sm font-medium cursor-pointer hover:underline">
+                    Ver relatório completo <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-bold text-gray-900">Metas</h4>
+                    <button class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+
+                <div class="space-y-5">
+                    <div class="border-b border-gray-50 pb-4">
+                        <div class="flex justify-between items-end mb-2">
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">Reserva de Emergência</p>
+                                <p class="text-xs text-gray-500 mt-1"><span class="font-bold text-gray-900">R$ 1.200,00</span> / R$ 5.000,00</p>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm font-bold text-green-600">40%</span>
+                                <div class="w-8 h-8 rounded-lg bg-green-50 text-green-500 flex items-center justify-center"><i class="fa-solid fa-check"></i></div>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-1.5"><div class="bg-green-500 h-1.5 rounded-full" style="width: 40%"></div></div>
+                    </div>
+
+                    <div class="border-b border-gray-50 pb-4">
+                        <div class="flex justify-between items-end mb-2">
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">Viagem</p>
+                                <p class="text-xs text-gray-500 mt-1"><span class="font-bold text-gray-900">R$ 900,00</span> / R$ 3.000,00</p>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm font-bold text-green-600">32%</span>
+                                <div class="w-8 h-8 rounded-lg bg-green-50 text-green-500 flex items-center justify-center"><i class="fa-solid fa-check"></i></div>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-1.5"><div class="bg-green-500 h-1.5 rounded-full" style="width: 32%"></div></div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">Trocar de carro</p>
+                                <p class="text-xs text-gray-500 mt-1"><span class="font-bold text-gray-900">R$ 2.300,00</span> / R$ 10.000,00</p>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm font-bold text-green-600">22%</span>
+                                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><i class="fa-solid fa-car-side"></i></div>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-1.5"><div class="bg-green-500 h-1.5 rounded-full" style="width: 22%"></div></div>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center text-blue-600 text-sm font-medium cursor-pointer hover:underline">
+                    Ver todas as metas
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-bold text-gray-900">Últimas transações</h4>
+                    <span class="text-blue-600 text-sm font-medium cursor-pointer">Ver mês</span>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center"><i class="fa-solid fa-basket-shopping"></i></div>
+                            <div>
+                                <p class="font-medium text-gray-800 text-sm">Supermercado Extra</p>
+                                <p class="text-xs text-gray-400">Alimentação</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium text-gray-900 text-sm">- R$ 194,90</p>
+                            <p class="text-xs text-gray-400">Hoje</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center"><i class="fa-solid fa-car"></i></div>
+                            <div>
+                                <p class="font-medium text-gray-800 text-sm">Uber</p>
+                                <p class="text-xs text-gray-400">Transporte</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium text-gray-900 text-sm">- R$ 27,50</p>
+                            <p class="text-xs text-gray-400">Ontem</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-green-50 text-green-500 flex items-center justify-center"><i class="fa-solid fa-building-columns"></i></div>
+                            <div>
+                                <p class="font-medium text-gray-800 text-sm">Salário</p>
+                                <p class="text-xs text-gray-400">Receita</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium text-green-600 text-sm">+ R$ 2.500,00</p>
+                            <p class="text-xs text-gray-400">03/05</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                <h4 class="font-bold text-gray-900 mb-4">Dicas para você</h4>
+                
+                <div class="bg-[#f2fbf6] border border-[#d1f0df] rounded-xl p-5 flex-1 flex flex-col justify-center">
+                    <div class="flex items-start gap-4">
+                        <div class="text-green-600 text-2xl mt-1"><i class="fa-regular fa-lightbulb"></i></div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800 mb-1">Evite compras por impulso e mantenha o foco nas suas metas.</p>
+                            <ul class="text-xs text-gray-600 space-y-1 mt-2 list-none">
+                                <li><i class="fa-solid fa-angle-right text-green-500 mr-1"></i> 1. Compare preços.</li>
+                                <li><i class="fa-solid fa-angle-right text-green-500 mr-1"></i> 2. Automatize investimentos.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center text-blue-600 text-sm font-medium cursor-pointer hover:underline">
+                    Ver mais dicas
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/dashboard.js"></script>
+
+</body>
+</html>
