@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verdanz Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Os ícones deslizam para dentro ao aparecer e para fora ao sumir. */
+        @keyframes surgirAcoes {
+            from { opacity: 0; transform: translateX(12px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes recolherAcoes {
+            from { opacity: 1; transform: translateX(0); }
+            to   { opacity: 0; transform: translateX(12px); }
+        }
+
+        #acoesPerfil:not(.hidden) { animation: surgirAcoes .18s ease-out; }
+
+        /* Enquanto recolhe, o elemento ainda é visível — só depois de a
+           animação terminar o JavaScript aplica o display:none.
+           'forwards' segura a opacidade em 0 no fim, evitando um piscar.
+           Vem depois da regra acima de propósito: as duas têm a mesma
+           especificidade, então a última escrita é a que vale. */
+        #acoesPerfil.recolhendo { animation: recolherAcoes .18s ease-in forwards; }
+
+        /* Respeita quem pediu menos animação nas configurações do sistema.
+           O JavaScript também checa isso, senão o evento de fim de animação
+           nunca dispararia e os ícones ficariam presos na tela. */
+        @media (prefers-reduced-motion: reduce) {
+            #acoesPerfil:not(.hidden),
+            #acoesPerfil.recolhendo { animation: none; }
+        }
+    </style>
+</head>
+<body class="bg-[#f8faff] h-screen flex overflow-hidden text-gray-800">
+
+    <aside class="w-64 bg-[#f8faff] flex flex-col justify-between hidden md:flex h-full border-r border-gray-100">
+        <div>
+            <div class="p-6 flex items-center gap-3 cursor-pointer">
+                <img src="/img/VerdanzIcone.png" alt="" class="w-14 h-14 object-contain">
+                <div>
+                   <h1 class="text-4xl font-bold text-[#071b3a]">
+                        Verdan<span class="text-green-500">z</span>
+                    </h1>
+                    <p class="text-[10px] text-gray-500">Seu dinheiro, seu futuro</p>
+                </div>
+            </div>
+
+            <nav class="px-4 space-y-1 mt-2">
+                <a href="/dashboard" aria-current="page" class="flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl font-medium shadow-sm shadow-blue-200">
+                    <i class="fa-solid fa-house-chimney w-5 text-center"></i> Dashboard
+                </a>
+                <a href="/contas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-regular fa-credit-card w-5 text-center"></i> Contas
+                </a>
+                <a href="/transacoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-money-bill-transfer w-5 text-center"></i> Transações
+                </a>
+                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-regular fa-calendar w-5 text-center"></i> Planejamento
+                </a>
+                <a href="/metas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-bullseye w-5 text-center"></i> Metas
+                </a>
+                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-gear w-5 text-center"></i> Configurações
+                </a>
+            </nav>
+        </div>
+
+        <!-- Placeholder: os ids abaixo ficam prontos para receber o valor real
+             quando existir a regra que define o "progresso" do usuário. -->
+        <div class="p-4 mb-4">
+            <div class="bg-gradient-to-br from-white to-blue-50 border border-blue-100 p-4 rounded-2xl relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-sm font-semibold text-gray-700">Seu progresso</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1" id="progressoValor">0%</p>
+                    <p class="text-xs text-gray-500 mt-1">Comece a registrar suas transações</p>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-3">
+                        <div class="bg-blue-600 h-1.5 rounded-full" id="progressoBarra" style="width: 0%"></div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-leaf absolute -bottom-2 -right-2 text-6xl text-green-200/50 -rotate-12"></i>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f8faff]">
+        
+        <header class="flex justify-between items-start mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Olá, <span id="nomeUsuario">...</span>! 👋</h2>
+                <p class="text-gray-500 text-sm mt-1">Aqui está o resumo da sua vida financeira.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Nasce com a classe "hidden" (display:none). O clique no avatar
+                     troca "hidden" por "flex". Como um item com display:none não
+                     conta como filho do flex, o espaçamento também some junto. -->
+                <div id="acoesPerfil" class="hidden items-center gap-4">
+                    <button title="Notificações" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fa-regular fa-bell text-xl"></i></button>
+                    <button title="Configurações" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fa-solid fa-gear text-xl"></i></button>
+                    <button id="botaoSair" title="Sair" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-right-from-bracket text-xl"></i></button>
+                </div>
+
+                <!-- O avatar virou <button> para poder ser acionado pelo teclado
+                     (Tab + Enter), não só pelo mouse. -->
+                <!-- O anel é controlado pelo JavaScript conforme o estado (aberto/fechado),
+                     e não por :focus — senão ele sumiria ao clicar em qualquer outro
+                     lugar da página. O focus-visible continua ali só para quem navega
+                     pelo teclado enxergar onde está. -->
+                <button id="perfilToggle" type="button" aria-expanded="false" aria-controls="acoesPerfil"
+                        title="Opções do perfil"
+                        class="rounded-full transition-shadow duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2">
+                    <img id="avatarUsuario" src="https://ui-avatars.com/api/?name=%20&background=0D8ABC&color=fff" alt="Perfil" class="w-10 h-10 rounded-full border-2 border-white shadow-sm cursor-pointer block">
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <p class="text-gray-500 text-sm mb-2">Saldo atual</p>
+                <h3 class="text-2xl font-bold text-gray-900" id="statSaldo">R$ 0,00</h3>
+                <p class="text-xs text-gray-400 mt-2">Nenhuma conta cadastrada ainda</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <p class="text-gray-500 text-sm mb-2">Receitas</p>
+                <h3 class="text-2xl font-bold text-gray-900" id="statReceitas">R$ 0,00</h3>
+                <p class="text-xs text-gray-400 mt-2">Este mês</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <p class="text-gray-500 text-sm mb-2">Despesas</p>
+                <h3 class="text-2xl font-bold text-gray-900" id="statDespesas">R$ 0,00</h3>
+                <p class="text-xs text-gray-400 mt-2">Este mês</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <p class="text-gray-500 text-sm mb-2">Metas ativas</p>
+                <h3 class="text-2xl font-bold text-gray-900" id="statMetas">0</h3>
+                <p class="text-xs text-gray-400 mt-2">Nenhuma meta criada</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h4 class="font-bold text-gray-900">Gastos por categoria</h4>
+                        <p class="text-xs text-gray-400">Este mês</p>
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+                
+                <div id="blocoCategorias" class="flex-1 flex flex-col items-center justify-center text-center gap-2 py-6">
+                    <i class="fa-solid fa-chart-pie text-3xl text-gray-300"></i>
+                    <p class="text-sm text-gray-400">Nenhuma transação registrada ainda</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-bold text-gray-900">Metas</h4>
+                    <a href="/metas" title="Ver todas as metas"
+                       class="text-gray-400 hover:text-gray-600 transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div id="blocoMetas" class="flex-1 flex flex-col items-center justify-center text-center gap-2 py-6">
+                    <i class="fa-solid fa-bullseye text-3xl text-gray-300"></i>
+                    <p class="text-sm text-gray-400">Você ainda não criou nenhuma meta</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-bold text-gray-900">Últimas transações</h4>
+                </div>
+
+                <div id="blocoTransacoes" class="flex flex-col items-center justify-center text-center gap-2 py-10">
+                    <i class="fa-solid fa-receipt text-3xl text-gray-300"></i>
+                    <p class="text-sm text-gray-400">Nenhuma transação registrada ainda</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                <h4 class="font-bold text-gray-900 mb-4">Dicas para você</h4>
+                
+                <div class="bg-[#f2fbf6] border border-[#d1f0df] rounded-xl p-5 flex-1 flex flex-col justify-center">
+                    <div class="flex items-start gap-4">
+                        <div class="text-green-600 text-2xl mt-1"><i class="fa-regular fa-lightbulb"></i></div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800 mb-1">Evite compras por impulso e mantenha o foco nas suas metas.</p>
+                            <ul class="text-xs text-gray-600 space-y-1 mt-2 list-none">
+                                <li><i class="fa-solid fa-angle-right text-green-500 mr-1"></i> 1. Compare preços.</li>
+                                <li><i class="fa-solid fa-angle-right text-green-500 mr-1"></i> 2. Automatize investimentos.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center text-blue-600 text-sm font-medium cursor-pointer hover:underline">
+                    Ver mais dicas
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/layout.js"></script>
+    <script src="/js/dashboard.js"></script>
+
+</body>
+</html>

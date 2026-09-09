@@ -1,0 +1,104 @@
+// prisma/schema.prisma
+//
+// Escopo atual: 5 entidades e 4 relacionamentos.
+// O modelo está na 3ª Forma Normal — ver comentários em Transacao.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================
+// USUARIO
+// ================================
+model Usuario {
+  id_usuario     Int      @id @default(autoincrement())
+  nome_usuario   String   @db.VarChar(100)
+  cpf_cnpj       String   @unique @db.VarChar(20)
+  email          String   @unique @db.VarChar(100)
+  senha          String   @db.VarChar(255)
+  data_cadastro  DateTime @default(now())
+
+  contas  Conta[]
+  metas   Meta[]
+
+  @@map("usuario")
+}
+
+// ================================
+// CONTA — a Carteira do usuário
+// ================================
+model Conta {
+  id_conta    Int     @id @default(autoincrement())
+  nome        String  @db.VarChar(100)
+  saldo       Decimal @default(0.00) @db.Decimal(12, 2)
+  id_usuario  Int
+
+  usuario     Usuario     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  transacoes  Transacao[]
+
+  @@map("conta")
+}
+
+// ================================
+// CATEGORIA — lista fixa de 12
+// ================================
+model Categoria {
+  id_categoria    Int    @id @default(autoincrement())
+  nome_categoria  String @db.VarChar(100)
+  tipo            String @db.VarChar(20) // 'receita' ou 'despesa'
+
+  transacoes  Transacao[]
+
+  @@map("categoria")
+}
+
+// ================================
+// TRANSACAO — um ganho ou um gasto
+// ================================
+// Dois campos foram removidos de propósito, por serem dependências
+// transitivas (3FN). NÃO reintroduzir:
+//
+// - id_usuario: a conta já pertence a um usuário. Para listar as
+//   transações de alguém, passe pela conta:
+//   where: { conta: { id_usuario } }
+//
+// - tipo_transacao: a categoria já tem seu próprio tipo. Para saber
+//   se é receita ou despesa, olhe transacao.categoria.tipo
+//
+model Transacao {
+  id_transacao     Int      @id @default(autoincrement())
+  valor_transacao  Decimal  @db.Decimal(12, 2) // sempre positivo
+  data_transacao   DateTime @db.Date
+  descricao        String?  @db.VarChar(150)
+  id_categoria     Int
+  id_conta         Int
+
+  categoria  Categoria @relation(fields: [id_categoria], references: [id_categoria])
+  conta      Conta     @relation(fields: [id_conta], references: [id_conta], onDelete: Cascade)
+
+  @@index([id_conta, data_transacao])
+  @@map("transacao")
+}
+
+// ================================
+// META — objetivo financeiro
+// ================================
+model Meta {
+  id_meta      Int      @id @default(autoincrement())
+  titulo       String   @db.VarChar(100)
+  valor_alvo   Decimal  @db.Decimal(12, 2)
+  valor_atual  Decimal  @default(0.00) @db.Decimal(12, 2)
+  data_limite  DateTime @db.Date
+  status       String   @default("em_progresso") @db.VarChar(20)
+  id_usuario   Int
+
+  usuario  Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_usuario, status])
+  @@map("meta")
+}
