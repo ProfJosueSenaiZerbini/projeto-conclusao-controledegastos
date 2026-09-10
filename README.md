@@ -62,8 +62,6 @@ projeto-conclusao-controledegastos/
     └── Wireframes/           # Wireframes do sistema
 ```
 
-> As pastas `backend/` e `frontend/` refletem a estrutura planejada do projeto. Consulte o histórico de commits para o estado mais atual do código.
-
 ## Pré-requisitos
 
 Antes de começar, você vai precisar ter instalado:
@@ -88,7 +86,7 @@ cd projeto-conclusao-controledegastos
 npm install
 ```
 
-Crie um arquivo `.env` na raiz da pasta `backend/` com as variáveis de ambiente necessárias:
+Crie um arquivo `.env` na pasta raíz com as variáveis de ambiente necessárias:
 
 ```env
 DATABASE_URL="mysql://usuario:senha@localhost:3306/verdanz"
