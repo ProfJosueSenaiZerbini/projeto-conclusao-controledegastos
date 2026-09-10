@@ -28,15 +28,34 @@ prisma/
 ├── schema.prisma
 ├── seed.js
 └── migrations/
-src/
+src/                  # roda no SERVIDOR
 ├── controllers/
 ├── routes/
-└── middlewares/
+├── middlewares/
+├── views/            # telas .html (servidas por viewRoutes.js)
+└── prisma.js         # instância única do Prisma Client
+public/               # roda no NAVEGADOR (express.static)
+├── js/
+├── css/
+└── img/
 index.js
 .env
 ```
 
 Não existe pasta `models/`. O Prisma Client substitui essa camada — os controllers chamam `prisma.<entidade>` diretamente.
+
+Não existem pastas `backend/` e `frontend/` separadas. É um único servidor Express: `viewRoutes.js` entrega o HTML e as rotas `/api` entregam JSON. As telas chegam ao navegador sem dados — quem as preenche são os scripts de `public/js/`, via `fetch` na própria API.
+
+Em `public/js/`, quatro arquivos são compartilhados por todas as telas e carregados **nesta ordem**:
+
+| Arquivo | Fornece |
+|---|---|
+| `auth.js` | `Sessao`, `chamarApi()`, `formatarMoeda()`, `formatarData()`, `mostrarMensagem()` |
+| `layout.js` | Guarda de sessão, nome/avatar, menu de perfil, sair, `aoTerminarAnimacao()` |
+| `painel.js` | `criarPainel()` — a gaveta lateral |
+| `modal.js` | `confirmar()` e `pedirValor()` — substituem `confirm()` e `prompt()` |
+
+Depois deles vem o script específico da tela. Reaproveite essas funções em vez de reescrevê-las.
 
 ---
 
@@ -50,7 +69,11 @@ O projeto já teve um modelo com 12 entidades (perfis financeiros, formulário d
 
 **Usuario** — cadastro e login
 **Conta** — a Carteira do usuário, com saldo
-**Categoria** — lista fixa de 12 categorias (8 despesa, 4 receita), sem hierarquia
+**Categoria** — lista fixa de 12 categorias (8 despesa, 4 receita), sem hierarquia. Vêm do
+`prisma/seed.js`, que **precisa ser rodado à mão** com `npx prisma db seed`. Ele só roda
+automaticamente dentro de um `npx prisma migrate dev` que cria uma migration nova. Com a
+tabela `categoria` vazia é impossível registrar qualquer transação — o formulário abre
+sem opções. Se algo "não está salvando no banco", confira esta tabela primeiro.
 **Transacao** — um gasto ou um ganho
 **Meta** — objetivo financeiro, com progresso atualizado manualmente
 
@@ -221,14 +244,44 @@ Dez rotas. Construa um recurso por vez, teste no Insomnia/Postman antes de avan�
 
 ## Roteiro
 
+O escopo mínimo das 5 entidades está **concluído**: as 10 rotas e as 7 telas
+estão implementadas e verificadas contra o banco.
+
 - [x] Login e cadastro
-- [ ] Criar a Carteira automaticamente ao cadastrar (atômico)
-- [ ] Listar categorias
-- [ ] Registrar transação atualizando o saldo (atômico, tipo vindo da categoria)
-- [ ] Listar transações do usuário (via conta)
-- [ ] Consultar saldo
-- [ ] CRUD de Meta
-- [ ] Telas correspondentes
+- [x] Criar a Carteira automaticamente ao cadastrar (atômico)
+- [x] Listar categorias
+- [x] Registrar transação atualizando o saldo (atômico, tipo vindo da categoria)
+- [x] Listar transações do usuário (via conta)
+- [x] Consultar saldo
+- [x] CRUD de Meta
+- [x] Telas correspondentes (index, login, cadastro, dashboard, contas, transações, metas)
+
+### Lacunas conhecidas
+
+Não são bugs — são funcionalidades que nunca foram escritas. Estão em ordem de
+dificuldade e servem como próximos passos:
+
+- [ ] **`DELETE /api/transacao/:id`** — hoje não existe. Um lançamento errado não pode
+      ser desfeito. Apagar precisa **devolver** o valor ao saldo dentro do mesmo
+      `$transaction`, invertendo o que `criarTransacao` faz.
+- [ ] **`PUT /api/transacao/:id`** — mesma questão: editar o valor exige corrigir o saldo
+      pela diferença, atomicamente.
+- [ ] **Concluir uma meta** — o campo `status` aceita `'concluida'` e `'cancelada'`, e o
+      controller já valida os três valores, mas nenhuma tela usa. Uma meta em 100% mostra
+      "Meta alcançada" visualmente e continua `em_progresso` no banco.
+- [ ] **Tela de perfil** — as rotas `GET`/`PUT`/`DELETE /api/usuario/:id` existem e
+      funcionam; falta só a interface.
+- [ ] **Filtro por período** — `dashboard.js` baixa *todas* as transações e filtra o mês
+      no navegador. O certo é filtrar no `where` do Prisma antes de trafegar os dados.
+
+### Dívida técnica
+
+- [ ] **Duas versões de Tailwind convivendo.** `index`, `login` e `cadastro` usam
+      `@tailwindcss/browser@4` (v4); `dashboard`, `contas`, `transacoes` e `metas` usam
+      `cdn.tailwindcss.com` (v3.4.17). Classes se comportam diferente entre as duas
+      versões. Unificar — e, de preferência, instalar o Tailwind como dependência em vez
+      de usar CDN, que gera o CSS por JavaScript em tempo de execução e provoca um
+      lampejo de tela sem estilo a cada carregamento.
 
 ---
 

@@ -50,11 +50,27 @@ O Verdanz organiza a vida financeira do usuário em torno de quatro pilares:
 
 ## Estrutura do projeto
 
+O back-end e o front-end vivem no **mesmo projeto e no mesmo servidor**. Não existem
+pastas `backend/` e `frontend/` separadas: o Express serve as telas e a API lado a lado.
+
 ```
 projeto-conclusao-controledegastos/
-├── src/          # API em Node.js + Express + Prisma
-├── view/         # Interface em HTML, CSS, JS e Tailwind
-└── Docs/             # Documentação do projeto
+├── index.js                  # Ponto de entrada: sobe o Express
+├── prisma/
+│   ├── schema.prisma         # Modelo das 5 entidades
+│   ├── seed.js               # Cria as 12 categorias fixas
+│   └── migrations/           # Histórico de alterações do banco
+├── src/                      # Código que roda no SERVIDOR (Node)
+│   ├── controllers/          # Regras de negócio e acesso ao banco
+│   ├── routes/               # Endereços da API e das telas
+│   ├── middlewares/          # Autenticação (JWT) e verificação de dono
+│   ├── views/                # Telas em HTML
+│   └── prisma.js             # Instância única do Prisma Client
+├── public/                   # Código que roda no NAVEGADOR (servido como estático)
+│   ├── js/                   # Scripts de cada tela + utilitários compartilhados
+│   ├── css/                  # Estilos próprios
+│   └── img/                  # Imagens e logos
+└── Docs/                     # Documentação do projeto
     ├── Diagramas/            # Diagramas conceitual, lógico e de classes (brModelo)
     ├── Scripts Banco Dados/  # Scripts SQL de criação do banco
     ├── Testes/               # Casos de teste
@@ -62,7 +78,15 @@ projeto-conclusao-controledegastos/
     └── Wireframes/           # Wireframes do sistema
 ```
 
-> As pastas `backend/` e `frontend/` refletem a estrutura planejada do projeto. Consulte o histórico de commits para o estado mais atual do código.
+A divisão que importa é entre `src/` e `public/`:
+
+| Pasta | Roda onde | Responsabilidade |
+| --- | --- | --- |
+| `src/` | No servidor (Node.js) | Rotas, validações, regras de negócio, banco de dados |
+| `public/` | No navegador | Buscar o JSON da API e montar a tela |
+
+As telas em `src/views/` chegam ao navegador **sem dados**. Quem as preenche são os
+scripts de `public/js/`, que chamam a própria API depois que a página carrega.
 
 ## Pré-requisitos
 
@@ -82,13 +106,16 @@ git clone https://github.com/ProfJosueSenaiZerbini/projeto-conclusao-controledeg
 cd projeto-conclusao-controledegastos
 ```
 
-### 2. Configurar o back-end
+### 2. Instalar as dependências
 
 ```bash
 npm install
 ```
 
-Crie um arquivo `.env` na raiz da pasta `backend/` com as variáveis de ambiente necessárias:
+### 3. Configurar as variáveis de ambiente
+
+Crie um arquivo `.env` **na raiz do projeto** (mesma pasta do `index.js`), usando o
+`.env.example` como modelo:
 
 ```env
 DATABASE_URL="mysql://usuario:senha@localhost:3306/verdanz"
@@ -96,27 +123,57 @@ JWT_SECRET="uma_chave_secreta_forte"
 PORT=3000
 ```
 
-Aplique as migrações do Prisma para criar as tabelas no banco de dados:
+O `.env` está no `.gitignore` e nunca deve ser commitado.
+
+### 4. Preparar o banco de dados
+
+Crie as tabelas a partir do schema do Prisma:
 
 ```bash
 npx prisma migrate dev
 ```
 
-Inicie o servidor em modo de desenvolvimento (com Nodemon):
+Em seguida, popule as **12 categorias fixas** (8 de despesa e 4 de receita):
+
+```bash
+npx prisma db seed
+```
+
+> **Este passo é obrigatório.** Sem as categorias, a tabela fica vazia e não é possível
+> registrar nenhuma transação — o formulário abre sem opções para escolher. O seed só
+> roda sozinho dentro de um `npx prisma migrate dev` que cria uma migration nova; em
+> qualquer outra situação é preciso chamá-lo à mão. Ele é idempotente: rodar várias
+> vezes não duplica nada.
+
+### 5. Iniciar o servidor
 
 ```bash
 npm run dev
 ```
 
-A API ficará disponível em `http://localhost:3000` (ou na porta definida em `PORT`).
+Pronto. O mesmo servidor entrega a API **e** as telas em `http://localhost:3000`
+(ou na porta definida em `PORT`). Não é necessário Live Server nem abrir os arquivos
+`.html` diretamente — fazer isso quebra os caminhos de `/css`, `/js` e `/img`.
 
-### 3. Configurar o front-end
+| Endereço | O que é |
+| --- | --- |
+| `http://localhost:3000/` | Página inicial |
+| `http://localhost:3000/cadastro` | Criar conta |
+| `http://localhost:3000/login` | Entrar |
+| `http://localhost:3000/dashboard` | Resumo financeiro |
+| `http://localhost:3000/api/...` | API em JSON |
+
+As telas internas (dashboard, contas, transações, metas) exigem sessão: sem estar
+logado, elas redirecionam para `/login`. Crie uma conta em `/cadastro` antes de testá-las.
+
+### Resumo: do zero ao ar
 
 ```bash
-cd ../view
+npm install
+npx prisma migrate dev
+npx prisma db seed
+npm run dev
 ```
-
-Como o front-end é feito em HTML, CSS e JavaScript com Tailwind, abra o arquivo `index.html` diretamente no navegador ou sirva a pasta com uma extensão como o [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) no VS Code.
 
 ## Documentação do projeto
 
