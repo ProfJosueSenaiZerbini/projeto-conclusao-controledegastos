@@ -193,6 +193,31 @@ document.getElementById('novaTransacao').addEventListener('click', function () {
   painel.abrir();
 });
 
+// ---- SALDO ----
+//
+// Um gasto não pode deixar a conta negativa. Ganhos passam sempre —
+// é justamente registrando um ganho que uma conta zerada volta a ter saldo.
+//
+// Esta checagem é só para avisar rápido, sem esperar o servidor. Quem
+// garante a regra de verdade é o transacaoController: a tela pode estar
+// com o saldo desatualizado (outra aba, por exemplo).
+
+function avisarSemSaldo(conta, valor) {
+  const saldo = Number(conta.saldo);
+
+  if (saldo <= 0) {
+    return avisar({
+      titulo: `A conta "${conta.nome}" não possui saldo`,
+      mensagem: `O saldo atual é ${formatarMoeda(saldo)}. Registre um ganho nessa conta ou escolha outra para pagar este gasto.`,
+    });
+  }
+
+  return avisar({
+    titulo: 'Saldo insuficiente',
+    mensagem: `A conta "${conta.nome}" tem ${formatarMoeda(saldo)}, e o gasto é de ${formatarMoeda(valor)}. Escolha outra conta ou ajuste o valor.`,
+  });
+}
+
 // ---- SALVAR ----
 
 formTransacao.addEventListener('submit', async function (evento) {
@@ -204,6 +229,15 @@ formTransacao.addEventListener('submit', async function (evento) {
   if (!Number.isFinite(valor) || valor <= 0) {
     mostrarMensagem('Informe um valor maior que zero.', 'erro');
     return;
+  }
+
+  if (tipoSelecionado === 'despesa') {
+    const conta = contas.find((c) => c.id_conta === Number(selectConta.value));
+
+    if (conta && valor > Number(conta.saldo)) {
+      await avisarSemSaldo(conta, valor);
+      return;
+    }
   }
 
   salvarTransacao.disabled = true;
@@ -220,6 +254,15 @@ formTransacao.addEventListener('submit', async function (evento) {
   });
 
   salvarTransacao.disabled = false;
+
+
+  // O servidor recusou por falta de saldo: o saldo que a tela conhecia
+  // estava velho. Avisa e recarrega as contas para mostrar o valor real.
+   if (!ok && dados.codigo === 'SALDO_INSUFICIENTE') {
+    await avisar({ titulo: 'Gasto não registrado', mensagem: dados.erro + '.' });
+    carregarContas();
+    return;
+  }
 
   if (!ok) {
     mostrarMensagem(dados.erro || 'Não foi possível registrar a transação.', 'erro');

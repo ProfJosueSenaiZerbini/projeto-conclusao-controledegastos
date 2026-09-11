@@ -1,5 +1,3 @@
-// Tela de Contas: lista as contas do usuário e permite criar,
-// renomear e excluir.
 
 const listaContas = document.getElementById('listaContas');
 const totalGeral = document.getElementById('totalGeral');
@@ -27,7 +25,7 @@ function cartaoConta(conta) {
           <i class="fa-regular fa-credit-card"></i>
         </div>
         <div class="flex gap-1">
-          <button data-editar="${conta.id_conta}" title="Renomear"
+          <button data-editar="${conta.id_conta}" title="Editar"
                   class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
             <i class="fa-solid fa-pen text-xs"></i>
           </button>
@@ -91,12 +89,13 @@ function abrirNova() {
 function abrirEdicao(conta) {
   document.getElementById('idConta').value = conta.id_conta;
   document.getElementById('nomeConta').value = conta.nome;
-  tituloPainel.textContent = 'Renomear conta';
+  tituloPainel.textContent = 'Editar conta';
   salvarConta.textContent = 'Salvar';
 
-  // O saldo some na edição porque ele é resultado das transações.
-  // Editar à mão faria o saldo divergir do histórico.
-  campoSaldo.classList.add('hidden');
+  // O campo já vem com o saldo atual, para a pessoa só corrigir o valor.
+  // Serve principalmente para a Carteira, que nasce zerada no cadastro.
+  document.getElementById('saldoConta').value = Number(conta.saldo).toFixed(2);
+  campoSaldo.classList.remove('hidden');
   painel.abrir();
 }
 
@@ -112,7 +111,7 @@ async function excluirConta(conta) {
 
   const { ok, dados } = await chamarApi('/api/conta/' + conta.id_conta, { method: 'DELETE' });
 
-  if (!ok) {
+ if (!ok) {
     mostrarMensagem(dados.erro || 'Não foi possível excluir a conta.', 'erro');
     return;
   }
@@ -134,12 +133,20 @@ formConta.addEventListener('submit', async function (evento) {
     return;
   }
 
+  if (Number(saldo) < 0) {
+    await avisar({
+      titulo: 'Saldo negativo não é permitido',
+      mensagem: 'Informe quanto você tem nessa conta hoje, a partir de R$ 0,00.',
+    });
+    return;
+  }
+
   salvarConta.disabled = true;
 
   const editando = Boolean(id);
   const { ok, dados } = await chamarApi(editando ? '/api/conta/' + id : '/api/conta', {
     method: editando ? 'PUT' : 'POST',
-    body: JSON.stringify(editando ? { nome } : { nome, saldo }),
+    body: JSON.stringify({ nome, saldo }),
   });
 
   salvarConta.disabled = false;

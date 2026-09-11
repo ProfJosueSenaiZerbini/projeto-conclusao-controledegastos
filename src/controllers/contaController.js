@@ -44,6 +44,11 @@ async function criarConta(req, res) {
       if (!Number.isFinite(saldoInicial)) {
         return res.status(400).json({ erro: 'Saldo inválido' });
       }
+
+      // Mesma regra dos gastos: nenhuma conta fica negativa.
+      if (saldoInicial < 0) {
+        return res.status(400).json({ erro: 'O saldo inicial não pode ser negativo' });
+      }
     }
 
     const conta = await prisma.conta.create({
@@ -92,17 +97,38 @@ async function atualizarConta(req, res) {
       return res.status(resultado.status).json({ erro: resultado.erro });
     }
 
-    const { nome } = req.body;
+    const { nome, saldo } = req.body;
 
     if (!nome || !nome.trim()) {
       return res.status(400).json({ erro: 'O nome da conta é obrigatório' });
     }
 
-    // O saldo NÃO é editável aqui de propósito: ele é resultado das
-    // transações. Deixar editar à mão faria o saldo divergir do histórico.
+    const dados = { nome: nome.trim() };
+
+    // O saldo é opcional na edição: sem ele, só o nome muda.
+    //
+    // Editar o saldo serve para acertar o ponto de partida — a Carteira
+    // nasce zerada no cadastro, mas a pessoa já tem dinheiro nela. É o
+    // mesmo papel do saldo inicial ao criar uma conta: a partir do novo
+    // valor, as transações continuam somando e subtraindo normalmente.
+    if (saldo !== undefined && saldo !== null && saldo !== '') {
+      const novoSaldo = Number(saldo);
+
+      if (!Number.isFinite(novoSaldo)) {
+        return res.status(400).json({ erro: 'Saldo inválido' });
+      }
+
+      // Mesma regra dos gastos: nenhuma conta fica negativa.
+      if (novoSaldo < 0) {
+        return res.status(400).json({ erro: 'O saldo não pode ser negativo' });
+      }
+
+      dados.saldo = novoSaldo;
+    }
+
     const conta = await prisma.conta.update({
       where: { id_conta: id },
-      data: { nome: nome.trim() },
+      data: dados,
     });
 
     res.json(comSaldoNumerico(conta));

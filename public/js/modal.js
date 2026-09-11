@@ -1,10 +1,11 @@
-// Modais do Verdanz — substituem confirm() e prompt() do navegador.
+// Modais do Verdanz — substituem confirm(), prompt() e alert() do navegador.
 //
 // Por que trocar: as caixas nativas travam a página inteira enquanto
 // estão abertas, não aceitam formatação nem texto explicativo, e têm a
 // aparência do sistema operacional, não do site.
 //
 // As duas funções abaixo devolvem uma Promise, então quem chama continua
+// As funções abaixo devolvem uma Promise, então quem chama continua
 // escrevendo de cima para baixo, quase igual ao código antigo:
 //
 //   const ok = await confirmar({ ... });
@@ -108,8 +109,7 @@ function fecharModal(resposta) {
 
 function abrirModal() {
   caixaModal.classList.remove('hidden', 'recolhendo');
-  caixaModal.classList.add('flex');
-  fundoModal.classList.remove('hidden', 'recolhendo');
+fundoModal.classList.remove('hidden', 'recolhendo');
 }
 
 // Clicar fora e apertar Esc cancelam — é o que todo mundo espera.
@@ -117,6 +117,12 @@ fundoModal.addEventListener('click', () => fecharModal(null));
 
 document.addEventListener('keydown', function (evento) {
   if (evento.key === 'Escape') fecharModal(null);
+  if (evento.key !== 'Escape' || caixaModal.classList.contains('hidden')) return;
+
+  // Com o modal aberto por cima do painel lateral, o Esc fecha só o modal.
+  // Sem isso o painel também fecharia e a pessoa perderia o que digitou.
+  evento.stopImmediatePropagation();
+  fecharModal(null);
 });
 
 // ---- CONFIRMAÇÃO ----
@@ -143,7 +149,8 @@ function confirmar({ titulo, mensagem = '', aviso = '', textoConfirmar = 'Confir
   avisoModal.classList.toggle('hidden', !aviso);
 
   campoModal.classList.add('hidden');
-
+  cancelarModal.classList.remove('hidden');
+  
   confirmarModal.textContent = textoConfirmar;
   confirmarModal.className =
     'flex-1 py-3 rounded-xl text-white font-bold transition bg-red-600 hover:bg-red-700';
@@ -187,12 +194,12 @@ function pedirValor({ titulo, mensagem = '', rotulo = 'Valor', textoConfirmar = 
   valorModal.value = '';
   erroModal.classList.add('hidden');
   campoModal.classList.remove('hidden');
+  cancelarModal.classList.remove('hidden');
 
   confirmarModal.textContent = textoConfirmar;
   confirmarModal.className =
     'flex-1 py-3 rounded-xl text-white font-bold transition bg-blue-600 hover:bg-blue-700';
-
-  abrirModal();
+abrirModal();
   valorModal.focus();
 
   return new Promise((resolver) => {
@@ -225,5 +232,33 @@ function pedirValor({ titulo, mensagem = '', rotulo = 'Valor', textoConfirmar = 
 
     cancelarModal.onclick = () => fecharModal(null);
     confirmarModal.onclick = tentarConfirmar;
+  });
+}
+
+function avisar({ titulo, mensagem = '', textoBotao = 'Entendi' }) {
+  tituloModal.textContent = titulo;
+  mensagemModal.textContent = mensagem;
+  mensagemModal.classList.toggle('hidden', !mensagem);
+
+  iconeModal.className =
+    'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-500';
+  iconeModal.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+
+  avisoModal.classList.add('hidden');
+  campoModal.classList.add('hidden');
+
+  // Não há o que cancelar: sobra só o botão de fechar.
+  cancelarModal.classList.add('hidden');
+
+  confirmarModal.textContent = textoBotao;
+  confirmarModal.className =
+    'flex-1 py-3 rounded-xl text-white font-bold transition bg-blue-600 hover:bg-blue-700';
+
+  abrirModal();
+  confirmarModal.focus();
+
+  return new Promise((resolver) => {
+    resolverModal = () => resolver();
+    confirmarModal.onclick = () => fecharModal();
   });
 }

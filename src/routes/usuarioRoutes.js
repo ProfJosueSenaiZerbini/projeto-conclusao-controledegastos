@@ -11,6 +11,11 @@ const router = express.Router();
 router.post('/usuario', usuarioController.criarUsuario);
 router.post('/usuario/login', usuarioController.login);
 
+// Quem esqueceu a senha, por definição, não consegue fazer login.
+// A segurança aqui vem do token enviado por e-mail, não do token de login.
+router.post('/usuario/esqueci-senha', usuarioController.esqueciSenha);
+router.post('/usuario/redefinir-senha', usuarioController.redefinirSenha);
+
 // ---- ROTAS PROTEGIDAS ----
 // Os middlewares rodam em ordem, da esquerda para a direita:
 // autenticar (tem token válido?) -> verificarDono (é seu?) -> controller.

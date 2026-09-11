@@ -5,6 +5,21 @@ function comValorNumerico(transacao) {
   return { ...transacao, valor_transacao: Number(transacao.valor_transacao) };
 }
 
+function formatarMoeda(valor) {
+  return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// Separa a conta sem dinheiro nenhum da conta que tem, mas não o bastante.
+function mensagemSaldoInsuficiente(conta) {
+  const saldo = Number(conta.saldo);
+
+  if (saldo <= 0) {
+    return `A conta "${conta.nome}" não possui saldo`;
+  }
+
+  return `Saldo insuficiente: a conta "${conta.nome}" tem ${formatarMoeda(saldo)}`;
+}
+
 // POST /api/transacao
 async function criarTransacao(req, res) {
   try {
@@ -61,7 +76,35 @@ async function criarTransacao(req, res) {
         throw new Error('CATEGORIA_NAO_ENCONTRADA');
       }
 
-      const novaTransacao = await tx.transacao.create({
+      // O sinal NÃO vem da transação — vem do tipo da categoria.
+      // Uma transação em "Salário" é necessariamente receita.
+      // Por isso `tipo_transacao` foi removido do modelo (3FN).
+      if (categoria.tipo === 'receita') {
+        await tx.conta.update({
+          where: { id_conta: idConta },
+          data: { saldo: { increment: valor } },
+        });
+      } else {
+        // Um gasto só passa se a conta tiver saldo para cobri-lo.
+        //
+        // A condição "saldo >= valor" vai no próprio WHERE, em vez de ler
+        // o saldo antes e comparar no JavaScript. Assim o banco confere e
+        // desconta na MESMA instrução: dois gastos enviados ao mesmo tempo
+        // não conseguem passar os dois pela checagem e deixar a conta
+        // negativa. Se o saldo não cobrir, nenhuma linha é alterada.
+        const { count } = await tx.conta.updateMany({
+          where: { id_conta: idConta, saldo: { gte: valor } },
+          data: { saldo: { decrement: valor } },
+        });
+
+        if (count === 0) {
+          const erroSaldo = new Error('SALDO_INSUFICIENTE');
+          erroSaldo.conta = conta;
+          throw erroSaldo;
+        }
+      }
+
+      return tx.transacao.create({
         data: {
           valor_transacao: valor,
           data_transacao: data,
@@ -71,27 +114,21 @@ async function criarTransacao(req, res) {
         },
         include: { categoria: true },
       });
-
-      // O sinal NÃO vem da transação — vem do tipo da categoria.
-      // Uma transação em "Salário" é necessariamente receita.
-      // Por isso `tipo_transacao` foi removido do modelo (3FN).
-      await tx.conta.update({
-        where: { id_conta: idConta },
-        data: {
-          saldo:
-            categoria.tipo === 'receita'
-              ? { increment: valor }
-              : { decrement: valor },
-        },
-      });
-
-      return novaTransacao;
     });
 
     res.status(201).json(comValorNumerico(transacao));
   } catch (erro) {
     if (erro.message === 'CATEGORIA_NAO_ENCONTRADA') {
       return res.status(400).json({ erro: 'Categoria não encontrada' });
+    }
+
+    // O `codigo` deixa a tela reconhecer este erro e mostrar o pop-up,
+    // sem depender de comparar o texto da mensagem.
+    if (erro.message === 'SALDO_INSUFICIENTE') {
+      return res.status(400).json({
+        codigo: 'SALDO_INSUFICIENTE',
+        erro: mensagemSaldoInsuficiente(erro.conta),
+      });
     }
 
     console.error(erro);
