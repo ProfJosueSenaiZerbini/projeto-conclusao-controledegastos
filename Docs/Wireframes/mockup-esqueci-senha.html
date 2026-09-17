@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo das telas de esqueci a senha | Verdanz</title>
+
+    <!-- CSS escrito aqui dentro de propósito: assim o arquivo abre com o
+         visual certo em qualquer lugar, inclusive com dois cliques e sem
+         internet. As telas de verdade continuam usando o Tailwind. -->
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #eef9ed 0%, #ffffff 50%, #e8f3ff 100%);
+            min-height: 100vh;
+            color: #374151;
+        }
+
+        .pagina { max-width: 1200px; margin: 0 auto; padding: 48px 24px; }
+
+        /* ---- CABEÇALHO ---- */
+        .rotulo { color: #16a34a; font-weight: 600; font-size: 13px; letter-spacing: .05em; }
+        .titulo-pagina { font-size: 34px; font-weight: 700; color: #071b3a; margin-top: 4px; }
+        .verde { color: #22c55e; }
+        .subtitulo { color: #6b7280; margin-top: 12px; max-width: 640px; line-height: 1.6; }
+
+        /* ---- SEÇÕES ---- */
+        .secao { margin-top: 56px; }
+        .cabecalho-secao { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .numero {
+            width: 32px; height: 32px; border-radius: 8px; color: #fff; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .numero.verde-bg { background: #22c55e; }
+        .numero.azul-bg  { background: #3b82f6; }
+        .numero.escuro   { background: #071b3a; }
+        .titulo-secao { font-size: 20px; font-weight: 700; color: #071b3a; }
+        .caminho { font-size: 13px; color: #6b7280; margin-top: 2px; }
+        .caminho code { color: #15803d; background: #f0fdf4; padding: 1px 6px; border-radius: 4px; }
+
+        /* ---- GRADE DAS TELAS ---- */
+        .grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: start; }
+        .legenda {
+            font-size: 11px; font-weight: 700; color: #9ca3af;
+            text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px;
+        }
+
+        /* ---- A CAIXA BRANCA (igual à do login) ---- */
+        .tela {
+            background: rgba(255,255,255,.9);
+            border: 1px solid #f3f4f6;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.08);
+        }
+        .tela + .tela { margin-top: 24px; }
+
+        .logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 28px; }
+        .logo-icone {
+            width: 48px; height: 48px;
+            object-fit: contain;
+        }
+        .logo-texto { font-size: 28px; font-weight: 700; color: #071b3a; }
+
+        .titulo-tela { font-size: 24px; font-weight: 700; color: #071b3a; text-align: center; }
+        .texto-tela { color: #6b7280; font-size: 14px; text-align: center; margin-top: 8px; line-height: 1.5; }
+        .bloco-titulo { margin-bottom: 28px; }
+
+        /* ---- FORMULÁRIO ---- */
+        label { display: block; font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+        .campo {
+            width: 100%; padding: 14px 16px; border-radius: 12px;
+            border: 1px solid #e5e7eb; background: #f9fafb;
+            font-size: 15px; color: #374151; outline: none;
+        }
+        .campo.erro { border-color: #fca5a5; }
+        .campo + label { margin-top: 20px; }
+
+        .botao {
+            width: 100%; margin-top: 20px; padding: 14px;
+            border: none; border-radius: 12px;
+            background: linear-gradient(to right, #22c55e, #3b82f6);
+            color: #fff; font-weight: 700; font-size: 17px;
+            box-shadow: 0 10px 15px -3px #bbf7d0;
+            cursor: default;
+        }
+
+        .voltar { text-align: center; margin-top: 28px; font-size: 14px; font-weight: 700; color: #16a34a; }
+
+        /* ---- MENSAGENS ---- */
+        .msg { padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+        .msg.sucesso { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .msg.erro    { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .nota { font-size: 12px; color: #9ca3af; margin-top: 16px; line-height: 1.5; }
+
+        /* ---- E-MAIL ---- */
+        .email {
+            max-width: 640px; background: #fff; border: 1px solid #e5e7eb;
+            border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,.06);
+        }
+        .email-topo { padding: 16px 24px; background: #f9fafb; border-bottom: 1px solid #f3f4f6; }
+        .email-topo p { font-size: 14px; color: #6b7280; }
+        .email-topo strong { color: #071b3a; }
+        .email-corpo { padding: 24px; font-size: 14px; line-height: 1.7; }
+        .email-corpo p + p { margin-top: 12px; }
+        .link-email { color: #15803d; text-decoration: underline; word-break: break-all; }
+        .cinza { color: #6b7280; }
+
+        /* ---- LINHA DA SENHA NO LOGIN ---- */
+        .linha-senha { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .linha-senha label { margin-bottom: 0; }
+        .destaque {
+            font-size: 14px; font-weight: 600; color: #16a34a;
+            background: #f0fdf4; padding: 2px 8px; border-radius: 4px;
+        }
+        .tela.estreita { max-width: 420px; }
+
+        @media (max-width: 900px) {
+            .grade { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pagina">
+
+        <!-- CABEÇALHO -->
+        <header>
+            <p class="rotulo">MODELO DAS TELAS</p>
+            <h1 class="titulo-pagina">Esqueci a senha — Verdan<span class="verde">z</span></h1>
+            <p class="subtitulo">
+                Mesmas cores, mesma caixa branca e mesmos botões da tela de login.
+                Abaixo estão as duas telas e o que aparece em cada situação.
+                Este arquivo é só um desenho para aprovação: nenhum botão funciona.
+            </p>
+        </header>
+
+        <!-- ============ TELA 1 ============ -->
+        <section class="secao">
+            <div class="cabecalho-secao">
+                <span class="numero verde-bg">1</span>
+                <div>
+                    <h2 class="titulo-secao">Tela 1 — Pedir o link</h2>
+                    <p class="caminho">Endereço: <code>/esqueci-senha</code></p>
+                </div>
+            </div>
+
+            <div class="grade">
+
+                <!-- 1A -->
+                <div>
+                    <p class="legenda">Ao abrir a tela</p>
+                    <div class="tela">
+                        <div class="logo">
+                            <img class="logo-icone" src="../../public/img/VerdanzIcone.png" alt="">
+                            <span class="logo-texto">Verdan<span class="verde">z</span></span>
+                        </div>
+                        <div class="bloco-titulo">
+                            <h3 class="titulo-tela">Esqueceu a senha?</h3>
+                            <p class="texto-tela">
+                                Informe o e-mail da sua conta e enviaremos um link para você criar uma senha nova.
+                            </p>
+                        </div>
+                        <label>E-mail</label>
+                        <input class="campo" type="email" placeholder="Digite seu e-mail">
+                        <button class="botao">Enviar link</button>
+                        <p class="voltar">Voltar para o login</p>
+                    </div>
+                </div>
+
+                <!-- 1B -->
+                <div>
+                    <p class="legenda">Depois de enviar</p>
+                    <div class="tela">
+                        <div class="logo">
+                            <img class="logo-icone" src="../../public/img/VerdanzIcone.png" alt="">
+                            <span class="logo-texto">Verdan<span class="verde">z</span></span>
+                        </div>
+                        <div class="bloco-titulo">
+                            <h3 class="titulo-tela">Esqueceu a senha?</h3>
+                        </div>
+                        <div class="msg sucesso">
+                            Se esse e-mail estiver cadastrado, você vai receber um link para criar uma senha nova.
+                        </div>
+                        <p class="nota">
+                            O formulário some. A mensagem é a mesma exista o e-mail ou não,
+                            para ninguém descobrir quais e-mails têm conta.
+                        </p>
+                        <p class="voltar">Voltar para o login</p>
+                    </div>
+                </div>
+
+                <!-- 1C -->
+                <div>
+                    <p class="legenda">E-mail em branco ou inválido</p>
+                    <div class="tela">
+                        <div class="logo">
+                            <img class="logo-icone" src="../../public/img/VerdanzIcone.png" alt="">
+                            <span class="logo-texto">Verdan<span class="verde">z</span></span>
+                        </div>
+                        <div class="bloco-titulo">
+                            <h3 class="titulo-tela">Esqueceu a senha?</h3>
+                        </div>
+                        <div class="msg erro">Informe um e-mail válido.</div>
+                        <label>E-mail</label>
+                        <input class="campo erro" type="text" value="nicolas.com">
+                        <button class="botao">Enviar link</button>
+                        <p class="voltar">Voltar para o login</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============ E-MAIL ============ -->
+        <section class="secao">
+            <div class="cabecalho-secao">
+                <span class="numero azul-bg">@</span>
+                <div>
+                    <h2 class="titulo-secao">O e-mail que chega</h2>
+                    <p class="caminho">Texto simples, sem imagens — é o que menos cai no spam.</p>
+                </div>
+            </div>
+
+            <div class="email">
+                <div class="email-topo">
+                    <p>De: <strong>Verdanz</strong></p>
+                    <p>Assunto: <strong>Redefinir sua senha</strong></p>
+                </div>
+                <div class="email-corpo">
+                    <p>Olá, Nicolas!</p>
+                    <p>Recebemos um pedido para criar uma senha nova na sua conta do Verdanz.</p>
+                    <p>Clique no link abaixo. Ele vale por 30 minutos:</p>
+                    <p class="link-email">http://localhost:3000/redefinir-senha?token=9f3c1a...</p>
+                    <p class="cinza">Se não foi você, é só ignorar: sua senha continua a mesma.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ TELA 2 ============ -->
+        <section class="secao">
+            <div class="cabecalho-secao">
+                <span class="numero verde-bg">2</span>
+                <div>
+                    <h2 class="titulo-secao">Tela 2 — Criar a senha nova</h2>
+                    <p class="caminho">Endereço: <code>/redefinir-senha?token=...</code> — aberta pelo link do e-mail</p>
+                </div>
+            </div>
+
+            <div class="grade">
+
+                <!-- 2A -->
+                <div>
+                    <p class="legenda">Ao abrir o link</p>
+                    <div class="tela">
+                        <div class="logo">
+                            <img class="logo-icone" src="../../public/img/VerdanzIcone.png" alt="">
+                            <span class="logo-texto">Verdan<span class="verde">z</span></span>
+                        </div>
+                        <div class="bloco-titulo">
+                            <h3 class="titulo-tela">Criar senha nova</h3>
+                            <p class="texto-tela">Escolha uma senha com pelo menos 6 caracteres.</p>
+                        </div>
+                        <label>Nova senha</label>
+                        <input class="campo" type="password" value="12345678">
+                        <label>Confirme a nova senha</label>
+                        <input class="campo" type="password" value="12345678">
+                        <button class="botao">Salvar senha</button>
+                        <p class="voltar">Voltar para o login</p>
+                    </div>
+                </div>
+
+                <!-- 2B -->
+                <div>
+                    <p class="legenda">As duas senhas não batem</p>
+                    <div class="tela">
+                        <div class="logo">
+                            <img class="logo-icone" src="../../public/img/VerdanzIcone.png" alt="">
+                            <span class="logo-texto">Verdan<span class="verde">z</span></span>
+                        </div>
+                        <div class="bloco-titulo">
+                            <h3 class="titulo-tela">Criar senha nova</h3>
+                        </div>
+                        <div class="msg erro">As duas senhas não são iguais.</div>
+                        <label>Nova senha</label>
+                        <input class="campo" type="password" value="12345678">
+                        <label>Confirme a nova senha</label>
+                        <input class="campo erro" type="password" value="12345">
+                        <button class="botao">Salvar senha</button>
+                    </div>
+                </div>
+
+                <!-- 2C -->
+                <div>
+                    <p class="legenda">Link vencido ou já usado</p>
+                    <div class="tela">
+                        <div class="logo">
+                            <img class="logo-icone" src="../../public/img/VerdanzIcone.png" alt="">
+                            <span class="logo-texto">Verdan<span class="verde">z</span></span>
+                        </div>
+                        <div class="msg erro">Este link é inválido ou expirou. Peça um novo.</div>
+                        <p class="nota">
+                            Os campos nem aparecem: não adianta digitar uma senha que
+                            vai ser recusada no final.
+                        </p>
+                        <p class="voltar">Pedir um link novo</p>
+                    </div>
+
+                    <p class="legenda" style="margin-top:24px">Deu certo</p>
+                    <div class="tela">
+                        <div class="logo">
+                            <img class="logo-icone" src="../../public/img/VerdanzIcone.png" alt="">
+                            <span class="logo-texto">Verdan<span class="verde">z</span></span>
+                        </div>
+                        <div class="msg sucesso">Senha alterada! Redirecionando para o login...</div>
+                        <p class="nota">Vai sozinho para o login depois de 1,5 segundo.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============ LOGIN ============ -->
+        <section class="secao">
+            <div class="cabecalho-secao">
+                <span class="numero escuro">↩</span>
+                <div>
+                    <h2 class="titulo-secao">De onde se chega na Tela 1</h2>
+                    <p class="caminho">Volta o link na tela de login, do lado direito do rótulo "Senha".</p>
+                </div>
+            </div>
+
+            <div class="tela estreita">
+                <div class="linha-senha">
+                    <label>Senha</label>
+                    <span class="destaque">Esqueceu a senha?</span>
+                </div>
+                <input class="campo" type="password" placeholder="Digite sua senha">
+            </div>
+        </section>
+
+    </div>
+</body>
+
+</html>

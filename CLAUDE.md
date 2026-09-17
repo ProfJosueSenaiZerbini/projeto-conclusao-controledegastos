@@ -202,6 +202,25 @@ model Meta {
 
 ---
 
+## Identidade visual — logo e ícone
+
+O logotipo do Verdanz é **uma imagem pronta, que já existe em `public/img/`**. Use sempre o arquivo que estiver lá.
+
+**Nunca invente um substituto.** Não desenhe a marca com `<div>` e CSS, não use a letra "V" dentro de um quadrado colorido, não gere SVG, emoji ou qualquer outro placeholder — nem em mockups, protótipos, telas de exemplo ou arquivos temporários. Um desenho improvisado não é a marca do projeto e polui a identidade visual.
+
+Antes de escrever a tela, confira o nome atual do arquivo na pasta `public/img/` e copie a forma de uso de uma tela que já existe (`src/views/login.html` é a referência). Os nomes dos arquivos de imagem podem mudar; a pasta, não.
+
+Como referenciar:
+
+- **Telas em `src/views/`** — caminho a partir da raiz do site, porque o Express serve `public/` como estático: `<img src="/img/NOME.png" alt="">`
+- **Arquivos fora de `src/views/`** (mockups em `Docs/`, por exemplo) — caminho relativo até `public/img/`, para a imagem aparecer com dois cliques, sem servidor
+
+Ajuste o tamanho com CSS e sempre use `object-fit: contain`, para a logo não esticar nem cortar.
+
+As imagens da pasta são grandes (centenas de KB). Se em algum momento elas forem substituídas por versões mais leves, **nada aqui muda**: continue usando o que estiver em `public/img/`.
+
+---
+
 ## Rotas do escopo atual
 
 | Método | Rota | Função |

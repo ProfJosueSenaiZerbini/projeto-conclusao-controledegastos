@@ -1,7 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
-const { enviarEmail } = require('../email');
 
 // Remove tudo que não é dígito: "123.456.789-00" vira "12345678900".
 // O banco guarda apenas números; pontos e traços são enfeite de tela.
@@ -210,132 +209,6 @@ async function login(req, res) {
   }
 }
 
-// ---- ESQUECI A SENHA ----
-//
-// O fluxo tem duas etapas:
-//   1. A pessoa informa o e-mail e recebe um link com um token.
-//   2. Abrindo o link, ela escolhe a senha nova e o token é conferido.
-//
-// O token é um JWT, igual ao do login, mas assinado com um segredo
-// diferente: JWT_SECRET + o hash da senha ATUAL do usuário. Isso dá
-// duas garantias sem precisar criar tabela nova no banco:
-//
-// - Uso único: quando a senha muda, o hash muda, e o segredo junto.
-//   O mesmo link não funciona uma segunda vez.
-// - Não se mistura com o login: um token de login não serve para
-//   redefinir senha, e um de redefinição não serve para entrar.
-
-const PRAZO_LINK = '30m';
-
-function segredoRedefinicao(usuario) {
-  return process.env.JWT_SECRET + usuario.senha;
-}
-
-// O endereço do site vem do .env, e não do cabeçalho Host da requisição.
-// O Host é enviado pelo cliente: um atacante poderia pedir a redefinição
-// da senha de outra pessoa com "Host: site-falso.com", e o link que chega
-// no e-mail da vítima entregaria o token para o site dele.
-function urlDoSite() {
-  return process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
-}
-
-// POST /api/usuario/esqueci-senha
-async function esqueciSenha(req, res) {
-  try {
-    const email = String(req.body.email || '').trim();
-
-    if (!email.includes('@')) {
-      return res.status(400).json({ erro: 'Informe um e-mail válido' });
-    }
-
-    const usuario = await prisma.usuario.findUnique({ where: { email } });
-
-    if (usuario) {
-      const token = jwt.sign(
-        { id_usuario: usuario.id_usuario },
-        segredoRedefinicao(usuario),
-        { expiresIn: PRAZO_LINK }
-      );
-
-      const link = `${urlDoSite()}/redefinir-senha?token=${token}`;
-
-      // Sem `await` de propósito: a resposta sai na hora, exista o e-mail
-      // ou não. Se esperássemos o envio, a resposta demoraria mais só
-      // quando o e-mail existe — e o tempo entregaria essa informação.
-      enviarEmail({
-        para: usuario.email,
-        assunto: 'Verdanz — redefinir sua senha',
-        texto:
-          `Olá, ${usuario.nome_usuario}!\n\n` +
-          `Recebemos um pedido para redefinir a senha da sua conta no Verdanz.\n` +
-          `Para criar uma senha nova, abra o link abaixo (ele vale por 30 minutos):\n\n` +
-          `${link}\n\n` +
-          `Se não foi você, ignore este e-mail: sua senha continua a mesma.`,
-      }).catch((erro) => console.error('Falha ao enviar e-mail de redefinição:', erro));
-    }
-
-    // Mesma resposta para e-mail cadastrado ou não, pelo mesmo motivo do
-    // login: não revelar quais e-mails existem no sistema.
-    res.json({
-      mensagem: 'Se esse e-mail estiver cadastrado, você vai receber um link para criar uma senha nova.',
-    });
-  } catch (erro) {
-    console.error(erro);
-    res.status(500).json({ erro: 'Erro ao solicitar redefinição de senha' });
-  }
-}
-
-// POST /api/usuario/redefinir-senha
-async function redefinirSenha(req, res) {
-  const linkInvalido = { erro: 'Este link é inválido ou expirou. Peça um novo.' };
-
-  try {
-    const { token, senha } = req.body;
-
-    if (!token || !senha) {
-      return res.status(400).json({ erro: 'Token e nova senha são obrigatórios' });
-    }
-
-    if (senha.length < 6) {
-      return res.status(400).json({ erro: 'A senha deve ter no mínimo 6 caracteres' });
-    }
-
-    // Para saber qual segredo usar, primeiro precisamos saber de quem é o
-    // token. jwt.decode só LÊ o conteúdo, sem conferir nada — por isso o
-    // id lido aqui ainda não é confiável. A conferência vem logo abaixo.
-    const conteudo = jwt.decode(token);
-
-    if (!conteudo || !Number.isInteger(conteudo.id_usuario)) {
-      return res.status(400).json(linkInvalido);
-    }
-
-    const usuario = await prisma.usuario.findUnique({
-      where: { id_usuario: conteudo.id_usuario },
-    });
-
-    if (!usuario) {
-      return res.status(400).json(linkInvalido);
-    }
-
-    // Agora sim: assinatura, prazo e uso único (via hash da senha atual).
-    try {
-      jwt.verify(token, segredoRedefinicao(usuario));
-    } catch {
-      return res.status(400).json(linkInvalido);
-    }
-
-    await prisma.usuario.update({
-      where: { id_usuario: usuario.id_usuario },
-      data: { senha: await bcrypt.hash(senha, 10) },
-    });
-
-    res.json({ mensagem: 'Senha alterada com sucesso' });
-  } catch (erro) {
-    console.error(erro);
-    res.status(500).json({ erro: 'Erro ao redefinir a senha' });
-  }
-}
-
 // GET /api/usuario/:id
 async function buscarUsuario(req, res) {
   try {
@@ -454,8 +327,6 @@ async function deletarUsuario(req, res) {
 module.exports = {
   criarUsuario,
   login,
-  esqueciSenha,
-  redefinirSenha,
   buscarUsuario,
   atualizarUsuario,
   deletarUsuario,
