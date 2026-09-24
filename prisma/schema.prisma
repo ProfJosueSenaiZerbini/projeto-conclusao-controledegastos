@@ -25,8 +25,33 @@ model Usuario {
 
   contas  Conta[]
   metas   Meta[]
+  tokens  TokenUsuario[]
 
   @@map("usuario")
+}
+
+// ================================
+// TOKEN_USUARIO — links enviados por e-mail
+// ================================
+// Cada linha é um link de uso único mandado para o e-mail do usuário.
+// Hoje só existe o tipo 'redefinir_senha'; a confirmação de cadastro
+// vai usar esta mesma tabela com o tipo 'verificar_email'.
+//
+// O banco guarda o HASH do token, nunca o token em si — pelo mesmo
+// motivo da senha: se alguém copiar o banco, não consegue usar os links.
+model TokenUsuario {
+  id_token      Int       @id @default(autoincrement())
+  token_hash    String    @unique @db.Char(64) // SHA-256 em hexadecimal
+  tipo          String    @db.VarChar(30)      // 'redefinir_senha'
+  expira_em     DateTime
+  usado_em      DateTime?                      // preenchido quando o link é usado
+  data_criacao  DateTime  @default(now())
+  id_usuario    Int
+
+  usuario  Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_usuario, tipo])
+  @@map("token_usuario")
 }
 
 // ================================
