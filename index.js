@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { conferirEmail } = require('./src/email');
 
 const viewRoutes = require('./src/routes/viewRoutes');
 const usuarioRoutes = require('./src/routes/usuarioRoutes');
@@ -55,4 +56,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
+  conferirEmail();
 });
