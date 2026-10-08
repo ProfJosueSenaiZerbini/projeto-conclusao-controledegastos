@@ -58,6 +58,14 @@ async function criarTransacao(req, res) {
       return res.status(403).json({ erro: 'Acesso negado a conta de outro usuário' });
     }
 
+    // Conta importada recebe transações só do banco, pela sincronização.
+    // Um lançamento à mão nela faria o saldo discordar do extrato real.
+    if (conta.id_conexao) {
+      return res.status(400).json({
+        erro: `A conta "${conta.nome}" é importada do banco e recebe transações só pela sincronização. Escolha outra conta.`,
+      });
+    }
+
     // ---- A OPERAÇÃO ATÔMICA ----
     //
     // Criar a transação e atualizar o saldo da conta são DUAS escritas

@@ -44,7 +44,9 @@ Não existe pasta `models/`. O Prisma Client substitui essa camada — os contro
 
 O projeto já teve um modelo com 12 entidades (perfis financeiros, formulário de personalização, funcionalidades habilitáveis, simulação bancária). Esse modelo completo **ainda existe na documentação como visão de produto**, mas foi deliberadamente pausado porque as decisões pendentes entre essas entidades estavam travando o desenvolvimento do básico.
 
-**O escopo atual tem 5 entidades e é isto que deve ser implementado agora.** Não sugira trazer de volta perfis, formulário, funcionalidades habilitáveis ou simulação bancária a menos que o desenvolvedor peça explicitamente.
+**O escopo atual tem 5 entidades e é isto que deve ser implementado agora.** Não sugira trazer de volta perfis, formulário ou funcionalidades habilitáveis a menos que o desenvolvedor peça explicitamente.
+
+A **simulação bancária voltou**, a pedido do desenvolvedor, numa forma enxuta: um banco simulado que imita o Open Finance e a importação de contas e transações para o Verdanz. Ela acrescenta a tabela `ConexaoBancaria` e campos opcionais em `Conta` e `Transacao` (ver a seção "Importação bancária").
 
 ### As 5 entidades
 
@@ -132,6 +134,39 @@ Um usuário sem conta não tem onde registrar nada. `POST /api/usuario` deve cri
 
 ---
 
+## Importação bancária (banco simulado)
+
+O usuário conecta um banco na tela de Contas e o Verdanz importa as contas e o extrato. Só instituições autorizadas pelo Banco Central acessam o Open Finance de verdade, então o banco é simulado — mas o fluxo imita o real (consentimento, código, token de acesso).
+
+**Onde fica cada parte:**
+
+| Arquivo | Papel |
+|---|---|
+| `src/bancoSimulado/` | O "banco". Não faz parte do Verdanz. Tem os próprios dados (`dados.json`), rotas em `/banco-simulado` e a tela de autorização |
+| `src/clienteBanco.js` | O ÚNICO lugar do Verdanz que conversa com o banco, sempre por HTTP |
+| `src/importacao.js` | Traduz o formato do banco para o do Verdanz, categoriza e grava |
+| `src/controllers/conexaoController.js` | Rotas `/api/conexao-bancaria` usadas pela tela |
+
+**Regras que não podem ser quebradas:**
+
+- **Separação dos dois sistemas.** O Verdanz nunca lê o `dados.json`, e o banco nunca lê o MySQL. Toda conversa passa pelas rotas. É isso que torna a simulação honesta.
+- **A importação também é atômica.** As transações novas de uma conta e a atualização do saldo entram no mesmo `$transaction`. O valor fica sempre positivo e a direção vem da categoria, como no registro manual.
+- **Sem duplicatas.** `Transacao.id_externo` guarda o código que o banco deu à transação, com `@@unique([id_conta, id_externo])`. Sincronizar de novo não grava nada repetido. O mesmo vale para `Conta.id_externo`.
+- **Conta importada só muda pelo banco.** O servidor recusa editar, excluir ou lançar transação manual numa conta com `id_conexao`. Para remover, desconecta-se o banco (Cascade apaga as contas importadas).
+- **Na importação não existe "saldo insuficiente".** Numa conta importada, quem manda é o banco. A checagem de saldo continua valendo para os lançamentos manuais.
+- **O `token_acesso` nunca sai do servidor.** A listagem de conexões usa `select` sem ele.
+- **O `state` é assinado com segredo próprio** (`JWT_SECRET + ':estado-conexao'`), e não com o `JWT_SECRET` puro. Ele passa pela URL; se usasse o mesmo segredo, serviria como token de login.
+
+**Clientes do banco simulado** (cadastre um usuário no Verdanz com um destes CPFs para testar):
+
+| Cliente | CPF | Contas |
+|---|---|---|
+| Ana Souza | 482.915.736-46 | Conta corrente e poupança |
+| Bruno Lima | 735.102.648-35 | Conta corrente |
+| Carla Mendes | 219.384.057-14 | Conta corrente |
+
+---
+
 ## Schema atual (referência — sempre confira o schema.prisma real antes de escrever queries)
 
 ```prisma
@@ -151,8 +186,25 @@ model Conta {
   nome        String  @db.VarChar(100)
   saldo       Decimal @default(0.00) @db.Decimal(12, 2)
   id_usuario  Int
-  usuario     Usuario     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  id_conexao  Int?                    // só nas contas importadas
+  id_externo  String? @db.VarChar(50) // código da conta no banco
+  usuario     Usuario          @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  conexao     ConexaoBancaria? @relation(fields: [id_conexao], references: [id_conexao], onDelete: Cascade)
   transacoes  Transacao[]
+  @@unique([id_conexao, id_externo])
+}
+
+model ConexaoBancaria {
+  id_conexao            Int       @id @default(autoincrement())
+  banco                 String    @db.VarChar(100)
+  token_acesso          String    @db.Text
+  acesso_expira_em      DateTime
+  data_conexao          DateTime  @default(now())
+  ultima_sincronizacao  DateTime?
+  id_usuario            Int
+  usuario  Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  contas   Conta[]
+  @@unique([id_usuario, banco])
 }
 
 model Categoria {
@@ -169,8 +221,10 @@ model Transacao {
   descricao        String?  @db.VarChar(150)
   id_categoria     Int
   id_conta         Int
+  id_externo       String?  @db.VarChar(50)  // código da transação no banco, só nas importadas
   categoria  Categoria @relation(fields: [id_categoria], references: [id_categoria])
   conta      Conta     @relation(fields: [id_conta], references: [id_conta], onDelete: Cascade)
+  @@unique([id_conta, id_externo])
 }
 
 model Meta {
@@ -235,8 +289,15 @@ As imagens da pasta são grandes (centenas de KB). Se em algum momento elas fore
 | GET | `/api/usuario/:id/meta` | Listar metas |
 | PUT | `/api/meta/:id` | Atualizar meta (inclui `valor_atual`) |
 | DELETE | `/api/meta/:id` | Excluir meta |
+| POST | `/api/conexao-bancaria` | Iniciar conexão: pede o consentimento e devolve a tela do banco |
+| POST | `/api/conexao-bancaria/finalizar` | Confere o `state`, troca o código pelo acesso e faz a primeira importação |
+| GET | `/api/conexao-bancaria` | Listar conexões (sem o token de acesso) |
+| POST | `/api/conexao-bancaria/:id/sincronizar` | Importar o que for novo |
+| DELETE | `/api/conexao-bancaria/:id` | Desconectar (apaga as contas importadas) |
 
-Dez rotas. Construa um recurso por vez, teste no Insomnia/Postman antes de avançar.
+Rotas do banco simulado, fora do `/api` porque não fazem parte do Verdanz: `POST /banco-simulado/consents`, `GET /banco-simulado/consents/:id`, `POST /banco-simulado/consents/authorize`, `POST /banco-simulado/consents/reject`, `POST /banco-simulado/token`, `GET /banco-simulado/accounts`, `GET /banco-simulado/accounts/:id/balances`, `GET /banco-simulado/accounts/:id/transactions` e a tela `GET /banco-simulado/autorizar`.
+
+Construa um recurso por vez, teste no Insomnia/Postman antes de avançar.
 
 ## Roteiro
 
@@ -253,7 +314,7 @@ Dez rotas. Construa um recurso por vez, teste no Insomnia/Postman antes de avan�
 
 ## O que NÃO existe mais no modelo (não sugerir de volta)
 
-`Perfil`, `UsuarioPerfil`, `PerguntaFormulario`, `FormularioPerfil`, `RespostaFormulario`, `Funcionalidade`, `UsuarioFuncionalidade`. Também não existem: hierarquia de subcategorias, contas domésticas com vencimento/status, simulação de importação bancária, `tipo_transacao`, `id_usuario` em `Transacao`, `cpf_cnpj`... (esse último continua existindo em `Usuario`, não remover).
+`Perfil`, `UsuarioPerfil`, `PerguntaFormulario`, `FormularioPerfil`, `RespostaFormulario`, `Funcionalidade`, `UsuarioFuncionalidade`. Também não existem: hierarquia de subcategorias, contas domésticas com vencimento/status, `tipo_transacao`, `id_usuario` em `Transacao`, `cpf_cnpj`... (esse último continua existindo em `Usuario`, não remover).
 
 Se o desenvolvedor pedir para trazer algo dessa lista de volta, é uma decisão dele para retomar depois — implemente apenas quando pedido explicitamente, sem sugerir por conta própria enquanto o escopo mínimo não estiver completo e funcionando.
 

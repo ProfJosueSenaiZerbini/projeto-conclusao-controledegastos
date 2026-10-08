@@ -120,7 +120,11 @@ async function carregarContas() {
   const total = contas.reduce((soma, c) => soma + Number(c.saldo), 0);
   saldoTotal.textContent = formatarMoeda(total);
 
+  // Contas importadas do banco recebem transações só pela sincronização,
+  // então não aparecem para lançamento manual. Elas continuam somando no
+  // saldo total acima.
   selectConta.innerHTML = contas
+    .filter((c) => !c.id_conexao)
     .map((c) => `<option value="${c.id_conta}">${escapar(c.nome)}</option>`)
     .join('');
 
@@ -181,7 +185,7 @@ document.getElementById('dataTransacao').addEventListener('change', atualizarRes
 // ---- ABRIR O PAINEL ----
 
 document.getElementById('novaTransacao').addEventListener('click', function () {
-  if (contas.length === 0) {
+  if (selectConta.options.length === 0) {
     mostrarMensagem('Crie uma conta antes de registrar transações.', 'erro');
     return;
   }

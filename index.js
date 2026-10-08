@@ -10,6 +10,8 @@ const contaRoutes = require('./src/routes/contaRoutes');
 const categoriaRoutes = require('./src/routes/categoriaRoutes');
 const transacaoRoutes = require('./src/routes/transacaoRoutes');
 const metaRoutes = require('./src/routes/metaRoutes');
+const conexaoRoutes = require('./src/routes/conexaoRoutes');
+const bancoSimuladoRoutes = require('./src/bancoSimulado/bancoRoutes');
 
 const app = express();
 
@@ -30,6 +32,11 @@ app.use('/api', contaRoutes);
 app.use('/api', categoriaRoutes);
 app.use('/api', transacaoRoutes);
 app.use('/api', metaRoutes);
+app.use('/api', conexaoRoutes);
+
+// Banco simulado: finge ser um banco externo para a importação de
+// contas. Fica fora do /api de propósito, porque não faz parte do Verdanz.
+app.use('/banco-simulado', bancoSimuladoRoutes);
 
 // Qualquer rota não encontrada cai aqui.
 // Atenção: no Express 5 a sintaxe app.get('*') foi removida.

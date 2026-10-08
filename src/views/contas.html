@@ -85,6 +85,24 @@
         <!-- As contas entram aqui pelo JavaScript -->
         <div id="listaContas" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
 
+        <!-- BANCOS CONECTADOS
+             As contas importadas aparecem lá em cima, junto com as outras.
+             Aqui fica só a conexão: com qual banco, quando sincronizou e
+             os botões para sincronizar ou desconectar. -->
+        <section class="mt-12">
+            <div class="mb-4">
+                <h2 class="text-xl font-bold text-gray-900">Bancos conectados</h2>
+                <p class="text-gray-500 text-sm mt-1">Importe contas e transações direto do seu banco.</p>
+            </div>
+
+            <div id="listaConexoes" class="space-y-3 max-w-2xl"></div>
+
+            <button id="conectarBanco" type="button"
+                    class="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 font-medium transition-colors hover:border-blue-300 hover:text-blue-500 disabled:opacity-60 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-building-columns"></i> Conectar banco
+            </button>
+        </section>
+
     </main>
 
     <!-- PAINEL LATERAL: nova conta -->

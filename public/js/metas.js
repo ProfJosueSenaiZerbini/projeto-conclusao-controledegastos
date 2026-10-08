@@ -107,7 +107,9 @@ async function adicionarValor(meta) {
   // só chega número válido — ou null, se a pessoa cancelou.
   const valor = await pedirValor({
     titulo: 'Adicionar valor',
-    mensagem: `Quanto você guardou para "${meta.titulo}"? Faltam ${formatarMoeda(falta)}.`,
+    mensagem:
+      `Quanto você guardou para "${meta.titulo}"? Faltam ${formatarMoeda(falta)}. ` +
+      'Se informar mais que isso, a meta é concluída com o valor dela.',
     rotulo: 'Valor guardado',
   });
 
@@ -123,7 +125,19 @@ async function adicionarValor(meta) {
     return;
   }
 
-  esconderMensagem();
+  // O servidor nunca deixa o guardado passar do valor da meta. Se a
+  // pessoa informou mais do que faltava, a tela conta o que aconteceu,
+  // em vez de o número mudar sem explicação.
+  if (valor > falta) {
+    mostrarMensagem(
+      `Meta "${meta.titulo}" concluída! Você informou ${formatarMoeda(valor)}, mas faltavam só ` +
+        `${formatarMoeda(falta)}, então ela ficou com ${formatarMoeda(dados.valor_alvo)}.`,
+      'sucesso'
+    );
+  } else {
+    esconderMensagem();
+  }
+
   carregarMetas();
 }
 
