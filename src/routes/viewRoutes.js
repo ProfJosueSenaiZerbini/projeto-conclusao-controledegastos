@@ -23,5 +23,6 @@ router.get('/dashboard', enviarTela('dashboard.html'));
 router.get('/contas', enviarTela('contas.html'));
 router.get('/transacoes', enviarTela('transacoes.html'));
 router.get('/metas', enviarTela('metas.html'));
+router.get('/configuracoes', enviarTela('configuracoes.html'));
 
 module.exports = router;

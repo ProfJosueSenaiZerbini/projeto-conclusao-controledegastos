@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações | Verdanz</title>
+    <link rel="icon" href="/img/VerdanzIcone.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        /* As categorias usam <details>/<summary>: o próprio HTML já sabe
+           abrir e fechar o conteúdo ao clicar, sem JavaScript.
+           Aqui só escondemos o triângulo padrão do navegador e giramos
+           a nossa setinha quando a categoria está aberta. */
+        summary { list-style: none; }
+        summary::-webkit-details-marker { display: none; }
+        details[open] .seta { transform: rotate(180deg); }
+    </style>
+</head>
+<body class="bg-[#f8faff] h-screen flex overflow-hidden text-gray-800">
+
+    <aside class="w-64 bg-[#f8faff] flex flex-col justify-between hidden md:flex h-full border-r border-gray-100">
+        <div>
+            <div class="p-6 flex items-center gap-3">
+                <img src="/img/VerdanzIcone.png" alt="" class="w-14 h-14 object-contain">
+                <div>
+                   <h1 class="text-4xl font-bold text-[#071b3a]">
+                        Verdan<span class="text-green-500">z</span>
+                    </h1>
+                    <p class="text-[10px] text-gray-500">Seu dinheiro, seu futuro</p>
+                </div>
+            </div>
+
+            <nav class="px-4 space-y-1 mt-2">
+                <a href="/dashboard" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-house-chimney w-5 text-center"></i> Dashboard
+                </a>
+                <a href="/contas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-regular fa-credit-card w-5 text-center"></i> Contas
+                </a>
+                <a href="/transacoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-money-bill-transfer w-5 text-center"></i> Transações
+                </a>
+                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-regular fa-calendar w-5 text-center"></i> Planejamento
+                </a>
+                <a href="/metas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-bullseye w-5 text-center"></i> Metas
+                </a>
+                <a href="/configuracoes" aria-current="page" class="flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl font-medium shadow-sm shadow-blue-200">
+                    <i class="fa-solid fa-gear w-5 text-center"></i> Configurações
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f8faff]">
+
+        <header class="flex justify-between items-start mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Configurações</h2>
+                <p class="text-gray-500 text-sm mt-1">Ajuste o Verdanz do seu jeito.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="acoesPerfil" class="hidden items-center gap-4">
+                    <button id="botaoSair" title="Sair" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-right-from-bracket text-xl"></i></button>
+                </div>
+                <button id="perfilToggle" type="button" aria-expanded="false" aria-controls="acoesPerfil"
+                        title="Opções do perfil"
+                        class="rounded-full transition-shadow duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2">
+                    <img id="avatarUsuario" src="https://ui-avatars.com/api/?name=%20&background=0D8ABC&color=fff" alt="Perfil" class="w-10 h-10 rounded-full border-2 border-white shadow-sm cursor-pointer block">
+                </button>
+            </div>
+        </header>
+
+        <div id="mensagem" class="hidden mb-5 px-4 py-3 rounded-xl text-sm max-w-2xl"></div>
+
+        <div class="space-y-3 max-w-2xl">
+
+            <!-- ===== PERFIL ===== -->
+            <details class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <summary class="flex items-center gap-4 p-5 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center"><i class="fa-regular fa-user"></i></div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-900">Perfil</p>
+                        <p class="text-xs text-gray-500">Nome, e-mail e informações pessoais</p>
+                    </div>
+                    <i class="seta fa-solid fa-chevron-down text-gray-400 transition-transform"></i>
+                </summary>
+
+                <form id="formPerfil" class="px-5 pb-5 pt-1 space-y-4 border-t border-gray-100">
+                    <div class="pt-4">
+                        <label for="nomePerfil" class="block text-sm font-semibold text-gray-700 mb-2">Nome</label>
+                        <input type="text" id="nomePerfil" maxlength="100"
+                               class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    </div>
+                    <div>
+                        <label for="emailPerfil" class="block text-sm font-semibold text-gray-700 mb-2">E-mail</label>
+                        <input type="email" id="emailPerfil" maxlength="100"
+                               class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    </div>
+                    <p class="text-xs text-gray-400" id="membroDesde"></p>
+                    <button type="submit" id="salvarPerfil"
+                            class="w-full py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Salvar alterações
+                    </button>
+                </form>
+            </details>
+
+            <!-- ===== NOTIFICAÇÕES ===== -->
+            <details class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <summary class="flex items-center gap-4 p-5 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center"><i class="fa-regular fa-bell"></i></div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-900">Notificações</p>
+                        <p class="text-xs text-gray-500">Escolha quais avisos você quer receber</p>
+                    </div>
+                    <i class="seta fa-solid fa-chevron-down text-gray-400 transition-transform"></i>
+                </summary>
+
+                <!-- Cada linha tem um data-preferencia: é a "chave" com que a
+                     escolha é guardada. O JavaScript lê todas de uma vez. -->
+                <div class="px-5 pb-5 pt-1 border-t border-gray-100 divide-y divide-gray-100">
+                    <label class="flex items-center justify-between gap-4 py-4 cursor-pointer">
+                        <span>
+                            <span class="block text-sm font-medium text-gray-800">Metas perto do prazo</span>
+                            <span class="block text-xs text-gray-500">Avisar quando uma meta estiver chegando na data limite</span>
+                        </span>
+                        <input type="checkbox" data-preferencia="notif_metas" class="w-5 h-5 accent-blue-600">
+                    </label>
+                    <label class="flex items-center justify-between gap-4 py-4 cursor-pointer">
+                        <span>
+                            <span class="block text-sm font-medium text-gray-800">Saldo baixo</span>
+                            <span class="block text-xs text-gray-500">Avisar quando o saldo de uma conta ficar negativo</span>
+                        </span>
+                        <input type="checkbox" data-preferencia="notif_saldo" class="w-5 h-5 accent-blue-600">
+                    </label>
+                    <label class="flex items-center justify-between gap-4 py-4 cursor-pointer">
+                        <span>
+                            <span class="block text-sm font-medium text-gray-800">Resumo por e-mail</span>
+                            <span class="block text-xs text-gray-500">Receber um resumo mensal dos seus gastos</span>
+                        </span>
+                        <input type="checkbox" data-preferencia="notif_resumo" class="w-5 h-5 accent-blue-600">
+                    </label>
+                </div>
+            </details>
+
+            <!-- ===== CONTAS E CARTÕES ===== -->
+            <details class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <summary class="flex items-center gap-4 p-5 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div class="w-11 h-11 rounded-xl bg-green-50 text-green-500 flex items-center justify-center"><i class="fa-regular fa-credit-card"></i></div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-900">Contas e Cartões</p>
+                        <p class="text-xs text-gray-500">Adicione ou gerencie suas contas</p>
+                    </div>
+                    <i class="seta fa-solid fa-chevron-down text-gray-400 transition-transform"></i>
+                </summary>
+
+                <div class="px-5 pb-5 pt-4 border-t border-gray-100 space-y-4">
+                    <ul id="listaContas" class="divide-y divide-gray-100"></ul>
+                    <a href="/contas" class="block w-full text-center py-3 rounded-xl border border-blue-200 text-blue-600 font-semibold hover:bg-blue-50 transition-colors">
+                        <i class="fa-solid fa-plus mr-1"></i> Adicionar ou gerenciar contas
+                    </a>
+                </div>
+            </details>
+
+            <!-- ===== APARÊNCIA ===== -->
+            <details class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <summary class="flex items-center gap-4 p-5 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center"><i class="fa-solid fa-palette"></i></div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-900">Aparência</p>
+                        <p class="text-xs text-gray-500">Tema e visual do sistema</p>
+                    </div>
+                    <i class="seta fa-solid fa-chevron-down text-gray-400 transition-transform"></i>
+                </summary>
+
+                <div class="px-5 pb-5 pt-4 border-t border-gray-100">
+                    <p class="text-sm font-semibold text-gray-700 mb-3">Tema</p>
+                    <!-- Mesmo "name" nos três: o navegador só deixa marcar um. -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="tema" value="claro" class="peer sr-only">
+                            <span class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 text-gray-600 peer-checked:border-blue-500 peer-checked:text-blue-600 transition-colors">
+                                <i class="fa-regular fa-sun text-xl"></i><span class="text-sm font-medium">Claro</span>
+                            </span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="tema" value="escuro" class="peer sr-only">
+                            <span class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 text-gray-600 peer-checked:border-blue-500 peer-checked:text-blue-600 transition-colors">
+                                <i class="fa-regular fa-moon text-xl"></i><span class="text-sm font-medium">Escuro</span>
+                            </span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="tema" value="sistema" class="peer sr-only">
+                            <span class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 text-gray-600 peer-checked:border-blue-500 peer-checked:text-blue-600 transition-colors">
+                                <i class="fa-solid fa-desktop text-xl"></i><span class="text-sm font-medium">Sistema</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </details>
+
+            <!-- ===== SEGURANÇA ===== -->
+            <details class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <summary class="flex items-center gap-4 p-5 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div class="w-11 h-11 rounded-xl bg-red-50 text-red-500 flex items-center justify-center"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-900">Segurança</p>
+                        <p class="text-xs text-gray-500">Senha e acesso à sua conta</p>
+                    </div>
+                    <i class="seta fa-solid fa-chevron-down text-gray-400 transition-transform"></i>
+                </summary>
+
+                <div class="px-5 pb-5 pt-4 border-t border-gray-100 space-y-3">
+                    <p class="text-sm font-semibold text-gray-700">Alterar senha</p>
+                    <p class="text-sm text-gray-500">
+                        Por segurança, a troca de senha é confirmada pelo seu e-mail.
+                        Vamos enviar um link para <span id="emailSeguranca" class="font-medium text-gray-700"></span>.
+                        Ele vale por 30 minutos.
+                    </p>
+                    <button type="button" id="enviarLinkSenha"
+                            class="w-full py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                        <i class="fa-regular fa-envelope mr-1"></i> Enviar link de verificação
+                    </button>
+                </div>
+            </details>
+
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/layout.js"></script>
+    <script src="/js/configuracoes.js"></script>
+
+</body>
+</html>
