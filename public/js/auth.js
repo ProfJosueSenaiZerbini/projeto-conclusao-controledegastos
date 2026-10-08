@@ -30,6 +30,36 @@ const Sessao = {
   },
 };
 
+// ---- PERFIS ESCOLHIDOS ----
+// Por enquanto os perfis ficam só no navegador, porque o banco ainda não
+// tem tabela de perfil (o escopo atual tem 5 entidades). A chave leva o id
+// do usuário para que duas pessoas no mesmo computador não misturem perfis.
+//
+// Limitação conhecida: entrando por outro navegador, a pesquisa aparece de
+// novo. Isso se resolve quando os perfis passarem a ser gravados no banco.
+//
+// Não é apagado no Sessao.limpar() de propósito: sair da conta não muda
+// o perfil de ninguém.
+
+const PerfisSalvos = {
+  chave() {
+    return 'perfis_' + Sessao.idUsuario();
+  },
+
+  salvar(listaDePerfis) {
+    localStorage.setItem(this.chave(), JSON.stringify(listaDePerfis));
+  },
+
+  // Devolve a lista salva, ou [] se o usuário ainda não escolheu.
+  ler() {
+    try {
+      return JSON.parse(localStorage.getItem(this.chave())) || [];
+    } catch (e) {
+      return [];
+    }
+  },
+};
+
 // ---- MENSAGENS NA TELA ----
 // Mostra o aviso no <div id="mensagem"> em vez de usar alert(),
 // que trava a página e tem aparência de site antigo.

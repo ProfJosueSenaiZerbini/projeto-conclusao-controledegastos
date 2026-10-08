@@ -1,5 +1,6 @@
 // Tela de login: envia email e senha para POST /api/usuario/login.
-// Dando certo, guarda o token e vai para o dashboard.
+// Dando certo, guarda o token e vai para a pesquisa de perfil
+// (primeiro acesso) ou direto para o dashboard.
 
 const formLogin = document.getElementById('formLogin');
 const botaoEntrar = document.getElementById('botaoEntrar');
@@ -34,7 +35,10 @@ formLogin.addEventListener('submit', async function (event) {
     }
 
     Sessao.salvar(dados.token, dados.id_usuario);
-    window.location.href = '/dashboard';
+
+    // Quem ainda não escolheu perfil passa primeiro pela pesquisa.
+    const jaEscolheuPerfil = PerfisSalvos.ler().length > 0;
+    window.location.href = jaEscolheuPerfil ? '/dashboard' : '/perfil';
   } catch (erro) {
     mostrarMensagem('Erro de conexão com o servidor.', 'erro');
   } finally {
