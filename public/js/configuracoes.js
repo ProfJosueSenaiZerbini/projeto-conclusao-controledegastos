@@ -36,7 +36,8 @@ async function carregarPerfil() {
   perfilOriginal = dados;
   nomePerfil.value = dados.nome_usuario;
   emailPerfil.value = dados.email;
-  documentoPerfil.value = dados.cpf_cnpj;
+  // O campo de CPF/CNPJ foi tirado da tela; o "if" evita erro se ele não existir.
+  if (documentoPerfil) documentoPerfil.value = dados.cpf_cnpj;
   document.getElementById('emailSeguranca').textContent = dados.email;
   document.getElementById('membroDesde').textContent =
     'Membro desde ' + formatarData(dados.data_cadastro);
@@ -48,7 +49,9 @@ formPerfil.addEventListener('submit', async function (event) {
 
   const nome = nomePerfil.value.trim();
   const email = emailPerfil.value.trim();
-  const documento = documentoPerfil.value.replace(/\D/g, '');
+  const documento = documentoPerfil
+    ? documentoPerfil.value.replace(/\D/g, '')
+    : perfilOriginal.cpf_cnpj;
 
   if (!nome || !email || !documento) {
     mostrarMensagem('Preencha nome, e-mail e CPF/CNPJ.', 'erro');
@@ -187,6 +190,8 @@ function carregarPreferencias() {
     opcao.checked = opcao.value === temaAtual;
     opcao.addEventListener('change', function () {
       salvarPreferencia('tema', opcao.value);
+      // tema.js: troca as cores na hora, sem recarregar a página.
+      aplicarTema(opcao.value);
     });
   });
 }
