@@ -1,0 +1,1462 @@
+{
+  "banco": {
+    "nome": "Banco Simulado",
+    "codigo": "999"
+  },
+  "clientes": [
+    {
+      "clientId": "CLI-001",
+      "nome": "Ana Souza",
+      "cpf": "48291573646",
+      "contas": [
+        {
+          "accountId": "ACC-ANA-01",
+          "type": "CONTA_DEPOSITO_A_VISTA",
+          "branchCode": "0001",
+          "number": "10234",
+          "checkDigit": "5",
+          "transacoes": [
+            {
+              "transactionId": "TX-ANA-01-0001",
+              "transactionDate": "2026-07-05",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "SALARIO EMPRESA XYZ LTDA",
+              "transactionAmount": {
+                "amount": "3200.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0002",
+              "transactionDate": "2026-07-07",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "28.85",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0003",
+              "transactionDate": "2026-07-08",
+              "creditDebitType": "DEBITO",
+              "type": "PIX",
+              "transactionName": "PIX ENVIADO - IMOBILIARIA SOL",
+              "transactionAmount": {
+                "amount": "950.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0004",
+              "transactionDate": "2026-07-08",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *LANCHONETE",
+              "transactionAmount": {
+                "amount": "71.09",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0005",
+              "transactionDate": "2026-07-08",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "DROGARIA SAO PAULO",
+              "transactionAmount": {
+                "amount": "46.91",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0006",
+              "transactionDate": "2026-07-09",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "SUPERMERCADO BOM PRECO",
+              "transactionAmount": {
+                "amount": "138.18",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0007",
+              "transactionDate": "2026-07-12",
+              "creditDebitType": "DEBITO",
+              "type": "BOLETO",
+              "transactionName": "CIA ENERGIA ELETRICA",
+              "transactionAmount": {
+                "amount": "125.37",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0008",
+              "transactionDate": "2026-07-12",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *LANCHONETE",
+              "transactionAmount": {
+                "amount": "64.68",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0009",
+              "transactionDate": "2026-07-12",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "30.51",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0010",
+              "transactionDate": "2026-07-17",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "ATACADAO CENTRO",
+              "transactionAmount": {
+                "amount": "249.20",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0011",
+              "transactionDate": "2026-07-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "NETFLIX.COM",
+              "transactionAmount": {
+                "amount": "39.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0012",
+              "transactionDate": "2026-07-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "LOJA RENNER",
+              "transactionAmount": {
+                "amount": "87.84",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0013",
+              "transactionDate": "2026-07-21",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "43.79",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0014",
+              "transactionDate": "2026-07-23",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "ATACADAO CENTRO",
+              "transactionAmount": {
+                "amount": "207.46",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0015",
+              "transactionDate": "2026-07-25",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "21.93",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0016",
+              "transactionDate": "2026-07-28",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "29.71",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0017",
+              "transactionDate": "2026-08-05",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "SALARIO EMPRESA XYZ LTDA",
+              "transactionAmount": {
+                "amount": "3200.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0018",
+              "transactionDate": "2026-08-06",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "22.75",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0019",
+              "transactionDate": "2026-08-06",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "15.39",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0020",
+              "transactionDate": "2026-08-08",
+              "creditDebitType": "DEBITO",
+              "type": "PIX",
+              "transactionName": "PIX ENVIADO - IMOBILIARIA SOL",
+              "transactionAmount": {
+                "amount": "950.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0021",
+              "transactionDate": "2026-08-09",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *LANCHONETE",
+              "transactionAmount": {
+                "amount": "45.34",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0022",
+              "transactionDate": "2026-08-12",
+              "creditDebitType": "DEBITO",
+              "type": "BOLETO",
+              "transactionName": "CIA ENERGIA ELETRICA",
+              "transactionAmount": {
+                "amount": "110.65",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0023",
+              "transactionDate": "2026-08-13",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "25.51",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0024",
+              "transactionDate": "2026-08-17",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "ATACADAO CENTRO",
+              "transactionAmount": {
+                "amount": "148.77",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0025",
+              "transactionDate": "2026-08-17",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "SUPERMERCADO BOM PRECO",
+              "transactionAmount": {
+                "amount": "220.66",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0026",
+              "transactionDate": "2026-08-18",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "MERCADO DA ESQUINA",
+              "transactionAmount": {
+                "amount": "249.97",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0027",
+              "transactionDate": "2026-08-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "NETFLIX.COM",
+              "transactionAmount": {
+                "amount": "39.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0028",
+              "transactionDate": "2026-08-22",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "DROGARIA SAO PAULO",
+              "transactionAmount": {
+                "amount": "63.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0029",
+              "transactionDate": "2026-08-24",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "LOJA RENNER",
+              "transactionAmount": {
+                "amount": "165.11",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0030",
+              "transactionDate": "2026-08-25",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *LANCHONETE",
+              "transactionAmount": {
+                "amount": "42.58",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0031",
+              "transactionDate": "2026-08-25",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "74.22",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0032",
+              "transactionDate": "2026-08-27",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "17.30",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0033",
+              "transactionDate": "2026-09-05",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "SALARIO EMPRESA XYZ LTDA",
+              "transactionAmount": {
+                "amount": "3200.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0034",
+              "transactionDate": "2026-09-06",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "28.66",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0035",
+              "transactionDate": "2026-09-07",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *RESTAURANTE",
+              "transactionAmount": {
+                "amount": "38.76",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0036",
+              "transactionDate": "2026-09-08",
+              "creditDebitType": "DEBITO",
+              "type": "PIX",
+              "transactionName": "PIX ENVIADO - IMOBILIARIA SOL",
+              "transactionAmount": {
+                "amount": "950.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0037",
+              "transactionDate": "2026-09-08",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "SUPERMERCADO BOM PRECO",
+              "transactionAmount": {
+                "amount": "103.76",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0038",
+              "transactionDate": "2026-09-09",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "27.01",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0039",
+              "transactionDate": "2026-09-12",
+              "creditDebitType": "DEBITO",
+              "type": "BOLETO",
+              "transactionName": "CIA ENERGIA ELETRICA",
+              "transactionAmount": {
+                "amount": "127.14",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0040",
+              "transactionDate": "2026-09-14",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "77.73",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0041",
+              "transactionDate": "2026-09-15",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "48.33",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0042",
+              "transactionDate": "2026-09-15",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "30.25",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0043",
+              "transactionDate": "2026-09-18",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "DROGARIA SAO PAULO",
+              "transactionAmount": {
+                "amount": "74.66",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0044",
+              "transactionDate": "2026-09-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "NETFLIX.COM",
+              "transactionAmount": {
+                "amount": "39.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0045",
+              "transactionDate": "2026-09-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "UBER *TRIP",
+              "transactionAmount": {
+                "amount": "21.14",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0046",
+              "transactionDate": "2026-09-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "LOJA RENNER",
+              "transactionAmount": {
+                "amount": "148.08",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0047",
+              "transactionDate": "2026-09-24",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "SUPERMERCADO BOM PRECO",
+              "transactionAmount": {
+                "amount": "184.18",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-01-0048",
+              "transactionDate": "2026-09-26",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "ATACADAO CENTRO",
+              "transactionAmount": {
+                "amount": "141.20",
+                "currency": "BRL"
+              }
+            }
+          ]
+        },
+        {
+          "accountId": "ACC-ANA-02",
+          "type": "CONTA_POUPANCA",
+          "branchCode": "0001",
+          "number": "50871",
+          "checkDigit": "2",
+          "transacoes": [
+            {
+              "transactionId": "TX-ANA-02-0001",
+              "transactionDate": "2026-07-06",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "DEPOSITO",
+              "transactionAmount": {
+                "amount": "300.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-02-0002",
+              "transactionDate": "2026-07-28",
+              "creditDebitType": "CREDITO",
+              "type": "OUTROS",
+              "transactionName": "RENDIMENTO POUPANCA",
+              "transactionAmount": {
+                "amount": "3.41",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-02-0003",
+              "transactionDate": "2026-08-06",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "DEPOSITO",
+              "transactionAmount": {
+                "amount": "300.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-02-0004",
+              "transactionDate": "2026-08-28",
+              "creditDebitType": "CREDITO",
+              "type": "OUTROS",
+              "transactionName": "RENDIMENTO POUPANCA",
+              "transactionAmount": {
+                "amount": "2.44",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-02-0005",
+              "transactionDate": "2026-09-06",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "DEPOSITO",
+              "transactionAmount": {
+                "amount": "300.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-ANA-02-0006",
+              "transactionDate": "2026-09-28",
+              "creditDebitType": "CREDITO",
+              "type": "OUTROS",
+              "transactionName": "RENDIMENTO POUPANCA",
+              "transactionAmount": {
+                "amount": "1.26",
+                "currency": "BRL"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clientId": "CLI-002",
+      "nome": "Bruno Lima",
+      "cpf": "73510264835",
+      "contas": [
+        {
+          "accountId": "ACC-BRUNO-01",
+          "type": "CONTA_DEPOSITO_A_VISTA",
+          "branchCode": "0002",
+          "number": "22719",
+          "checkDigit": "0",
+          "transacoes": [
+            {
+              "transactionId": "TX-BRUNO-01-0001",
+              "transactionDate": "2026-07-03",
+              "creditDebitType": "CREDITO",
+              "type": "PIX",
+              "transactionName": "PIX RECEBIDO - STUDIO ALFA",
+              "transactionAmount": {
+                "amount": "2232.24",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0002",
+              "transactionDate": "2026-07-07",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CINEMARK",
+              "transactionAmount": {
+                "amount": "31.27",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0003",
+              "transactionDate": "2026-07-08",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *RESTAURANTE",
+              "transactionAmount": {
+                "amount": "75.72",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0004",
+              "transactionDate": "2026-07-08",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "33.72",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0005",
+              "transactionDate": "2026-07-10",
+              "creditDebitType": "DEBITO",
+              "type": "PIX",
+              "transactionName": "PIX ENVIADO - ALUGUEL APTO",
+              "transactionAmount": {
+                "amount": "1100.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0006",
+              "transactionDate": "2026-07-15",
+              "creditDebitType": "DEBITO",
+              "type": "BOLETO",
+              "transactionName": "INTERNET FIBRA NET",
+              "transactionAmount": {
+                "amount": "99.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0007",
+              "transactionDate": "2026-07-18",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "TED RECEBIDA - PROJETO SITE LOJA",
+              "transactionAmount": {
+                "amount": "1390.37",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0008",
+              "transactionDate": "2026-07-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *LANCHONETE",
+              "transactionAmount": {
+                "amount": "48.53",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0009",
+              "transactionDate": "2026-07-21",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "SPOTIFY",
+              "transactionAmount": {
+                "amount": "21.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0010",
+              "transactionDate": "2026-07-21",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "72.92",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0011",
+              "transactionDate": "2026-07-22",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "POSTO SHELL",
+              "transactionAmount": {
+                "amount": "135.72",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0012",
+              "transactionDate": "2026-07-24",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "MERCADO DA ESQUINA",
+              "transactionAmount": {
+                "amount": "145.61",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0013",
+              "transactionDate": "2026-07-26",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "POSTO SHELL",
+              "transactionAmount": {
+                "amount": "120.83",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0014",
+              "transactionDate": "2026-07-27",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "MERCADO DA ESQUINA",
+              "transactionAmount": {
+                "amount": "274.79",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0015",
+              "transactionDate": "2026-08-03",
+              "creditDebitType": "CREDITO",
+              "type": "PIX",
+              "transactionName": "PIX RECEBIDO - AGENCIA CRIATIVA",
+              "transactionAmount": {
+                "amount": "2158.54",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0016",
+              "transactionDate": "2026-08-06",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "ATACADAO CENTRO",
+              "transactionAmount": {
+                "amount": "363.24",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0017",
+              "transactionDate": "2026-08-07",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "POSTO SHELL",
+              "transactionAmount": {
+                "amount": "139.16",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0018",
+              "transactionDate": "2026-08-10",
+              "creditDebitType": "DEBITO",
+              "type": "PIX",
+              "transactionName": "PIX ENVIADO - ALUGUEL APTO",
+              "transactionAmount": {
+                "amount": "1100.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0019",
+              "transactionDate": "2026-08-11",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *RESTAURANTE",
+              "transactionAmount": {
+                "amount": "48.25",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0020",
+              "transactionDate": "2026-08-15",
+              "creditDebitType": "DEBITO",
+              "type": "BOLETO",
+              "transactionName": "INTERNET FIBRA NET",
+              "transactionAmount": {
+                "amount": "99.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0021",
+              "transactionDate": "2026-08-16",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "42.75",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0022",
+              "transactionDate": "2026-08-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "MERCADO DA ESQUINA",
+              "transactionAmount": {
+                "amount": "256.14",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0023",
+              "transactionDate": "2026-08-21",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "SPOTIFY",
+              "transactionAmount": {
+                "amount": "21.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0024",
+              "transactionDate": "2026-08-22",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *RESTAURANTE",
+              "transactionAmount": {
+                "amount": "68.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0025",
+              "transactionDate": "2026-08-23",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CINEMARK",
+              "transactionAmount": {
+                "amount": "51.10",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0026",
+              "transactionDate": "2026-08-26",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "POSTO SHELL",
+              "transactionAmount": {
+                "amount": "113.15",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0027",
+              "transactionDate": "2026-08-28",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "42.72",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0028",
+              "transactionDate": "2026-09-03",
+              "creditDebitType": "CREDITO",
+              "type": "PIX",
+              "transactionName": "PIX RECEBIDO - STUDIO ALFA",
+              "transactionAmount": {
+                "amount": "2411.05",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0029",
+              "transactionDate": "2026-09-07",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *LANCHONETE",
+              "transactionAmount": {
+                "amount": "40.65",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0030",
+              "transactionDate": "2026-09-09",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "SUPERMERCADO BOM PRECO",
+              "transactionAmount": {
+                "amount": "183.23",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0031",
+              "transactionDate": "2026-09-10",
+              "creditDebitType": "DEBITO",
+              "type": "PIX",
+              "transactionName": "PIX ENVIADO - ALUGUEL APTO",
+              "transactionAmount": {
+                "amount": "1100.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0032",
+              "transactionDate": "2026-09-10",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "MERCADO DA ESQUINA",
+              "transactionAmount": {
+                "amount": "182.72",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0033",
+              "transactionDate": "2026-09-10",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "32.44",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0034",
+              "transactionDate": "2026-09-14",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "POSTO SHELL",
+              "transactionAmount": {
+                "amount": "139.47",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0035",
+              "transactionDate": "2026-09-15",
+              "creditDebitType": "DEBITO",
+              "type": "BOLETO",
+              "transactionName": "INTERNET FIBRA NET",
+              "transactionAmount": {
+                "amount": "99.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0036",
+              "transactionDate": "2026-09-15",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CINEMARK",
+              "transactionAmount": {
+                "amount": "52.94",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0037",
+              "transactionDate": "2026-09-21",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "SPOTIFY",
+              "transactionAmount": {
+                "amount": "21.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0038",
+              "transactionDate": "2026-09-23",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *RESTAURANTE",
+              "transactionAmount": {
+                "amount": "33.09",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0039",
+              "transactionDate": "2026-09-23",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "POSTO SHELL",
+              "transactionAmount": {
+                "amount": "118.64",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-BRUNO-01-0040",
+              "transactionDate": "2026-09-24",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *RESTAURANTE",
+              "transactionAmount": {
+                "amount": "78.07",
+                "currency": "BRL"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clientId": "CLI-003",
+      "nome": "Carla Mendes",
+      "cpf": "21938405714",
+      "contas": [
+        {
+          "accountId": "ACC-CARLA-01",
+          "type": "CONTA_DEPOSITO_A_VISTA",
+          "branchCode": "0003",
+          "number": "31456",
+          "checkDigit": "8",
+          "transacoes": [
+            {
+              "transactionId": "TX-CARLA-01-0001",
+              "transactionDate": "2026-07-02",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "BOLSA ESTAGIO",
+              "transactionAmount": {
+                "amount": "1100.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0002",
+              "transactionDate": "2026-07-04",
+              "creditDebitType": "CREDITO",
+              "type": "PIX",
+              "transactionName": "PIX RECEBIDO - MARIA MENDES",
+              "transactionAmount": {
+                "amount": "300.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0003",
+              "transactionDate": "2026-07-05",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "RECARGA BILHETE UNICO",
+              "transactionAmount": {
+                "amount": "150.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0004",
+              "transactionDate": "2026-07-07",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CANTINA FACULDADE",
+              "transactionAmount": {
+                "amount": "19.58",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0005",
+              "transactionDate": "2026-07-10",
+              "creditDebitType": "DEBITO",
+              "type": "BOLETO",
+              "transactionName": "MENSALIDADE FACULDADE",
+              "transactionAmount": {
+                "amount": "690.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0006",
+              "transactionDate": "2026-07-13",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CANTINA FACULDADE",
+              "transactionAmount": {
+                "amount": "24.04",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0007",
+              "transactionDate": "2026-07-15",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "LIVRARIA CULTURA",
+              "transactionAmount": {
+                "amount": "62.01",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0008",
+              "transactionDate": "2026-07-19",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *LANCHONETE",
+              "transactionAmount": {
+                "amount": "49.71",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0009",
+              "transactionDate": "2026-07-22",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CANTINA FACULDADE",
+              "transactionAmount": {
+                "amount": "16.80",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0010",
+              "transactionDate": "2026-07-25",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *LANCHONETE",
+              "transactionAmount": {
+                "amount": "26.50",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0011",
+              "transactionDate": "2026-07-27",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "PADARIA PAO QUENTE",
+              "transactionAmount": {
+                "amount": "10.03",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0012",
+              "transactionDate": "2026-08-02",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "BOLSA ESTAGIO",
+              "transactionAmount": {
+                "amount": "1100.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0013",
+              "transactionDate": "2026-08-04",
+              "creditDebitType": "CREDITO",
+              "type": "PIX",
+              "transactionName": "PIX RECEBIDO - MARIA MENDES",
+              "transactionAmount": {
+                "amount": "300.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0014",
+              "transactionDate": "2026-08-05",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "RECARGA BILHETE UNICO",
+              "transactionAmount": {
+                "amount": "150.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0015",
+              "transactionDate": "2026-08-06",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "PADARIA PAO QUENTE",
+              "transactionAmount": {
+                "amount": "21.89",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0016",
+              "transactionDate": "2026-08-09",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *RESTAURANTE",
+              "transactionAmount": {
+                "amount": "30.57",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0017",
+              "transactionDate": "2026-08-10",
+              "creditDebitType": "DEBITO",
+              "type": "BOLETO",
+              "transactionName": "MENSALIDADE FACULDADE",
+              "transactionAmount": {
+                "amount": "690.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0018",
+              "transactionDate": "2026-08-18",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "PADARIA PAO QUENTE",
+              "transactionAmount": {
+                "amount": "12.09",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0019",
+              "transactionDate": "2026-08-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CANTINA FACULDADE",
+              "transactionAmount": {
+                "amount": "21.82",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0020",
+              "transactionDate": "2026-08-21",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "PADARIA PAO QUENTE",
+              "transactionAmount": {
+                "amount": "24.59",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0021",
+              "transactionDate": "2026-08-21",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "LIVRARIA CULTURA",
+              "transactionAmount": {
+                "amount": "47.16",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0022",
+              "transactionDate": "2026-08-22",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *RESTAURANTE",
+              "transactionAmount": {
+                "amount": "29.90",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0023",
+              "transactionDate": "2026-09-02",
+              "creditDebitType": "CREDITO",
+              "type": "TED",
+              "transactionName": "BOLSA ESTAGIO",
+              "transactionAmount": {
+                "amount": "1100.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0024",
+              "transactionDate": "2026-09-04",
+              "creditDebitType": "CREDITO",
+              "type": "PIX",
+              "transactionName": "PIX RECEBIDO - MARIA MENDES",
+              "transactionAmount": {
+                "amount": "300.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0025",
+              "transactionDate": "2026-09-05",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "RECARGA BILHETE UNICO",
+              "transactionAmount": {
+                "amount": "150.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0026",
+              "transactionDate": "2026-09-06",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *PIZZARIA",
+              "transactionAmount": {
+                "amount": "40.60",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0027",
+              "transactionDate": "2026-09-10",
+              "creditDebitType": "DEBITO",
+              "type": "BOLETO",
+              "transactionName": "MENSALIDADE FACULDADE",
+              "transactionAmount": {
+                "amount": "690.00",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0028",
+              "transactionDate": "2026-09-10",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "PADARIA PAO QUENTE",
+              "transactionAmount": {
+                "amount": "11.77",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0029",
+              "transactionDate": "2026-09-10",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "LIVRARIA CULTURA",
+              "transactionAmount": {
+                "amount": "81.04",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0030",
+              "transactionDate": "2026-09-14",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CANTINA FACULDADE",
+              "transactionAmount": {
+                "amount": "16.24",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0031",
+              "transactionDate": "2026-09-15",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "IFOOD *RESTAURANTE",
+              "transactionAmount": {
+                "amount": "26.35",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0032",
+              "transactionDate": "2026-09-20",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CANTINA FACULDADE",
+              "transactionAmount": {
+                "amount": "21.65",
+                "currency": "BRL"
+              }
+            },
+            {
+              "transactionId": "TX-CARLA-01-0033",
+              "transactionDate": "2026-09-25",
+              "creditDebitType": "DEBITO",
+              "type": "CARTAO",
+              "transactionName": "CANTINA FACULDADE",
+              "transactionAmount": {
+                "amount": "15.64",
+                "currency": "BRL"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

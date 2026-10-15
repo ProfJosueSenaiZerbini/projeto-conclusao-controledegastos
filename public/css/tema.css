@@ -1,0 +1,126 @@
+/* Modo escuro do Verdanz.
+
+   As telas usam classes prontas do Tailwind (bg-white, text-gray-900...),
+   que sempre têm a mesma cor. Em vez de reescrever todas as telas, este
+   arquivo diz: "quando o <html> tiver a classe .escuro, a classe bg-white
+   passa a ser azul-escuro", e assim por diante.
+
+   Por que funciona mesmo com o Tailwind carregando depois: as regras
+   daqui começam com "html.escuro", o que as deixa mais específicas que
+   as do Tailwind. Em CSS, a regra mais específica vence.
+
+   Classes com colchetes, como bg-[#f8faff], precisam de "\" antes dos
+   símbolos [ ] # : para o CSS entender que fazem parte do nome. */
+
+html.escuro {
+    color-scheme: dark; /* barras de rolagem, calendário e checkbox escuros */
+}
+
+/* ---------- FUNDOS ---------- */
+
+html.escuro .bg-\[\#f8faff\] { background-color: #0b1220; }             /* fundo da página e menu */
+html.escuro .bg-white        { background-color: #111a2e; }             /* cards */
+html.escuro .bg-gray-50      { background-color: #0d1526; }             /* campos de texto */
+html.escuro .bg-gray-100,
+html.escuro .bg-slate-100    { background-color: #1e293b; }
+html.escuro .bg-gray-200     { background-color: #334155; }
+
+html.escuro .hover\:bg-gray-50:hover,
+html.escuro .hover\:bg-gray-100:hover,
+html.escuro .hover\:bg-slate-100:hover,
+html.escuro .hover\:bg-white:hover { background-color: #1e293b; }
+
+/* Fundos coloridos clarinhos (ícones, avisos, etiquetas):
+   viram a mesma cor, só que transparente. */
+html.escuro .bg-blue-50,
+html.escuro .hover\:bg-blue-50:hover  { background-color: rgb(59 130 246 / .15); }
+html.escuro .bg-green-50              { background-color: rgb(34 197 94 / .15); }
+html.escuro .bg-green-100             { background-color: rgb(34 197 94 / .22); }
+html.escuro .bg-red-50,
+html.escuro .hover\:bg-red-50:hover   { background-color: rgb(239 68 68 / .15); }
+html.escuro .bg-amber-50              { background-color: rgb(245 158 11 / .15); }
+html.escuro .bg-orange-50             { background-color: rgb(249 115 22 / .15); }
+html.escuro .bg-purple-50             { background-color: rgb(168 85 247 / .18); }
+
+/* Card "degradê" do topo das telas (from-white to-blue-50). */
+html.escuro .from-white.to-blue-50 {
+    background-image: linear-gradient(to bottom right, #111a2e, #132542);
+}
+
+/* ---------- TEXTOS ---------- */
+
+html.escuro .text-\[\#071b3a\],
+html.escuro .text-gray-900,
+html.escuro .text-gray-800 { color: #f1f5f9; }
+html.escuro .text-gray-700 { color: #e2e8f0; }
+html.escuro .text-gray-600 { color: #cbd5e1; }
+html.escuro .text-gray-500 { color: #94a3b8; }
+html.escuro .text-gray-400 { color: #7c8aa3; }
+html.escuro .text-gray-300 { color: #475569; }
+
+/* Cores escuras de destaque ficam ilegíveis em fundo escuro: clareamos. */
+html.escuro .text-blue-600 { color: #60a5fa; }
+html.escuro .text-green-600,
+html.escuro .text-green-700 { color: #4ade80; }
+html.escuro .text-red-600,
+html.escuro .text-red-700  { color: #f87171; }
+html.escuro .text-orange-600 { color: #fb923c; }
+
+/* Placeholder dos campos */
+html.escuro input::placeholder,
+html.escuro textarea::placeholder { color: #64748b; }
+
+/* Os "hover" precisam ser repetidos aqui. Sem isso, as regras de texto
+   acima (mais específicas) apagariam a mudança de cor ao passar o mouse. */
+html.escuro .hover\:text-gray-800:hover,
+html.escuro .hover\:text-gray-700:hover,
+html.escuro .hover\:text-gray-600:hover { color: #f1f5f9; }
+html.escuro .hover\:text-red-500:hover   { color: #ef4444; }
+html.escuro .hover\:text-blue-500:hover,
+html.escuro .hover\:text-blue-600:hover  { color: #60a5fa; }
+html.escuro .hover\:text-green-700:hover { color: #4ade80; }
+
+/* ---------- BORDAS ---------- */
+
+html.escuro .border-gray-100,
+html.escuro .border-slate-100 { border-color: #1e293b; }
+html.escuro .border-gray-200,
+html.escuro .border-slate-200 { border-color: #2a3650; }
+html.escuro .border-slate-300 { border-color: #3b4a66; }
+html.escuro .border-white     { border-color: #111a2e; }  /* contorno do avatar */
+html.escuro .border-blue-100,
+html.escuro .border-blue-200  { border-color: rgb(59 130 246 / .3); }
+html.escuro .border-green-200,
+html.escuro .border-\[\#d1f0df\] { border-color: rgb(34 197 94 / .3); }
+html.escuro .border-red-100,
+html.escuro .border-red-200   { border-color: rgb(239 68 68 / .3); }
+
+/* Linhas divisórias entre itens de lista (divide-gray-100) */
+html.escuro .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1e293b; }
+
+/* De novo os estados que precisam continuar vencendo as regras acima */
+html.escuro .hover\:border-gray-300:hover { border-color: #475569; }
+html.escuro .hover\:border-blue-300:hover { border-color: #60a5fa; }
+html.escuro .focus\:border-blue-500:focus { border-color: #3b82f6; }
+html.escuro .focus\:border-green-500:focus { border-color: #22c55e; }
+html.escuro .focus\:ring-blue-100:focus  { --tw-ring-color: rgb(59 130 246 / .35); }
+html.escuro .focus\:ring-green-100:focus { --tw-ring-color: rgb(34 197 94 / .35); }
+
+/* Opção marcada (ex.: os botões Claro / Escuro / Sistema) */
+html.escuro .peer:checked ~ .peer-checked\:border-blue-500 { border-color: #3b82f6; }
+html.escuro .peer:checked ~ .peer-checked\:text-blue-600   { color: #60a5fa; }
+
+/* ---------- SOMBRAS ---------- */
+/* As sombras coloridas (azul/verde clarinho) brilham demais no escuro. */
+html.escuro .shadow-blue-200,
+html.escuro .shadow-green-200 {
+    --tw-shadow-color: rgb(0 0 0 / .4);
+    --tw-shadow: var(--tw-shadow-colored);
+}
+
+/* Transição suave ao trocar de tema */
+html.escuro body,
+html.escuro .bg-white,
+html.escuro .bg-\[\#f8faff\] {
+    transition: background-color .2s, color .2s;
+}

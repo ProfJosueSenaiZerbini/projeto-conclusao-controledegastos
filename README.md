@@ -166,6 +166,28 @@ Pronto. O mesmo servidor entrega a API **e** as telas em `http://localhost:3000`
 As telas internas (dashboard, contas, transações, metas) exigem sessão: sem estar
 logado, elas redirecionam para `/login`. Crie uma conta em `/cadastro` antes de testá-las.
 
+### 6. Testar a conexão bancária (banco simulado)
+
+O Verdanz importa contas e transações de um **banco simulado**, que imita o fluxo do
+Open Finance (consentimento, autorização no site do banco e token de acesso). O banco
+fica em `src/bancoSimulado/` e roda no mesmo servidor, em `/banco-simulado`.
+
+O banco tem 3 clientes fictícios, com 3 meses de extrato cada. Para testar:
+
+1. Cadastre-se no Verdanz usando o CPF de um deles:
+
+   | Cliente | CPF | Contas no banco |
+   | --- | --- | --- |
+   | Ana Souza | 482.915.736-46 | Conta corrente e poupança |
+   | Bruno Lima | 735.102.648-35 | Conta corrente |
+   | Carla Mendes | 219.384.057-14 | Conta corrente |
+
+2. Em **Contas**, clique em **Conectar banco**. Você vai para a tela do banco.
+3. Clique em **Autorizar**. De volta ao Verdanz, as contas aparecem com o selo
+   "Banco Simulado" e as transações já categorizadas em **Transações**.
+
+Com qualquer outro CPF, o banco responde que você não é cliente dele.
+
 ### Resumo: do zero ao ar
 
 ```bash

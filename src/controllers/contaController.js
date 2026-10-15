@@ -26,6 +26,14 @@ async function buscarContaDoUsuario(id_conta, id_usuario) {
   return { conta };
 }
 
+// Contas importadas de um banco espelham o extrato real. Editar o saldo
+// ou apagar uma delas faria o Verdanz discordar do banco (e a próxima
+// sincronização traria a conta de volta). Quem atualiza é o banco.
+const MENSAGEM_CONTA_IMPORTADA = {
+  editar: 'Contas importadas são atualizadas pelo banco. Use "Sincronizar" na tela de Contas.',
+  excluir: 'Para remover uma conta importada, desconecte o banco na tela de Contas.',
+};
+
 // POST /api/conta
 async function criarConta(req, res) {
   try {
@@ -73,6 +81,9 @@ async function listarContas(req, res) {
   try {
     const contas = await prisma.conta.findMany({
       where: { id_usuario: req.usuario.id_usuario },
+      // O nome do banco vai junto para a tela mostrar o selo nas contas
+      // importadas. Nas contas manuais, `conexao` vem null.
+      include: { conexao: { select: { banco: true } } },
       orderBy: { id_conta: 'asc' },
     });
 
@@ -95,6 +106,10 @@ async function atualizarConta(req, res) {
     const resultado = await buscarContaDoUsuario(id, req.usuario.id_usuario);
     if (resultado.erro) {
       return res.status(resultado.status).json({ erro: resultado.erro });
+    }
+
+    if (resultado.conta.id_conexao) {
+      return res.status(400).json({ erro: MENSAGEM_CONTA_IMPORTADA.editar });
     }
 
     const { nome, saldo } = req.body;
@@ -150,6 +165,10 @@ async function deletarConta(req, res) {
     const resultado = await buscarContaDoUsuario(id, req.usuario.id_usuario);
     if (resultado.erro) {
       return res.status(resultado.status).json({ erro: resultado.erro });
+    }
+
+    if (resultado.conta.id_conexao) {
+      return res.status(400).json({ erro: MENSAGEM_CONTA_IMPORTADA.excluir });
     }
 
     // O schema usa onDelete: Cascade — apagar a conta apaga junto todas

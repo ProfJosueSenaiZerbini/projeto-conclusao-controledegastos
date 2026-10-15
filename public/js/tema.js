@@ -1,56 +1,48 @@
-// Paleta de cores do Verdanz, num lugar só.
+// Tema claro / escuro / sistema.
 //
-// Carregado em TODAS as telas logo depois do Tailwind (cdn.tailwindcss.com).
-// Cada cor vira classe do Tailwind: 'brand' gera bg-brand, text-brand,
-// border-brand... Para mudar uma cor no site inteiro, muda-se só aqui.
+// A escolha é feita em Configurações > Aparência e fica guardada no
+// localStorage, no mesmo objeto "preferencias_<id>" que o configuracoes.js
+// já usa para as notificações.
 //
-// A base veio da tela de perguntas (Perguntas.html do Victor):
-//   brand / brandDark / soft / softBorder / ink / sub
+// Este arquivo é carregado no <head> de cada tela, ANTES do conteúdo
+// aparecer. Se fosse carregado no fim do <body>, a tela abriria branca e
+// só depois ficaria escura (um "piscar" bem visível).
 //
-// Em cima dela entram:
-//   fundo  → o fundo claro das páginas, um verde acinzentado da mesma
-//            família da barra lateral
-//   mata   → o verde escuro da barra lateral; 'claro' é o hover e o quadro de baixo
-//   menta  → verde claro, para destaques sobre o fundo escuro da barra
-//   azul   → o azul do degradê da logo. Marca a página atual na barra
-//            lateral e preenche o medidor de progresso; 'suave' é o trilho
-//            do medidor e o sombreado dos botões da barra lateral
-//   ceu, coral, sol, lavanda → cores de apoio, vivas mas suaves. Cada uma
-//     tem a versão forte (DEFAULT, para ícone e texto) e a 'suave' (fundo).
-//     São usadas para diferenciar coisas, nunca como enfeite:
-//       ceu     = saldo e contas
-//       brand   = ganhos (receitas)
-//       coral   = gastos (despesas) e ações de excluir
-//       sol     = metas
-//       lavanda = dicas
+// Como funciona: quando o tema é escuro, a tag <html> ganha a classe
+// "escuro". O arquivo /css/tema.css troca as cores só quando essa classe
+// existe. Nenhuma tela precisou ser reescrita.
 
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        brand: '#1f9d55',
-        brandDark: '#15803d',
-        soft: '#eafcf1',
-        softBorder: '#d5f3e0',
-        ink: '#0f2e1c',
-        sub: '#6b8579',
+(function () {
+  // Pergunta ao navegador se o sistema operacional está no modo escuro.
+  const midiaEscura = window.matchMedia('(prefers-color-scheme: dark)');
 
-        fundo: '#e9f0eb',
-        mata: {
-          DEFAULT: '#1e5a41',
-          claro: '#287052',
-        },
-        menta: '#7ee2a8',
-        azul: { DEFAULT: '#2b56a3', suave: '#9cbcf7' },
+  function temaSalvo() {
+    try {
+      const id = localStorage.getItem('id_usuario');
+      const preferencias = JSON.parse(localStorage.getItem('preferencias_' + id)) || {};
+      return preferencias.tema || 'claro';
+    } catch (e) {
+      // localStorage bloqueado ou com dado inválido: segue no claro.
+      return 'claro';
+    }
+  }
 
-        ceu: { DEFAULT: '#2b8fc4', suave: '#e7f3fa' },
-        coral: { DEFAULT: '#e0604a', suave: '#fdecea', escuro: '#c24a36' },
-        sol: { DEFAULT: '#d98e1f', suave: '#fdf3e1' },
-        lavanda: { DEFAULT: '#7467d4', suave: '#efedfb' },
-      },
-      fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-      },
-    },
-  },
-};
+  // tema: 'claro', 'escuro' ou 'sistema'. Sem parâmetro, usa o salvo.
+  function aplicarTema(tema) {
+    tema = tema || temaSalvo();
+    const escuro = tema === 'escuro' || (tema === 'sistema' && midiaEscura.matches);
+    document.documentElement.classList.toggle('escuro', escuro);
+  }
+
+  // No modo "Sistema", acompanha o Windows se ele trocar de tema
+  // com a página aberta.
+  midiaEscura.addEventListener('change', function () {
+    if (temaSalvo() === 'sistema') aplicarTema('sistema');
+  });
+
+  // Deixa a função disponível para o configuracoes.js aplicar o tema
+  // na hora em que o usuário clica, sem recarregar a página.
+  window.aplicarTema = aplicarTema;
+
+  aplicarTema();
+})();

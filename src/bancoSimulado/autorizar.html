@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- O endereço desta tela carrega o pedido de acesso. Sem esta linha,
+         o navegador poderia enviá-lo aos sites de onde a página carrega
+         arquivos (os CDNs abaixo). -->
+    <meta name="referrer" content="no-referrer">
+    <title>Autorizar acesso | Banco Simulado</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<!-- Esta tela é do BANCO, não do Verdanz. As cores são outras de
+     propósito: a pessoa precisa perceber que saiu do app e está no site
+     do banco, que é onde a autorização acontece no Open Finance. -->
+<body class="min-h-screen bg-[#14183a] text-gray-800">
+
+    <header class="px-6 py-5 flex items-center gap-3 text-white">
+        <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center">
+            <i class="fa-solid fa-building-columns"></i>
+        </div>
+        <div>
+            <p class="font-bold leading-tight">Banco Simulado</p>
+            <p class="text-xs text-indigo-200">Ambiente de demonstração</p>
+        </div>
+    </header>
+
+    <main class="flex justify-center px-6 pb-12 pt-4">
+        <div class="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl">
+
+            <!-- CARREGANDO -->
+            <p id="carregando" class="text-center text-gray-500 py-10">
+                <i class="fa-solid fa-spinner fa-spin mr-2"></i> Carregando pedido de acesso...
+            </p>
+
+            <!-- ERRO (pedido vencido ou inválido) -->
+            <div id="erro" class="hidden text-center py-6">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-2xl mb-4">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                </div>
+                <p id="textoErro" class="text-gray-700 font-semibold"></p>
+                <p class="text-sm text-gray-500 mt-2">Volte ao aplicativo e tente conectar de novo.</p>
+            </div>
+
+            <!-- PEDIDO DE AUTORIZAÇÃO -->
+            <div id="pedido" class="hidden">
+                <p class="text-sm text-gray-500">Olá,</p>
+                <h1 id="nomeCliente" class="text-2xl font-bold text-[#14183a]"></h1>
+
+                <div class="flex items-center gap-3 mt-6 p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                    <img src="/img/VerdanzIcone.png" alt="" class="w-10 h-10 object-contain">
+                    <p class="text-sm text-gray-700">
+                        O aplicativo <strong>Verdanz</strong> quer acessar dados da sua conta.
+                    </p>
+                </div>
+
+                <p class="text-sm font-semibold text-gray-700 mt-6 mb-3">O que será compartilhado:</p>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li><i class="fa-solid fa-check text-orange-500 w-5"></i> Dados das suas contas (agência e número)</li>
+                    <li><i class="fa-solid fa-check text-orange-500 w-5"></i> Saldos</li>
+                    <li><i class="fa-solid fa-check text-orange-500 w-5"></i> Extrato de transações</li>
+                </ul>
+
+                <div class="mt-6 p-4 rounded-2xl bg-orange-50 border border-orange-100 text-sm text-orange-900 space-y-1">
+                    <p><i class="fa-solid fa-lock w-5"></i> Somente leitura: o Verdanz <strong>não pode</strong> movimentar seu dinheiro.</p>
+                    <p><i class="fa-regular fa-clock w-5"></i> Válido por 90 dias. Você pode desconectar quando quiser pelo Verdanz.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mt-8">
+                    <button id="botaoRecusar" type="button"
+                            class="py-3.5 rounded-xl border-2 border-gray-200 text-gray-600 font-bold transition hover:bg-gray-50 disabled:opacity-60">
+                        Recusar
+                    </button>
+                    <button id="botaoAutorizar" type="button"
+                            class="py-3.5 rounded-xl bg-orange-500 text-white font-bold shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:opacity-60">
+                        Autorizar
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // A tela só conversa com as rotas do próprio banco.
+        const consentId = new URLSearchParams(window.location.search).get('consentId');
+
+        const carregando = document.getElementById('carregando');
+        const pedido = document.getElementById('pedido');
+        const caixaErro = document.getElementById('erro');
+        const botaoAutorizar = document.getElementById('botaoAutorizar');
+        const botaoRecusar = document.getElementById('botaoRecusar');
+
+        function mostrarErro(texto) {
+            carregando.classList.add('hidden');
+            pedido.classList.add('hidden');
+            document.getElementById('textoErro').textContent = texto;
+            caixaErro.classList.remove('hidden');
+        }
+
+        async function chamarBanco(caminho, corpo) {
+            const resposta = await fetch('/banco-simulado' + caminho, {
+                method: corpo ? 'POST' : 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                body: corpo ? JSON.stringify(corpo) : undefined,
+            });
+            const dados = await resposta.json().catch(() => ({}));
+            return { ok: resposta.ok, dados };
+        }
+
+        async function carregarPedido() {
+            if (!consentId) {
+                mostrarErro('Pedido de acesso incompleto.');
+                return;
+            }
+
+            try {
+                const { ok, dados } = await chamarBanco('/consents/' + encodeURIComponent(consentId));
+
+                if (!ok) {
+                    mostrarErro('Este pedido de acesso expirou ou é inválido.');
+                    return;
+                }
+
+                // textContent, e não innerHTML: o nome vira texto, nunca código.
+                document.getElementById('nomeCliente').textContent = dados.data.clientName;
+                carregando.classList.add('hidden');
+                pedido.classList.remove('hidden');
+            } catch (erro) {
+                mostrarErro('Não foi possível falar com o banco.');
+            }
+        }
+
+        // Autorizar ou recusar: o banco responde para onde devolver a
+        // pessoa. location.replace tira esta tela do histórico, para o
+        // botão "voltar" do navegador não reabrir um pedido já respondido.
+        async function responder(acao) {
+            botaoAutorizar.disabled = true;
+            botaoRecusar.disabled = true;
+
+            try {
+                const { ok, dados } = await chamarBanco('/consents/' + acao, { consentId });
+
+                if (!ok) {
+                    mostrarErro('Este pedido de acesso expirou ou é inválido.');
+                    return;
+                }
+
+                window.location.replace(dados.data.redirectTo);
+            } catch (erro) {
+                mostrarErro('Não foi possível falar com o banco.');
+            }
+        }
+
+        botaoAutorizar.addEventListener('click', () => responder('authorize'));
+        botaoRecusar.addEventListener('click', () => responder('reject'));
+
+        carregarPedido();
+    </script>
+
+</body>
+</html>
