@@ -14,12 +14,42 @@ let perguntaAtual = 0;
 // mesma lógica serve para os dois tipos de pergunta.
 const respostas = {};
 
-// Perfis marcados na etapa de seleção. Começa com o que já estava salvo,
-// para quem voltar a esta tela no futuro não perder a escolha anterior.
-let selecionados = PerfisSalvos.ler();
+// ---- SUGESTÃO SALVA ----
+// A ideia é a pessoa responder as perguntas UMA vez só. Por isso a
+// sugestão da pesquisa fica guardada: quem volta pelo "Trocar perfis" e
+// pula as perguntas continua vendo quais perfis foram sugeridos.
+// Mesmo esquema do PerfisSalvos: o id do usuário vai na chave.
+const SugestaoSalva = {
+  chave() {
+    return 'sugestao_perfis_' + Sessao.idUsuario();
+  },
+  salvar(lista) {
+    localStorage.setItem(this.chave(), JSON.stringify(lista));
+  },
+  ler() {
+    try {
+      return JSON.parse(localStorage.getItem(this.chave())) || [];
+    } catch (e) {
+      return [];
+    }
+  },
+};
 
-// Perfis sugeridos pela pesquisa (preenchido ao terminar as perguntas).
+// Perfis marcados na etapa de seleção.
+//
+// REGRA: um perfil só fica marcado quando a pessoa clica nele, ali, na
+// hora. Por isso a seleção SEMPRE abre vazia — depois das perguntas, ao
+// pular as perguntas e ao refazer. Nem a sugestão nem a escolha antiga
+// marcam nada sozinhas: a sugestão vira só o selo "Sugerido para você",
+// e os perfis atuais aparecem só como texto.
+let selecionados = [];
+
+// Perfis sugeridos pela pesquisa.
 let sugeridos = [];
+
+// Já fez a pesquisa antes? Quem já tem perfil salvo, ou uma sugestão
+// guardada, pode pular as perguntas.
+const jaRespondeu = PerfisSalvos.ler().length > 0 || SugestaoSalva.ler().length > 0;
 
 // ---- TROCA DE ETAPA ----
 
@@ -227,28 +257,55 @@ function juntarNomes(chaves) {
   return nomes.slice(0, -1).join(', ') + ' e ' + nomes[nomes.length - 1];
 }
 
+// Fim das perguntas: calcula a sugestão, guarda e abre a seleção.
 function mostrarSelecao() {
   sugeridos = calcularSugestao(respostas);
+  SugestaoSalva.salvar(sugeridos);
+  abrirSelecao();
+}
 
-  // Primeira vez (nada salvo ainda): já deixa os sugeridos marcados, para
-  // o caminho mais comum ser só conferir e confirmar. A sugestão segue a
-  // mesma regra da escolha (de 1 a 3), então nunca passa do limite.
-  // Quem já tinha perfis salvos mantém a escolha que fez.
-  if (selecionados.length === 0) {
-    selecionados = [...sugeridos];
-  }
+// "Pular perguntas": vai direto para a seleção, mostrando a sugestão da
+// última pesquisa (só o selo, como sempre).
+function pularPerguntas() {
+  sugeridos = SugestaoSalva.ler().filter((chave) => PERFIS[chave]);
+  abrirSelecao();
+}
+
+function abrirSelecao() {
+  // A seleção sempre começa vazia (ver a REGRA lá em cima).
+  selecionados = [];
 
   const texto = document.getElementById('textoSugestao');
-  texto.textContent =
-    sugeridos.length === 1
-      ? `Pelas suas respostas, o perfil que mais combina com você agora é ${juntarNomes(sugeridos)}. `
-      : `Pelas suas respostas, os perfis que mais combinam com você agora são ${juntarNomes(sugeridos)}. `;
-  texto.textContent += 'É só uma sugestão: escolha de 1 a 3 perfis, sugeridos ou não.';
+
+  if (sugeridos.length === 0) {
+    texto.textContent = 'Escolha de 1 a 3 perfis. ';
+  } else {
+    texto.textContent =
+      sugeridos.length === 1
+        ? `Pelas suas respostas, o perfil que mais combina com você agora é ${juntarNomes(sugeridos)}. `
+        : `Pelas suas respostas, os perfis que mais combinam com você agora são ${juntarNomes(sugeridos)}. `;
+    texto.textContent += 'É só uma sugestão: escolha de 1 a 3 perfis, sugeridos ou não. ';
+  }
+
+  // Quem está trocando de perfil vê quais tem hoje, mas só como
+  // informação: para continuar com eles, basta clicar neles de novo.
+  const atuais = PerfisSalvos.ler().filter((chave) => PERFIS[chave]);
+  if (atuais.length > 0) {
+    texto.textContent += `Seus perfis atuais: ${juntarNomes(atuais)}.`;
+  }
 
   esconderMensagem();
   desenharCartoesSelecao();
   mostrarEtapa('etapaSelecao');
 }
+
+// Os dois botões "Pular perguntas" (na abertura e nas perguntas) só
+// aparecem para quem já fez a pesquisa uma vez.
+['botaoPularIntro', 'botaoPularPerguntas'].forEach((id) => {
+  const botao = document.getElementById(id);
+  botao.classList.toggle('hidden', !jaRespondeu);
+  botao.addEventListener('click', pularPerguntas);
+});
 
 function desenharCartoesSelecao() {
   const lista = document.getElementById('listaPerfisSelecao');
@@ -328,9 +385,11 @@ function alternarPerfil(chave) {
 }
 
 document.getElementById('botaoRefazer').addEventListener('click', function () {
-  // Apaga as respostas, mas mantém os perfis marcados: refazer a pesquisa
-  // não deve desfazer uma escolha que o usuário fez de propósito.
+  // Refazer é começar do zero: apaga as respostas E os perfis marcados.
+  // O que está salvo só muda quando a pessoa confirmar a nova escolha —
+  // se ela sair no meio, os perfis antigos continuam valendo.
   Object.keys(respostas).forEach((chave) => delete respostas[chave]);
+  selecionados = [];
   perguntaAtual = 0;
   mostrarPergunta();
   mostrarEtapa('etapaPerguntas');

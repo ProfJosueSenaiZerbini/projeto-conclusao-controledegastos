@@ -4,7 +4,6 @@
 // estão abertas, não aceitam formatação nem texto explicativo, e têm a
 // aparência do sistema operacional, não do site.
 //
-// As duas funções abaixo devolvem uma Promise, então quem chama continua
 // As funções abaixo devolvem uma Promise, então quem chama continua
 // escrevendo de cima para baixo, quase igual ao código antigo:
 //
@@ -14,39 +13,54 @@
 // O HTML fica aqui em vez de repetido nas três telas, para os modais não
 // saírem diferentes um do outro com o tempo.
 
+// ---- CORES ----
+// O modal usa as cores pelo código (#dc2626) e não pelo nome do Tailwind
+// (bg-red-600). Motivo: se uma tela trocar a paleta do Tailwind (um
+// tailwind.config com "colors" fora do "extend", por exemplo), os nomes
+// prontos deixam de existir. Foi o que aconteceu: o botão "Excluir"
+// ficava com texto branco sobre fundo nenhum — invisível. Com o código
+// da cor, o modal aparece certo em qualquer tela.
+const COR_MODAL = {
+  perigo: 'bg-[#dc2626] hover:bg-[#b91c1c]',       // botão de excluir
+  principal: 'bg-[#2563eb] hover:bg-[#1d4ed8]',    // botões de adicionar / entendi
+  iconePerigo: 'bg-[#fef2f2] text-[#ef4444]',
+  iconePrincipal: 'bg-[#eff6ff] text-[#3b82f6]',
+  iconeAlerta: 'bg-[#fffbeb] text-[#f59e0b]',
+};
+
 const MARCACAO_MODAL = `
   <div id="fundoModal" class="hidden fixed inset-0 bg-black/40 z-[60]"></div>
 
   <div id="caixaModal" role="dialog" aria-modal="true" aria-labelledby="tituloModal"
        class="hidden fixed inset-0 z-[70] items-center justify-center p-4 pointer-events-none">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto overflow-hidden">
+    <div class="bg-[#ffffff] rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto overflow-hidden">
 
       <div class="p-6">
         <div class="flex items-start gap-4">
           <div id="iconeModal" class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"></div>
           <div class="min-w-0 flex-1">
-            <h3 id="tituloModal" class="font-bold text-gray-900"></h3>
-            <p id="mensagemModal" class="text-sm text-gray-500 mt-1"></p>
+            <h3 id="tituloModal" class="font-bold text-[#111827]"></h3>
+            <p id="mensagemModal" class="text-sm text-[#6b7280] mt-1"></p>
           </div>
         </div>
 
-        <div id="avisoModal" class="hidden mt-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700"></div>
+        <div id="avisoModal" class="hidden mt-4 px-4 py-3 rounded-xl bg-[#fef2f2] border border-[#fee2e2] text-sm text-[#b91c1c]"></div>
 
         <div id="campoModal" class="hidden mt-5">
-          <label id="rotuloModal" for="valorModal" class="block text-sm font-semibold text-gray-700 mb-2"></label>
+          <label id="rotuloModal" for="valorModal" class="block text-sm font-semibold text-[#374151] mb-2"></label>
           <input type="number" id="valorModal" step="0.01" inputmode="decimal" placeholder="0,00"
-                 class="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 outline-none transition text-2xl font-bold text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-          <p id="erroModal" class="hidden text-sm text-red-600 mt-2"></p>
+                 class="w-full px-4 py-4 rounded-xl border border-[#e5e7eb] bg-[#f9fafb] outline-none transition text-2xl font-bold text-center focus:border-[#3b82f6] focus:ring-2 focus:ring-[#dbeafe]">
+          <p id="erroModal" class="hidden text-sm text-[#dc2626] mt-2"></p>
         </div>
       </div>
 
-      <div class="flex gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
+      <div class="flex gap-3 px-6 py-4 bg-[#f9fafb] border-t border-[#f3f4f6]">
         <button type="button" id="cancelarModal"
-                class="flex-1 py-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-medium transition hover:bg-gray-100">
+                class="flex-1 py-3 rounded-xl border border-[#e5e7eb] bg-[#ffffff] text-[#4b5563] font-medium transition hover:bg-[#f3f4f6]">
           Cancelar
         </button>
         <button type="button" id="confirmarModal"
-                class="flex-1 py-3 rounded-xl text-white font-bold transition">
+                class="flex-1 py-3 rounded-xl text-[#ffffff] font-bold transition">
         </button>
       </div>
 
@@ -109,14 +123,17 @@ function fecharModal(resposta) {
 
 function abrirModal() {
   caixaModal.classList.remove('hidden', 'recolhendo');
-fundoModal.classList.remove('hidden', 'recolhendo');
+  // 'flex' é o que centraliza a caixa na tela (items-center e
+  // justify-center só funcionam com display flex). O esconderModal tira
+  // o 'flex'; sem colocá-lo de volta aqui, o modal abria no canto de cima.
+  caixaModal.classList.add('flex');
+  fundoModal.classList.remove('hidden', 'recolhendo');
 }
 
 // Clicar fora e apertar Esc cancelam — é o que todo mundo espera.
 fundoModal.addEventListener('click', () => fecharModal(null));
 
 document.addEventListener('keydown', function (evento) {
-  if (evento.key === 'Escape') fecharModal(null);
   if (evento.key !== 'Escape' || caixaModal.classList.contains('hidden')) return;
 
   // Com o modal aberto por cima do painel lateral, o Esc fecha só o modal.
@@ -142,7 +159,7 @@ function confirmar({ titulo, mensagem = '', aviso = '', textoConfirmar = 'Confir
   mensagemModal.classList.toggle('hidden', !mensagem);
 
   iconeModal.className =
-    'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-red-50 text-red-500';
+    'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ' + COR_MODAL.iconePerigo;
   iconeModal.innerHTML = '<i class="fa-solid fa-trash"></i>';
 
   avisoModal.textContent = aviso;
@@ -150,10 +167,10 @@ function confirmar({ titulo, mensagem = '', aviso = '', textoConfirmar = 'Confir
 
   campoModal.classList.add('hidden');
   cancelarModal.classList.remove('hidden');
-  
+
   confirmarModal.textContent = textoConfirmar;
   confirmarModal.className =
-    'flex-1 py-3 rounded-xl text-white font-bold transition bg-red-600 hover:bg-red-700';
+    'flex-1 py-3 rounded-xl text-[#ffffff] font-bold transition ' + COR_MODAL.perigo;
 
   abrirModal();
 
@@ -185,7 +202,7 @@ function pedirValor({ titulo, mensagem = '', rotulo = 'Valor', textoConfirmar = 
   mensagemModal.classList.toggle('hidden', !mensagem);
 
   iconeModal.className =
-    'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-50 text-blue-500';
+    'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ' + COR_MODAL.iconePrincipal;
   iconeModal.innerHTML = '<i class="fa-solid fa-plus"></i>';
 
   avisoModal.classList.add('hidden');
@@ -198,8 +215,9 @@ function pedirValor({ titulo, mensagem = '', rotulo = 'Valor', textoConfirmar = 
 
   confirmarModal.textContent = textoConfirmar;
   confirmarModal.className =
-    'flex-1 py-3 rounded-xl text-white font-bold transition bg-blue-600 hover:bg-blue-700';
-abrirModal();
+    'flex-1 py-3 rounded-xl text-[#ffffff] font-bold transition ' + COR_MODAL.principal;
+
+  abrirModal();
   valorModal.focus();
 
   return new Promise((resolver) => {
@@ -241,7 +259,7 @@ function avisar({ titulo, mensagem = '', textoBotao = 'Entendi' }) {
   mensagemModal.classList.toggle('hidden', !mensagem);
 
   iconeModal.className =
-    'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-500';
+    'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ' + COR_MODAL.iconeAlerta;
   iconeModal.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
 
   avisoModal.classList.add('hidden');
@@ -252,7 +270,7 @@ function avisar({ titulo, mensagem = '', textoBotao = 'Entendi' }) {
 
   confirmarModal.textContent = textoBotao;
   confirmarModal.className =
-    'flex-1 py-3 rounded-xl text-white font-bold transition bg-blue-600 hover:bg-blue-700';
+    'flex-1 py-3 rounded-xl text-[#ffffff] font-bold transition ' + COR_MODAL.principal;
 
   abrirModal();
   confirmarModal.focus();

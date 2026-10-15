@@ -61,13 +61,16 @@
                     <i class="fa-regular fa-credit-card w-5 text-center"></i> Contas
                 </a>
                 <a href="/transacoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
-                    <i class="fa-solid fa-money-bill-transfer w-5 text-center"></i> Transações
+                    <i class="fa-solid fa-right-left w-5 text-center"></i> Transações
                 </a>
                 <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-regular fa-calendar w-5 text-center"></i> Planejamento
                 </a>
                 <a href="/metas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-solid fa-bullseye w-5 text-center"></i> Metas
+                </a>
+                <a href="/meu-perfil" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-user-gear w-5 text-center"></i> Meu perfil
                 </a>
                 <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-solid fa-gear w-5 text-center"></i> Configurações
@@ -199,8 +202,8 @@
                     <div class="flex items-start gap-4">
                         <div class="text-green-600 text-2xl mt-1"><i class="fa-regular fa-lightbulb"></i></div>
                         <div>
-                            <p class="text-sm font-medium text-gray-800 mb-1">Evite compras por impulso e mantenha o foco nas suas metas.</p>
-                            <ul class="text-xs text-gray-600 space-y-1 mt-2 list-none">
+                            <p id="dicaTitulo" class="text-sm font-medium text-gray-800 mb-1">Evite compras por impulso e mantenha o foco nas suas metas.</p>
+                            <ul id="dicaCorpo" class="text-xs text-gray-600 space-y-1 mt-2 list-none">
                                 <li><i class="fa-solid fa-angle-right text-green-500 mr-1"></i> 1. Compare preços.</li>
                                 <li><i class="fa-solid fa-angle-right text-green-500 mr-1"></i> 2. Automatize investimentos.</li>
                             </ul>
@@ -208,9 +211,9 @@
                     </div>
                 </div>
 
-                <div class="mt-4 text-center text-blue-600 text-sm font-medium cursor-pointer hover:underline">
-                    Ver mais dicas
-                </div>
+                <a id="dicaLink" href="/perfil" class="mt-4 block text-center text-blue-600 text-sm font-medium hover:underline">
+                    Descobrir meu perfil
+                </a>
             </div>
 
         </div>
@@ -219,6 +222,9 @@
     <script src="/js/auth.js"></script>
     <script src="/js/layout.js"></script>
     <script src="/js/dashboard.js"></script>
+    <script src="/js/perfil-perguntas.js"></script>
+    <script src="/js/perfil-conteudo.js"></script>
+    <script src="/js/dica-perfil.js"></script>
 
 </body>
 </html>
