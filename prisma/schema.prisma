@@ -1,6 +1,8 @@
 // prisma/schema.prisma
 //
-// Escopo atual: 5 entidades e 4 relacionamentos.
+// Escopo atual: as 5 entidades do núcleo (Usuario, Conta, Categoria,
+// Transacao, Meta), mais TokenUsuario (links por e-mail) e
+// ConexaoBancaria (importação do banco simulado).
 // O modelo está na 3ª Forma Normal — ver comentários em Transacao.
 
 generator client {
@@ -23,9 +25,10 @@ model Usuario {
   senha          String   @db.VarChar(255)
   data_cadastro  DateTime @default(now())
 
-  contas  Conta[]
-  metas   Meta[]
-  tokens  TokenUsuario[]
+  contas    Conta[]
+  metas     Meta[]
+  tokens    TokenUsuario[]
+  conexoes  ConexaoBancaria[]
 
   @@map("usuario")
 }
@@ -63,10 +66,46 @@ model Conta {
   saldo       Decimal @default(0.00) @db.Decimal(12, 2)
   id_usuario  Int
 
-  usuario     Usuario     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  // Preenchidos só nas contas importadas de um banco. Nas contas
+  // criadas à mão (como a Carteira), os dois ficam vazios.
+  // id_externo é o código que o BANCO deu para a conta: é por ele que a
+  // sincronização reconhece "esta conta eu já importei".
+  id_conexao  Int?
+  id_externo  String? @db.VarChar(50)
+
+  usuario     Usuario          @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  conexao     ConexaoBancaria? @relation(fields: [id_conexao], references: [id_conexao], onDelete: Cascade)
   transacoes  Transacao[]
 
+  @@unique([id_conexao, id_externo])
   @@map("conta")
+}
+
+// ================================
+// CONEXAO_BANCARIA — um banco que o usuário autorizou
+// ================================
+// Guarda a autorização (consentimento) que o usuário deu no site do
+// banco. É uma tabela própria porque a conexão tem dados que não são
+// nem do usuário nem de uma conta: o token de acesso, até quando ele
+// vale e quando foi a última sincronização. Um usuário pode conectar
+// mais de um banco, mas o mesmo banco só uma vez.
+//
+// Desconectar apaga a conexão E as contas importadas por ela (Cascade
+// em Conta.conexao). Nada muda no banco: ele só deixa de ser consultado.
+model ConexaoBancaria {
+  id_conexao            Int       @id @default(autoincrement())
+  banco                 String    @db.VarChar(100)
+  token_acesso          String    @db.Text
+  acesso_expira_em      DateTime
+  data_conexao          DateTime  @default(now())
+  ultima_sincronizacao  DateTime?
+  id_usuario            Int
+
+  usuario  Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  contas   Conta[]
+
+  @@unique([id_usuario, banco])
+  @@map("conexao_bancaria")
 }
 
 // ================================
@@ -103,9 +142,15 @@ model Transacao {
   id_categoria     Int
   id_conta         Int
 
+  // Código que o banco deu para a transação. Só existe nas importadas.
+  // O @@unique abaixo é a trava contra duplicatas: sincronizar duas
+  // vezes não consegue gravar a mesma transação do banco duas vezes.
+  id_externo       String?  @db.VarChar(50)
+
   categoria  Categoria @relation(fields: [id_categoria], references: [id_categoria])
   conta      Conta     @relation(fields: [id_conta], references: [id_conta], onDelete: Cascade)
 
+  @@unique([id_conta, id_externo])
   @@index([id_conta, data_transacao])
   @@map("transacao")
 }

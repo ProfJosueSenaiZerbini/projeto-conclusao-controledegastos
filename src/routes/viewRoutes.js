@@ -19,6 +19,7 @@ router.get('/login', enviarTela('login.html'));
 router.get('/cadastro', enviarTela('cadastro.html'));
 router.get('/esqueci-senha', enviarTela('esqueci-senha.html'));
 router.get('/redefinir-senha', enviarTela('redefinir-senha.html'));
+router.get('/perfil', enviarTela('perfil.html'));
 router.get('/dashboard', enviarTela('dashboard.html'));
 router.get('/contas', enviarTela('contas.html'));
 router.get('/transacoes', enviarTela('transacoes.html'));

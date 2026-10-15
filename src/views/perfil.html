@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seu perfil | Verdanz</title>
+    <link rel="icon" href="/img/VerdanzIcone.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Mesmas cores da tela Perguntas.html (telas do Victor), para as
+        // perguntas terem a mesma cara do modelo que o grupo aprovou.
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#1f9d55',
+                        brandDark: '#15803d',
+                        soft: '#eafcf1',
+                        softBorder: '#d5f3e0',
+                        ink: '#0f2e1c',
+                        sub: '#6b8579',
+                    },
+                },
+            },
+        };
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #e8f1ec; }
+
+        /* Cada etapa (e cada pergunta) entra com um leve deslize, para a
+           troca de tela não parecer um "pulo" seco. */
+        @keyframes entrarEtapa {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .entrando { animation: entrarEtapa .25s ease-out; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .entrando { animation: none; }
+        }
+    </style>
+</head>
+
+<!--
+    Esta página tem TRÊS etapas, que o perfil.js mostra uma de cada vez:
+
+      1. etapaIntro      → apresenta a pesquisa e os 6 perfis
+      2. etapaPerguntas  → uma pergunta por vez (layout da Perguntas.html)
+      3. etapaSelecao    → mostra a sugestão e o usuário escolhe de 1 a 3 perfis
+
+    Ficar tudo numa página só evita ter que passar as respostas de uma
+    tela para outra pela URL ou pelo armazenamento do navegador.
+-->
+
+<body class="min-h-screen flex items-center justify-center p-4 md:p-6 text-ink">
+
+    <div class="w-full max-w-[950px] bg-white border border-slate-100 rounded-[28px] shadow-xl p-5 md:p-8">
+
+        <!-- CABEÇALHO -->
+        <header class="flex items-center gap-2 mb-6">
+            <img src="/img/VerdanzIcone.png" alt="" class="w-9 h-9 object-contain">
+            <span class="font-bold text-lg tracking-wide text-ink">
+                Verdan<span class="text-brand">z</span>
+            </span>
+
+            <!-- Na etapa de perguntas mostra "1 de 7"; nas outras, o nome. -->
+            <span id="contadorPergunta" class="hidden ml-auto text-xs font-medium text-sub"></span>
+            <span id="saudacao" class="ml-auto text-sm text-sub">
+                Olá, <span id="nomeUsuario" class="font-semibold text-ink"></span>
+            </span>
+        </header>
+
+
+        <!-- ================================
+             ETAPA 1: INTRODUÇÃO
+             ================================ -->
+        <section id="etapaIntro" class="etapa text-center">
+
+            <div class="w-14 h-14 mx-auto rounded-full bg-soft text-brand
+                        flex items-center justify-center text-2xl">
+                <i class="fa-solid fa-user" aria-hidden="true"></i>
+            </div>
+
+            <h1 class="text-2xl md:text-3xl font-bold leading-snug mt-4">
+                Antes de começar, faremos uma pesquisa rápida
+            </h1>
+
+            <p class="text-sub text-[15px] leading-relaxed mt-2 max-w-xl mx-auto">
+                São 7 perguntas de alternativa para descobrir quais perfis combinam
+                com você hoje. No fim, você mesmo escolhe de 1 a 3 perfis — a
+                sugestão é só uma ajuda.
+            </p>
+
+            <p class="text-sm font-semibold mt-8 mb-4">Estes são os perfis do Verdanz:</p>
+
+            <!-- Preenchido pelo perfil.js a partir da lista PERFIS -->
+            <div id="listaPerfisIntro" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"></div>
+
+            <div class="mt-8 flex flex-col md:flex-row items-center gap-4
+                        bg-soft border border-softBorder rounded-2xl p-4 text-left">
+
+                <div class="w-10 h-10 shrink-0 rounded-full bg-white text-brand
+                            flex items-center justify-center">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                </div>
+
+                <p class="text-sm text-sub flex-1">
+                    Suas respostas são confidenciais e nos ajudam a oferecer
+                    a melhor experiência para você.
+                </p>
+
+                <button type="button" id="botaoComecar"
+                    class="bg-brand hover:bg-brandDark text-white font-semibold text-sm px-6 py-3
+                           rounded-xl transition flex items-center gap-2
+                           focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+                    Vamos começar <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ================================
+             ETAPA 2: PERGUNTAS
+             ================================ -->
+        <section id="etapaPerguntas" class="etapa hidden">
+
+            <!-- PROGRESSO -->
+            <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"
+                 role="progressbar" aria-label="Progresso da pesquisa"
+                 aria-valuemin="0" aria-valuemax="100" id="trilhaProgresso">
+                <div id="barraProgresso" class="h-full bg-brand transition-all duration-300 rounded-full"
+                     style="width: 0%"></div>
+            </div>
+
+            <!-- VOLTAR -->
+            <button type="button" id="botaoVoltar" aria-label="Voltar"
+                class="mt-4 mb-4 w-9 h-9 -ml-2 rounded-full text-sub hover:text-ink hover:bg-slate-100 transition
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <!-- LAYOUT DIVIDIDO: pergunta à esquerda, alternativas à direita -->
+            <div id="conteudoPergunta" class="grid grid-cols-1 md:grid-cols-[1fr_1.3fr] gap-6 md:gap-8 items-start">
+                <div>
+                    <div id="iconePergunta"
+                         class="w-14 h-14 rounded-full bg-soft text-brand flex items-center justify-center text-2xl mb-4">
+                    </div>
+                    <h2 id="textoPergunta" class="text-2xl md:text-3xl font-bold leading-snug mb-2"></h2>
+                    <p id="ajudaPergunta" class="text-sub text-[15px] leading-relaxed"></p>
+                </div>
+
+                <div>
+                    <!-- ALTERNATIVAS: preenchidas pelo perfil.js -->
+                    <div id="listaAlternativas" class="flex flex-col gap-3"></div>
+
+                    <div class="flex justify-end mt-6">
+                        <button type="button" id="botaoProxima"
+                            class="bg-brand hover:bg-brandDark text-white font-semibold text-sm px-6 py-2.5
+                                   rounded-xl transition flex items-center gap-2
+                                   disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-brand
+                                   focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================================
+             ETAPA 3: SELEÇÃO DE PERFIL
+             ================================ -->
+        <section id="etapaSelecao" class="etapa hidden">
+
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 mx-auto rounded-full bg-soft text-brand
+                            flex items-center justify-center text-2xl mb-4">
+                    <i class="fa-solid fa-user-check" aria-hidden="true"></i>
+                </div>
+                <h1 class="text-2xl md:text-3xl font-bold leading-snug">
+                    Selecione os perfis com que você mais se identifica
+                </h1>
+                <p id="textoSugestao" class="text-sub text-[15px] leading-relaxed mt-2 max-w-2xl mx-auto"></p>
+            </div>
+
+            <!-- Cartões preenchidos pelo perfil.js -->
+            <div id="listaPerfisSelecao" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+            <div class="mt-6"><div id="mensagem" class="hidden" role="alert"></div></div>
+
+            <div class="mt-8 bg-soft border border-softBorder rounded-2xl p-4
+                        flex flex-col md:flex-row items-center gap-4">
+
+                <div class="flex-1 text-center md:text-left">
+                    <p class="font-semibold" aria-live="polite">
+                        <span id="contadorSelecionados">0</span> de 3 perfis escolhidos
+                    </p>
+                    <p class="text-sm text-sub">
+                        Escolha pelo menos 1. Você pode alterar depois nas configurações.
+                    </p>
+                </div>
+
+                <button type="button" id="botaoRefazer"
+                    class="px-5 py-2.5 rounded-xl text-sub font-semibold text-sm hover:bg-white hover:text-ink transition
+                           focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                    <i class="fa-solid fa-rotate-left mr-2" aria-hidden="true"></i> Refazer perguntas
+                </button>
+
+                <button type="button" id="botaoConfirmar"
+                    class="bg-brand hover:bg-brandDark text-white font-semibold text-sm px-6 py-2.5
+                           rounded-xl transition flex items-center gap-2
+                           disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-brand
+                           focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+                    Confirmar e continuar <i class="fa-solid fa-check" aria-hidden="true"></i>
+                </button>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/layout.js"></script>
+    <script src="/js/perfil-perguntas.js"></script>
+    <script src="/js/perfil.js"></script>
+</body>
+</html>
