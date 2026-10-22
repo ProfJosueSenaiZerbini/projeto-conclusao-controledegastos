@@ -58,6 +58,23 @@ const PerfisSalvos = {
       return [];
     }
   },
+
+  // Apaga TUDO o que foi guardado no navegador sobre o perfil de um
+  // usuário: os perfis escolhidos, a sugestão da pesquisa e o que ele
+  // digitou nas ferramentas do Meu perfil.
+  //
+  // Recebe o id explicitamente (e não o da sessão) porque é chamada no
+  // cadastro, quando ainda não existe sessão do usuário novo.
+  //
+  // Por que isso é necessário: as chaves usam o id do usuário
+  // ("perfis_1"). Se o banco for zerado durante os testes, o próximo
+  // cadastro ganha de novo o id 1 e "herdaria" os perfis de quem usou
+  // esse número antes. Um usuário novo tem que começar sem nada.
+  apagarTudo(idUsuario) {
+    ['perfis_', 'sugestao_perfis_', 'perfil_ferramentas_'].forEach((prefixo) =>
+      localStorage.removeItem(prefixo + idUsuario)
+    );
+  },
 };
 
 // ---- MENSAGENS NA TELA ----

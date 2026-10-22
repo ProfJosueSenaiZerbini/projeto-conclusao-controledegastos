@@ -93,6 +93,10 @@ formCadastro.addEventListener('submit', async function (event) {
       return;
     }
 
+    // Conta nova começa sem perfil nenhum: apaga qualquer resto guardado
+    // no navegador com este mesmo id (ver PerfisSalvos.apagarTudo).
+    PerfisSalvos.apagarTudo(resposta.id_usuario);
+
     mostrarMensagem('Conta criada com sucesso! Redirecionando...', 'sucesso');
     setTimeout(() => (window.location.href = '/login'), 1200);
   } catch (erro) {

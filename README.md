@@ -121,7 +121,16 @@ Crie um arquivo `.env` **na raiz do projeto** (mesma pasta do `index.js`), usand
 DATABASE_URL="mysql://usuario:senha@localhost:3306/verdanz"
 JWT_SECRET="uma_chave_secreta_forte"
 PORT=3000
+
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER=""
+SMTP_PASS=""
+EMAIL_REMETENTE="Verdanz <seu-email@gmail.com>"
 ```
+
+Comando para criar uma chave criptografada forte:
+```node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"```
 
 O `.env` está no `.gitignore` e nunca deve ser commitado.
 

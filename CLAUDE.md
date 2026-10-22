@@ -184,6 +184,16 @@ O usuário conecta um banco na tela de Contas e o Verdanz importa as contas e o 
 
 ---
 
+## Perfis e ferramentas por perfil (só no navegador)
+
+A pesquisa (`/perfil`) sugere de 1 a 3 perfis entre CLT, Autônomo, Estudante, Doméstico, Desempregado e Aposentado. A tela `/meu-perfil` mostra as ferramentas de cada perfil escolhido; a análise que justifica cada uma, com as fontes, está em `Docs/Perfis/analise-funcionalidades-por-perfil.md`.
+
+- **Nada disso está no banco.** Os perfis ficam no `localStorage` (`PerfisSalvos`, em `auth.js`) e o que a pessoa digita nas ferramentas também (`Preferencias`, em `meu-perfil.js`), sempre com o id do usuário na chave. As ferramentas só leem contas, transações e metas pela API; a única escrita é o botão "Criar esta meta" (`POST /api/meta`). Guardar perfis no banco exigiria tabelas novas — decisão do grupo, não fazer por conta própria.
+- **Valores oficiais (salário mínimo, INSS, seguro-desemprego, MEI) mudam todo janeiro.** Ficam só na constante `VALORES_2026` de `public/js/perfil-calculos.js`. Ao atualizar, ajuste também `Docs/Testes/teste-calculos-perfil.js` e rode `node Docs/Testes/teste-calculos-perfil.js`.
+- **Só entram números conferidos em mais de uma fonte.** O IR do 13º e o calendário do INSS ficaram de fora de propósito; a tela orienta a conferir no holerite ou no Meu INSS.
+
+---
+
 ## Schema atual (referência — sempre confira o schema.prisma real antes de escrever queries)
 
 ```prisma
