@@ -149,6 +149,32 @@
             </div>
         </div>
 
+        <!-- Contas pendentes: gastos lançados com data futura.
+             Nasce com "hidden" (escondido). O dashboard.js tira o "hidden"
+             só quando existe pelo menos um gasto com data depois de hoje. -->
+        <section id="blocoPendentes" aria-labelledby="tituloPendentes"
+                 class="hidden bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-6">
+            <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                    <div>
+                        <h4 id="tituloPendentes" class="font-bold text-gray-900">Contas pendentes</h4>
+                        <p id="pendentesResumo" class="text-xs text-gray-500"></p>
+                    </div>
+                </div>
+                <!-- No celular o total desce para baixo do título e fica à
+                     esquerda; a partir de telas médias (sm:) vai para a direita. -->
+                <div class="sm:text-right">
+                    <p id="pendentesTotal" class="text-xl font-bold text-gray-900">R$ 0,00</p>
+                    <p class="text-xs text-gray-400">Já descontado do saldo</p>
+                </div>
+            </div>
+
+            <div id="pendentesLista" class="divide-y divide-gray-100"></div>
+        </section>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             
             <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">

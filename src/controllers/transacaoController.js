@@ -84,6 +84,13 @@ async function criarTransacao(req, res) {
         throw new Error('CATEGORIA_NAO_ENCONTRADA');
       }
 
+      // "Metas" é lançada só pelo "Adicionar valor" da tela de Metas, que
+      // também soma o valor na meta. À mão, o dinheiro sairia da conta sem
+      // entrar em meta nenhuma.
+      if (categoria.nome_categoria === 'Metas') {
+        throw new Error('CATEGORIA_SO_DE_METAS');
+      }
+
       // O sinal NÃO vem da transação — vem do tipo da categoria.
       // Uma transação em "Salário" é necessariamente receita.
       // Por isso `tipo_transacao` foi removido do modelo (3FN).
@@ -128,6 +135,12 @@ async function criarTransacao(req, res) {
   } catch (erro) {
     if (erro.message === 'CATEGORIA_NAO_ENCONTRADA') {
       return res.status(400).json({ erro: 'Categoria não encontrada' });
+    }
+
+    if (erro.message === 'CATEGORIA_SO_DE_METAS') {
+      return res.status(400).json({
+        erro: 'Para guardar dinheiro numa meta, use "Adicionar valor" na tela de Metas',
+      });
     }
 
     // O `codigo` deixa a tela reconhecer este erro e mostrar o pop-up,

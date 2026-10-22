@@ -24,6 +24,145 @@ async function recalcularStatus(tx, id_meta) {
     WHERE id_meta = ${id_meta} AND status <> 'cancelada'`;
 }
 
+// ---- GUARDAR DINHEIRO NA META ----
+//
+// O dinheiro guardado numa meta SAI de uma conta do usuário. Isso vira
+// uma transação de verdade, na categoria "Metas", porque Conta.saldo é a
+// soma das transações: se o saldo baixasse sem uma transação, o histórico
+// deixaria de explicar o saldo.
+const CATEGORIA_METAS = 'Metas';
+
+// Erro com status HTTP, para ser lançado de dentro do $transaction.
+// Lançar um erro lá dentro desfaz TUDO o que já tinha sido feito nele.
+class ErroMeta extends Error {
+  constructor(status, mensagem, codigo) {
+    super(mensagem);
+    this.status = status;
+    this.codigo = codigo;
+  }
+}
+
+// O dia de hoje no relógio do servidor, como data "pura" (sem horário).
+// new Date() sozinho guardaria a data em UTC: às 22h no Brasil já seria
+// o dia seguinte, e o dashboard mostraria a transação como pendente.
+function hojeSemHorario() {
+  const agora = new Date();
+  return new Date(Date.UTC(agora.getFullYear(), agora.getMonth(), agora.getDate()));
+}
+
+// Confere a conta de onde o dinheiro vai sair. Mesmas regras de um
+// lançamento manual em transacaoController.
+async function buscarContaDeOrigem(id_conta, id_usuario) {
+  const idConta = Number(id_conta);
+
+  if (!Number.isInteger(idConta)) {
+    return { status: 400, erro: 'Escolha de qual conta o dinheiro vai sair' };
+  }
+
+  const conta = await prisma.conta.findUnique({ where: { id_conta: idConta } });
+
+  if (!conta) {
+    return { status: 404, erro: 'Conta não encontrada' };
+  }
+
+  if (conta.id_usuario !== id_usuario) {
+    return { status: 403, erro: 'Acesso negado a conta de outro usuário' };
+  }
+
+  // Conta importada só muda pelo banco (regra do CLAUDE.md).
+  if (conta.id_conexao) {
+    return {
+      status: 400,
+      erro: `A conta "${conta.nome}" é importada do banco e não pode ser usada para guardar dinheiro. Escolha outra conta.`,
+    };
+  }
+
+  return { conta };
+}
+
+// Tira `valor` da conta e coloca na meta. Recebe o `tx` porque SEMPRE roda
+// dentro de um prisma.$transaction: debitar a conta, registrar a transação
+// e somar na meta acontecem juntos, ou nada acontece.
+//
+// Devolve quanto entrou de fato na meta: se faltavam R$ 200 e a pessoa
+// informou R$ 500, entram (e saem da conta) só R$ 200.
+async function guardarNaMeta(tx, { id_meta, conta, valor }) {
+  const categoria = await tx.categoria.findFirst({
+    where: { nome_categoria: CATEGORIA_METAS, tipo: 'despesa' },
+  });
+
+  if (!categoria) {
+    throw new ErroMeta(500, 'A categoria "Metas" não está cadastrada. Rode: npx prisma migrate dev');
+  }
+
+  // FOR UPDATE trava a linha da meta até o fim da operação. Se duas somas
+  // chegarem juntas, a segunda espera a primeira terminar e já enxerga o
+  // valor novo. Sem a trava, as duas calculariam o "quanto falta" com o
+  // valor antigo e a conta seria debitada a mais.
+  const [linha] = await tx.$queryRaw`
+    SELECT titulo, valor_atual, valor_alvo, status
+    FROM meta
+    WHERE id_meta = ${id_meta}
+    FOR UPDATE`;
+
+  if (linha.status === 'cancelada') {
+    throw new ErroMeta(400, 'Esta meta está cancelada e não recebe mais valores');
+  }
+
+  // A conta é feita em centavos (números inteiros) para fugir dos erros de
+  // arredondamento do JavaScript, como 0.1 + 0.2 = 0.30000000000000004.
+  const faltaCentavos = Math.round((Number(linha.valor_alvo) - Number(linha.valor_atual)) * 100);
+  const valorCentavos = Math.round(valor * 100);
+
+  if (faltaCentavos <= 0) {
+    throw new ErroMeta(400, 'Esta meta já foi concluída');
+  }
+
+  const guardado = Math.min(valorCentavos, faltaCentavos) / 100;
+
+  // Mesma checagem de saldo do lançamento manual: a condição vai no WHERE,
+  // então o banco confere e desconta na mesma instrução.
+  const { count } = await tx.conta.updateMany({
+    where: { id_conta: conta.id_conta, saldo: { gte: guardado } },
+    data: { saldo: { decrement: guardado } },
+  });
+
+  if (count === 0) {
+    throw new ErroMeta(
+      400,
+      `Saldo insuficiente: a conta "${conta.nome}" não tem ${guardado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} disponíveis`,
+      'SALDO_INSUFICIENTE'
+    );
+  }
+
+  await tx.transacao.create({
+    data: {
+      valor_transacao: guardado,
+      data_transacao: hojeSemHorario(),
+      descricao: `Meta: ${linha.titulo}`,
+      id_categoria: categoria.id_categoria,
+      id_conta: conta.id_conta,
+    },
+  });
+
+  await tx.meta.update({
+    where: { id_meta },
+    data: { valor_atual: { increment: guardado } },
+  });
+
+  await recalcularStatus(tx, id_meta);
+
+  return guardado;
+}
+
+// Resposta de erro padrão para os erros lançados acima.
+function responderErroMeta(res, erro) {
+  return res.status(erro.status).json({
+    ...(erro.codigo ? { codigo: erro.codigo } : {}),
+    erro: erro.message,
+  });
+}
+
 // Converte os Decimal e calcula o progresso.
 //
 // O percentual NÃO é gravado no banco: é dado derivado, calculado a
@@ -58,7 +197,7 @@ async function buscarMetaDoUsuario(id_meta, id_usuario) {
 // POST /api/meta
 async function criarMeta(req, res) {
   try {
-    const { titulo, valor_alvo, data_limite } = req.body;
+    const { titulo, valor_alvo, data_limite, valor_inicial, id_conta } = req.body;
 
     if (!titulo || !titulo.trim()) {
       return res.status(400).json({ erro: 'O título da meta é obrigatório' });
@@ -85,18 +224,59 @@ async function criarMeta(req, res) {
       return res.status(400).json({ erro: 'A data limite deve estar no futuro' });
     }
 
-    const meta = await prisma.meta.create({
-      data: {
-        titulo: titulo.trim(),
-        valor_alvo: valorAlvo,
-        data_limite: dataLimite,
-        // Dono vem do token, nunca do body.
-        id_usuario: req.usuario.id_usuario,
-      },
+    // Valor inicial é opcional. Vazio, null ou 0 = a meta nasce zerada.
+    // Se vier, precisa dizer de qual conta o dinheiro sai.
+    let valorInicial = 0;
+    let conta = null;
+
+    if (valor_inicial !== undefined && valor_inicial !== null && valor_inicial !== '') {
+      valorInicial = Number(valor_inicial);
+
+      if (!Number.isFinite(valorInicial) || valorInicial < 0) {
+        return res.status(400).json({ erro: 'O valor inicial deve ser um número maior que zero' });
+      }
+
+      // Na criação, recusar é mais claro do que cortar: a pessoa acabou
+      // de digitar os dois valores e pode corrigir na hora.
+      if (valorInicial > valorAlvo) {
+        return res.status(400).json({ erro: 'O valor inicial não pode ser maior que o valor da meta' });
+      }
+
+      if (valorInicial > 0) {
+        const resultado = await buscarContaDeOrigem(id_conta, req.usuario.id_usuario);
+        if (resultado.erro) {
+          return res.status(resultado.status).json({ erro: resultado.erro });
+        }
+        conta = resultado.conta;
+      }
+    }
+
+    // Criar a meta e guardar o valor inicial juntos: se faltar saldo, a
+    // meta também não é criada, e a pessoa tenta de novo sem duplicar.
+    const meta = await prisma.$transaction(async (tx) => {
+      const nova = await tx.meta.create({
+        data: {
+          titulo: titulo.trim(),
+          valor_alvo: valorAlvo,
+          data_limite: dataLimite,
+          // Dono vem do token, nunca do body.
+          id_usuario: req.usuario.id_usuario,
+        },
+      });
+
+      if (valorInicial > 0) {
+        await guardarNaMeta(tx, { id_meta: nova.id_meta, conta, valor: valorInicial });
+      }
+
+      return tx.meta.findUnique({ where: { id_meta: nova.id_meta } });
     });
 
     res.status(201).json(comProgresso(meta));
   } catch (erro) {
+    if (erro instanceof ErroMeta) {
+      return responderErroMeta(res, erro);
+    }
+
     console.error(erro);
     res.status(500).json({ erro: 'Erro ao criar meta' });
   }
@@ -125,14 +305,18 @@ async function listarMetas(req, res) {
 
 // PUT /api/meta/:id
 //
-// Atende dois usos: editar a meta e somar dinheiro nela.
-// Mandando { adicionar: 100 }, o valor é somado ao que já existe —
-// é o que o botão "Adicionar valor" da tela usa, para não obrigar o
-// usuário a calcular o novo total de cabeça.
+// Atende dois usos: editar a meta e guardar dinheiro nela.
+// Mandando { adicionar: 100, id_conta: 1 }, R$ 100 saem da conta 1 e
+// entram na meta — é o que o botão "Adicionar valor" da tela usa, para
+// não obrigar o usuário a calcular o novo total de cabeça.
 //
 // REGRA: o valor guardado nunca passa do valor da meta. Uma meta de
-// R$ 3.000 fica em "3.000 de 3.000", e não "5.344 de 3.000": o que
-// passou do alvo não é dinheiro guardado PARA aquela meta.
+// R$ 3.000 fica em "3.000 de 3.000", e não "5.344 de 3.000". Se a pessoa
+// informar mais do que falta, só o que falta sai da conta.
+//
+// REGRA: o valor guardado é dinheiro que saiu de uma conta, então ele não
+// é editado à mão (valor_atual) e o valor da meta não pode ficar menor que
+// ele — senão uma parte do dinheiro sumiria sem voltar para conta nenhuma.
 async function atualizarMeta(req, res) {
   try {
     const id = Number(req.params.id);
@@ -146,8 +330,14 @@ async function atualizarMeta(req, res) {
       return res.status(resultado.status).json({ erro: resultado.erro });
     }
 
-    const { titulo, valor_alvo, valor_atual, data_limite, status, adicionar } = req.body;
+    const { titulo, valor_alvo, valor_atual, data_limite, status, adicionar, id_conta } = req.body;
     const dados = {};
+
+    if (valor_atual !== undefined) {
+      return res.status(400).json({
+        erro: 'O valor guardado não é editado diretamente. Use "Adicionar valor", que tira o dinheiro de uma conta.',
+      });
+    }
 
     if (titulo !== undefined) {
       if (!titulo.trim()) {
@@ -165,20 +355,20 @@ async function atualizarMeta(req, res) {
     }
 
     let valorAdicionar = null;
+    let conta = null;
 
     if (adicionar !== undefined) {
       const v = Number(adicionar);
       if (!Number.isFinite(v) || v <= 0) {
         return res.status(400).json({ erro: 'O valor a adicionar deve ser maior que zero' });
       }
-      // A soma é feita mais abaixo, direto no banco, já com o limite.
-      valorAdicionar = v.toFixed(2);
-    } else if (valor_atual !== undefined) {
-      const v = Number(valor_atual);
-      if (!Number.isFinite(v) || v < 0) {
-        return res.status(400).json({ erro: 'Valor guardado inválido' });
+      valorAdicionar = v;
+
+      const origem = await buscarContaDeOrigem(id_conta, req.usuario.id_usuario);
+      if (origem.erro) {
+        return res.status(origem.status).json({ erro: origem.erro });
       }
-      dados.valor_atual = v;
+      conta = origem.conta;
     }
 
     if (data_limite !== undefined) {
@@ -202,35 +392,30 @@ async function atualizarMeta(req, res) {
       return res.status(400).json({ erro: 'Nenhum campo enviado para atualização' });
     }
 
+    let guardado = null;
+
     const meta = await prisma.$transaction(async (tx) => {
+      // Baixar o valor da meta abaixo do que já foi guardado é recusado.
+      // A leitura usa FOR UPDATE pelo mesmo motivo de guardarNaMeta: uma
+      // soma chegando ao mesmo tempo não escapa da comparação.
+      if (dados.valor_alvo !== undefined) {
+        const [linha] = await tx.$queryRaw`
+          SELECT valor_atual FROM meta WHERE id_meta = ${id} FOR UPDATE`;
+
+        if (dados.valor_alvo < Number(linha.valor_atual)) {
+          throw new ErroMeta(
+            400,
+            `Você já guardou ${Number(linha.valor_atual).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} nesta meta. O valor dela não pode ficar menor que isso.`
+          );
+        }
+      }
+
       if (Object.keys(dados).length > 0) {
         await tx.meta.update({ where: { id_meta: id }, data: dados });
       }
 
-      // Somar e limitar numa instrução só, dentro do próprio banco.
-      // LEAST devolve o menor dos dois: o total somado ou o valor da meta.
-      //
-      // Por que não ler o valor, calcular no JavaScript e gravar? Porque
-      // duas somas enviadas ao mesmo tempo leriam o mesmo valor antigo e
-      // uma apagaria a outra. Feito no banco, cada soma parte do valor
-      // que já está lá.
-      //
-      // Também roda quando só o alvo ou o valor guardado mudam: se a
-      // pessoa baixar a meta de R$ 3.000 para R$ 2.000, o guardado acompanha.
-      //
-      // O CAST mantém a conta em decimal exato (sem os erros de
-      // arredondamento de 0.1 + 0.2). O ${...} vira parâmetro da consulta,
-      // nunca texto colado no SQL, então não abre brecha para SQL injection.
       if (valorAdicionar !== null) {
-        await tx.$executeRaw`
-          UPDATE meta
-          SET valor_atual = LEAST(valor_atual + CAST(${valorAdicionar} AS DECIMAL(12, 2)), valor_alvo)
-          WHERE id_meta = ${id}`;
-      } else if (dados.valor_alvo !== undefined || dados.valor_atual !== undefined) {
-        await tx.$executeRaw`
-          UPDATE meta
-          SET valor_atual = LEAST(valor_atual, valor_alvo)
-          WHERE id_meta = ${id}`;
+        guardado = await guardarNaMeta(tx, { id_meta: id, conta, valor: valorAdicionar });
       }
 
       // Depois de os valores estarem certos, o status acompanha.
@@ -241,8 +426,14 @@ async function atualizarMeta(req, res) {
       return tx.meta.findUnique({ where: { id_meta: id } });
     });
 
-    res.json(comProgresso(meta));
+    // valor_guardado diz à tela quanto saiu da conta de fato (pode ser
+    // menos do que o informado, quando faltava pouco para a meta).
+    res.json(guardado === null ? comProgresso(meta) : { ...comProgresso(meta), valor_guardado: guardado });
   } catch (erro) {
+    if (erro instanceof ErroMeta) {
+      return responderErroMeta(res, erro);
+    }
+
     console.error(erro);
     res.status(500).json({ erro: 'Erro ao atualizar meta' });
   }

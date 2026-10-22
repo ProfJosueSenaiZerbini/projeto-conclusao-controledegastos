@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// As 12 categorias fixas do escopo atual: 8 de despesa e 4 de receita.
+// As 13 categorias fixas do escopo atual: 9 de despesa e 4 de receita.
 // A lista é fechada — o usuário não cria categorias nesta fase.
 //
 // O `tipo` aqui é o que define se uma transação é entrada ou saída.
@@ -24,6 +24,13 @@ const categorias = [
   { nome_categoria: 'Freelance', tipo: 'receita' },
   { nome_categoria: 'Investimentos', tipo: 'receita' },
   { nome_categoria: 'Outras receitas', tipo: 'receita' },
+
+  // ---- METAS ----
+  // Usada só pelo sistema: quando a pessoa guarda dinheiro numa meta, sai
+  // uma transação desta categoria da conta escolhida (ver metaController).
+  // Fica por último para ter o mesmo id (13) num banco novo e num banco
+  // que recebeu a categoria pela migration "categoria_metas".
+  { nome_categoria: 'Metas', tipo: 'despesa' },
 ];
 
 async function main() {

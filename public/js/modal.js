@@ -109,7 +109,11 @@ function fecharModal(resposta) {
 
 function abrirModal() {
   caixaModal.classList.remove('hidden', 'recolhendo');
-fundoModal.classList.remove('hidden', 'recolhendo');
+  // 'flex' é o que centraliza a caixa na tela (items-center e
+  // justify-center só funcionam com display flex). O esconderModal tira
+  // o 'flex'; sem colocá-lo de volta aqui, o modal abria no canto de cima.
+  caixaModal.classList.add('flex');
+  fundoModal.classList.remove('hidden', 'recolhendo');
 }
 
 // Clicar fora e apertar Esc cancelam — é o que todo mundo espera.
@@ -169,6 +173,46 @@ function confirmar({ titulo, mensagem = '', aviso = '', textoConfirmar = 'Confir
   });
 }
 
+// ---- LISTA OPCIONAL DO PEDIR VALOR ----
+//
+// Usada quando o pedirValor recebe "escolha" (ex.: de qual conta sai o
+// dinheiro guardado numa meta). A lista é criada na primeira vez que
+// alguém precisa dela; nas outras vezes, é só reaproveitada.
+// Devolve o <select>, ou null quando não há escolha.
+function prepararEscolha(escolha) {
+  let caixa = document.getElementById('escolhaModal');
+
+  if (!caixa) {
+    campoModal.insertAdjacentHTML(
+      'beforeend',
+      `<div id="escolhaModal" class="mt-4">
+         <label id="rotuloEscolhaModal" for="selectModal" class="block text-sm font-semibold text-gray-700 mb-2"></label>
+         <select id="selectModal"
+                 class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></select>
+       </div>`
+    );
+    caixa = document.getElementById('escolhaModal');
+  }
+
+  caixa.classList.toggle('hidden', !escolha);
+  if (!escolha) return null;
+
+  const select = document.getElementById('selectModal');
+  document.getElementById('rotuloEscolhaModal').textContent = escolha.rotulo;
+
+  // createElement + textContent (e não innerHTML): o nome de uma conta
+  // nunca é lido como HTML.
+  select.innerHTML = '';
+  escolha.opcoes.forEach((opcao) => {
+    const item = document.createElement('option');
+    item.value = opcao.valor;
+    item.textContent = opcao.texto;
+    select.appendChild(item);
+  });
+
+  return select;
+}
+
 // ---- PEDIR UM VALOR ----
 //
 // Substitui o prompt(). Devolve o número digitado, ou null se cancelou.
@@ -178,8 +222,19 @@ function confirmar({ titulo, mensagem = '', aviso = '', textoConfirmar = 'Confir
 //     mensagem: 'Quanto você guardou para "Viagem"?',
 //     rotulo: 'Valor guardado',
 //   })
+//
+// Com "escolha", o modal mostra também uma lista, e a resposta vira
+// { valor, escolha } (escolha = o "valor" da opção selecionada, como número):
+//
+//   await pedirValor({
+//     titulo: 'Adicionar valor',
+//     escolha: {
+//       rotulo: 'De qual conta sai o dinheiro?',
+//       opcoes: [{ valor: 1, texto: 'Carteira · R$ 500,00' }],
+//     },
+//   })
 
-function pedirValor({ titulo, mensagem = '', rotulo = 'Valor', textoConfirmar = 'Adicionar' }) {
+function pedirValor({ titulo, mensagem = '', rotulo = 'Valor', textoConfirmar = 'Adicionar', escolha = null }) {
   tituloModal.textContent = titulo;
   mensagemModal.textContent = mensagem;
   mensagemModal.classList.toggle('hidden', !mensagem);
@@ -194,6 +249,8 @@ function pedirValor({ titulo, mensagem = '', rotulo = 'Valor', textoConfirmar = 
   valorModal.value = '';
   erroModal.classList.add('hidden');
   campoModal.classList.remove('hidden');
+
+  const selectEscolha = prepararEscolha(escolha);
   cancelarModal.classList.remove('hidden');
 
   confirmarModal.textContent = textoConfirmar;
@@ -217,7 +274,7 @@ abrirModal();
         return;
       }
 
-      fecharModal(valor);
+      fecharModal(escolha ? { valor, escolha: Number(selectEscolha.value) } : valor);
     }
 
     valorModal.oninput = () => erroModal.classList.add('hidden');

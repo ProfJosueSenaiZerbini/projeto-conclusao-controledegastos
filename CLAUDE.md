@@ -52,9 +52,9 @@ A **simulação bancária voltou**, a pedido do desenvolvedor, numa forma enxuta
 
 **Usuario** — cadastro e login
 **Conta** — a Carteira do usuário, com saldo
-**Categoria** — lista fixa de 12 categorias (8 despesa, 4 receita), sem hierarquia
+**Categoria** — lista fixa de 13 categorias (9 despesa, 4 receita), sem hierarquia. "Metas" é usada só pelo sistema (ver "o dinheiro da meta sai de uma conta")
 **Transacao** — um gasto ou um ganho
-**Meta** — objetivo financeiro, com progresso atualizado manualmente
+**Meta** — objetivo financeiro; o valor guardado sai de uma conta do usuário
 
 ### Relacionamentos (4 no total)
 
@@ -131,6 +131,23 @@ Use este padrão sempre que implementar o registro de transação. Não separe e
 ## Regra: a Carteira nasce junto com o usuário
 
 Um usuário sem conta não tem onde registrar nada. `POST /api/usuario` deve criar `Usuario` e a `Conta` "Carteira" (saldo 0.00) na mesma operação — também dentro de um `$transaction`, pelo mesmo motivo.
+
+## Regra: o dinheiro da meta sai de uma conta
+
+Guardar dinheiro numa meta ("Adicionar valor", ou o valor inicial opcional ao criar) tira o valor de uma conta escolhida pelo usuário. Tudo acontece num `$transaction` só, em `guardarNaMeta` (`metaController.js`):
+
+1. trava a linha da meta (`SELECT ... FOR UPDATE`) e calcula quanto falta;
+2. desconta da conta só o que cabe na meta (pediu R$ 500 e faltavam R$ 200 → saem R$ 200), com a mesma checagem de saldo do lançamento manual;
+3. cria uma `Transacao` na categoria **"Metas"** (despesa), descrição `Meta: <título>`;
+4. soma em `Meta.valor_atual` e recalcula o status.
+
+Por que vira transação: `Conta.saldo` é a soma das transações. Se o saldo baixasse sem uma transação, o histórico deixaria de explicar o saldo.
+
+- **Conta importada não pode ser usada** (só muda pelo banco).
+- **`valor_atual` não é editado direto** pelo `PUT`, e o `valor_alvo` não pode ficar menor que o que já foi guardado — senão parte do dinheiro sumiria sem voltar para conta nenhuma.
+- **A categoria "Metas" não aparece no formulário de transações**, e o servidor recusa lançá-la à mão.
+- **Excluir a meta não devolve o dinheiro** à conta: as transações "Meta: ..." continuam no histórico. A tela avisa antes de excluir.
+- A categoria entra pelo seed (bancos novos) e pela migration `categoria_metas` (bancos que já existiam). Nos dois casos fica com o id 13.
 
 ---
 
@@ -239,7 +256,7 @@ model Meta {
 }
 ```
 
-`Meta.valor_atual` é atualizado manualmente pelo usuário nesta fase (não há vínculo automático com transações — isso ficou para depois).
+`Meta.valor_atual` só aumenta guardando dinheiro de uma conta, que gera uma transação na categoria "Metas" (ver "Regra: o dinheiro da meta sai de uma conta"). Não existe chave estrangeira entre `Transacao` e `Meta`: a ligação fica na descrição `Meta: <título>`.
 
 ---
 
@@ -285,9 +302,9 @@ As imagens da pasta são grandes (centenas de KB). Se em algum momento elas fore
 | POST | `/api/transacao` | Registrar ganho ou gasto (atualiza saldo, atômico) |
 | GET | `/api/usuario/:id/transacao` | Listar transações (via join com conta) |
 | GET | `/api/usuario/:id/conta` | Consultar saldo |
-| POST | `/api/meta` | Criar meta |
+| POST | `/api/meta` | Criar meta (`valor_inicial` + `id_conta` opcionais) |
 | GET | `/api/usuario/:id/meta` | Listar metas |
-| PUT | `/api/meta/:id` | Atualizar meta (inclui `valor_atual`) |
+| PUT | `/api/meta/:id` | Atualizar meta; `{ adicionar, id_conta }` guarda dinheiro tirado da conta |
 | DELETE | `/api/meta/:id` | Excluir meta |
 | POST | `/api/conexao-bancaria` | Iniciar conexão: pede o consentimento e devolve a tela do banco |
 | POST | `/api/conexao-bancaria/finalizar` | Confere o `state`, troca o código pelo acesso e faz a primeira importação |

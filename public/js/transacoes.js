@@ -139,8 +139,11 @@ async function carregarCategorias() {
 
 // Mostra só as categorias do tipo escolhido. Quem está lançando um gasto
 // não precisa ver "Salário" na lista.
+//
+// "Metas" também fica de fora: ela é lançada só pelo "Adicionar valor" da
+// tela de Metas, que soma o valor na meta junto (o servidor recusa à mão).
 function preencherCategorias() {
-  const doTipo = categorias.filter((c) => c.tipo === tipoSelecionado);
+  const doTipo = categorias.filter((c) => c.tipo === tipoSelecionado && c.nome_categoria !== 'Metas');
 
   selectCategoria.innerHTML = doTipo
     .map((c) => `<option value="${c.id_categoria}">${escapar(c.nome_categoria)}</option>`)
