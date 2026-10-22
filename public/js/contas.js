@@ -57,9 +57,18 @@ function cartaoConta(conta) {
         ${acoes}
       </div>
       <p class="text-gray-500 text-sm">${escapar(conta.nome)}</p>
-      <h3 class="text-2xl font-bold text-gray-900 mt-1">${formatarMoeda(conta.saldo)}</h3>
+      <h3 class="text-2xl font-bold ${Number(conta.saldo) < 0 ? 'text-red-600' : 'text-gray-900'} mt-1">${formatarMoeda(conta.saldo)}</h3>
+      ${linhaPrevisto(conta)}
       ${selo}
     </div>`;
+}
+
+// "Previsto: R$ 300,00" — quanto a conta terá depois de pagar os gastos
+// não pagos e receber os ganhos já lançados (cálculo em src/saldo.js).
+// Só aparece quando é diferente do saldo de hoje.
+function linhaPrevisto(conta) {
+  if (Number(conta.saldo_previsto) === Number(conta.saldo)) return '';
+  return `<p class="text-xs text-gray-400 mt-1">Previsto: ${formatarMoeda(conta.saldo_previsto)}</p>`;
 }
 
 const cartaoNovaConta = `
@@ -155,13 +164,8 @@ formConta.addEventListener('submit', async function (evento) {
     return;
   }
 
-  if (Number(saldo) < 0) {
-    await avisar({
-      titulo: 'Saldo negativo não é permitido',
-      mensagem: 'Informe quanto você tem nessa conta hoje, a partir de R$ 0,00.',
-    });
-    return;
-  }
+  // Saldo negativo é aceito: o dinheiro das contas manuais é informado
+  // pela própria pessoa (quem está no cheque especial, por exemplo).
 
   salvarConta.disabled = true;
 

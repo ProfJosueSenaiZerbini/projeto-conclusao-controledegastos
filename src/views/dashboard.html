@@ -152,9 +152,9 @@
             </div>
         </div>
 
-        <!-- Contas pendentes: gastos lançados com data futura.
+        <!-- Contas a pagar: gastos ainda não pagos (pendentes e atrasados).
              Nasce com "hidden" (escondido). O dashboard.js tira o "hidden"
-             só quando existe pelo menos um gasto com data depois de hoje. -->
+             só quando existe pelo menos um gasto não pago. -->
         <section id="blocoPendentes" aria-labelledby="tituloPendentes"
                  class="hidden bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-6">
             <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
@@ -163,7 +163,7 @@
                         <i class="fa-regular fa-clock"></i>
                     </div>
                     <div>
-                        <h4 id="tituloPendentes" class="font-bold text-gray-900">Contas pendentes</h4>
+                        <h4 id="tituloPendentes" class="font-bold text-gray-900">Contas a pagar</h4>
                         <p id="pendentesResumo" class="text-xs text-gray-500"></p>
                     </div>
                 </div>
@@ -171,7 +171,7 @@
                      esquerda; a partir de telas médias (sm:) vai para a direita. -->
                 <div class="sm:text-right">
                     <p id="pendentesTotal" class="text-xl font-bold text-gray-900">R$ 0,00</p>
-                    <p class="text-xs text-gray-400">Já descontado do saldo</p>
+                    <p class="text-xs text-gray-400">Ainda não saiu do saldo</p>
                 </div>
             </div>
 

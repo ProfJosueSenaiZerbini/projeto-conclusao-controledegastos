@@ -187,15 +187,17 @@ async function importarConta(conexao, contaBanco, categorias) {
           id_categoria: categoria.id_categoria,
           id_conta: conta.id_conta,
           id_externo: t.transactionId,
+          // Gasto que veio do banco já aconteceu: conta como pago no
+          // próprio dia. Ganho não usa este campo.
+          data_pagamento: categoria.tipo === 'despesa' ? new Date(t.transactionDate) : null,
         };
       });
 
       await tx.transacao.createMany({ data: linhas });
 
-      // Aqui NÃO existe a checagem de "saldo insuficiente" do registro
-      // manual. Numa conta importada, quem manda é o banco: se ele diz
-      // que a transação aconteceu, ela aconteceu. Recusar uma deixaria o
-      // Verdanz diferente do extrato real.
+      // Numa conta importada, quem manda é o banco: se ele diz que a
+      // transação aconteceu, ela aconteceu, mesmo que o saldo fique
+      // negativo. Recusar uma deixaria o Verdanz diferente do extrato real.
       await tx.conta.update({
         where: { id_conta: conta.id_conta },
         data: { saldo: { increment: (diferencaCentavos / 100).toFixed(2) } },

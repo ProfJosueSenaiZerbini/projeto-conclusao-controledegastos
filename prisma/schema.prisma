@@ -147,6 +147,14 @@ model Transacao {
   // vezes não consegue gravar a mesma transação do banco duas vezes.
   id_externo       String?  @db.VarChar(50)
 
+  // Dia em que o GASTO foi pago. Vazio = ainda não pago.
+  // Um campo só responde "foi pago?" (está preenchido?) e "quando?".
+  // Não quebra a 3FN: "pago" é um fato que só a pessoa informa, não dá
+  // para deduzir de nenhum outro campo. (Já "pendente" e "atrasado" SÃO
+  // deduzidos — da data_transacao e do dia de hoje — e por isso não
+  // são gravados.) Em ganhos fica sempre vazio: ganho não tem "pago".
+  data_pagamento   DateTime? @db.Date
+
   categoria  Categoria @relation(fields: [id_categoria], references: [id_categoria])
   conta      Conta     @relation(fields: [id_conta], references: [id_conta], onDelete: Cascade)
 

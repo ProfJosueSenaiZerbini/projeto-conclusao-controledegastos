@@ -119,6 +119,50 @@ function formatarData(iso) {
   return `${dia}/${mes}/${ano}`;
 }
 
+// ---- DATAS E STATUS DE PAGAMENTO ----
+// Usado pelas telas de transações e pelo dashboard.
+
+// A data de hoje no formato "2026-10-22", no fuso do navegador.
+// Não usamos toISOString() de propósito: ele converte para UTC, e
+// depois das 21h no Brasil já devolveria o dia seguinte.
+function hojeTexto() {
+  const hoje = new Date();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  return `${hoje.getFullYear()}-${mes}-${dia}`;
+}
+
+// Quantos dias faltam até a data (negativo = já passou). Date.UTC nos
+// dois lados deixa a conta livre de fuso e de horário de verão.
+function diasAte(iso) {
+  const [ano, mes, dia] = String(iso).slice(0, 10).split('-').map(Number);
+  const [anoHoje, mesHoje, diaHoje] = hojeTexto().split('-').map(Number);
+  const umDia = 24 * 60 * 60 * 1000;
+  return Math.round((Date.UTC(ano, mes - 1, dia) - Date.UTC(anoHoje, mesHoje - 1, diaHoje)) / umDia);
+}
+
+// A situação de uma transação, calculada na hora (não fica no banco):
+//
+//   gasto: 'pago'      → tem data de pagamento
+//          'atrasado'  → não pago e a data já passou
+//          'pendente'  → não pago, vence hoje ou depois
+//   ganho: 'previsto'  → data futura (ainda não entrou no saldo)
+//          'recebido'  → data de hoje ou de antes
+//
+// Datas no formato "AAAA-MM-DD" podem ser comparadas como texto:
+// "2026-10-30" > "2026-10-22" dá o mesmo resultado que comparar datas.
+function statusTransacao(t) {
+  const data = String(t.data_transacao).slice(0, 10);
+  const hoje = hojeTexto();
+
+  if (t.categoria.tipo === 'receita') {
+    return data > hoje ? 'previsto' : 'recebido';
+  }
+
+  if (t.data_pagamento) return 'pago';
+  return data < hoje ? 'atrasado' : 'pendente';
+}
+
 // ---- CHAMADAS À API ----
 // Centraliza o fetch para não repetir cabeçalhos e tratamento de erro.
 // Devolve sempre { ok, status, dados } para quem chamou decidir o que fazer.

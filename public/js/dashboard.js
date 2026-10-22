@@ -31,44 +31,25 @@ function mesmoMes(iso) {
   return data === mesAtual;
 }
 
-// ---- CONTAS PENDENTES ----
-
-// A data de hoje no formato "2026-10-22", no fuso do navegador.
-// Não usamos toISOString() de propósito: ele converte para UTC, e
-// depois das 21h no Brasil já devolveria o dia seguinte.
-function hojeTexto() {
-  const hoje = new Date();
-  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-  const dia = String(hoje.getDate()).padStart(2, '0');
-  return `${hoje.getFullYear()}-${mes}-${dia}`;
-}
-
-// Uma conta está PENDENTE quando é um gasto com data depois de hoje.
+// ---- CONTAS A PAGAR ----
 //
-// Isso é calculado na hora, e não guardado numa coluna "status" no
-// banco: o "pendente" depende só da data da transação e do dia de hoje.
-// Uma coluna ficaria errada sozinha quando a data chegasse, e seria uma
-// dependência transitiva — o mesmo motivo que tirou tipo_transacao da
-// tabela (3FN).
-//
-// Datas no formato "AAAA-MM-DD" podem ser comparadas como texto:
-// "2026-10-30" > "2026-10-22" dá o mesmo resultado que comparar datas.
-function ehPendente(t) {
-  return t.categoria.tipo === 'despesa' && String(t.data_transacao).slice(0, 10) > hojeTexto();
-}
+// hojeTexto, diasAte e statusTransacao ficam em auth.js, porque a tela
+// de Transações usa as mesmas regras.
 
-// Quantos dias faltam até a data. Date.UTC nos dois lados deixa a conta
-// livre de fuso e de horário de verão: só os dias importam.
-function diasAte(iso) {
-  const [ano, mes, dia] = String(iso).slice(0, 10).split('-').map(Number);
-  const [anoHoje, mesHoje, diaHoje] = hojeTexto().split('-').map(Number);
-  const umDia = 24 * 60 * 60 * 1000;
-  return Math.round((Date.UTC(ano, mes - 1, dia) - Date.UTC(anoHoje, mesHoje - 1, diaHoje)) / umDia);
+// Uma conta está A PAGAR quando é um gasto ainda não pago — pendente
+// (vence hoje ou depois) ou atrasado (a data já passou).
+function aPagar(t) {
+  const status = statusTransacao(t);
+  return status === 'pendente' || status === 'atrasado';
 }
 
 function textoVencimento(iso) {
   const dias = diasAte(iso);
-  return dias === 1 ? 'vence amanhã' : `vence em ${dias} dias`;
+  if (dias === 0) return 'vence hoje';
+  if (dias === 1) return 'vence amanhã';
+  if (dias > 1) return `vence em ${dias} dias`;
+  if (dias === -1) return 'venceu ontem';
+  return `venceu há ${-dias} dias`;
 }
 
 async function carregarResumo() {
@@ -85,14 +66,25 @@ async function carregarResumo() {
 
   if (contas.ok) {
     const total = contas.dados.reduce((soma, c) => soma + Number(c.saldo), 0);
+    const previsto = contas.dados.reduce((soma, c) => soma + Number(c.saldo_previsto), 0);
     statSaldo.textContent = formatarMoeda(total);
 
+    // Saldo negativo em vermelho, para chamar a atenção.
+    statSaldo.classList.toggle('text-red-600', total < 0);
+    statSaldo.classList.toggle('text-gray-900', total >= 0);
+
+    // Saldo previsto = quanto vai sobrar depois de pagar o que falta e
+    // receber os ganhos já lançados (cálculo em src/saldo.js). Só aparece
+    // quando é diferente do saldo de hoje.
     const legenda = statSaldo.nextElementSibling;
     if (legenda) {
+      const quantas = `Em ${contas.dados.length} ${contas.dados.length === 1 ? 'conta' : 'contas'}`;
       legenda.textContent =
         contas.dados.length === 0
           ? 'Nenhuma conta cadastrada ainda'
-          : `Em ${contas.dados.length} ${contas.dados.length === 1 ? 'conta' : 'contas'}`;
+          : previsto !== total
+            ? `${quantas} · previsto ${formatarMoeda(previsto)}`
+            : quantas;
     }
   }
 
@@ -108,16 +100,16 @@ async function carregarResumo() {
     statReceitas.textContent = formatarMoeda(soma('receita'));
     statDespesas.textContent = formatarMoeda(soma('despesa'));
 
-    // As despesas do mês incluem as que ainda vão vencer neste mês.
+    // As despesas do mês incluem as que ainda não foram pagas.
     // A legenda deixa isso claro, para o número não parecer "já pago".
-    const aVencerNoMes = doMes
-      .filter(ehPendente)
+    const aPagarNoMes = doMes
+      .filter(aPagar)
       .reduce((total, t) => total + Number(t.valor_transacao), 0);
 
     const legendaDespesas = statDespesas.nextElementSibling;
     if (legendaDespesas) {
       legendaDespesas.textContent =
-        aVencerNoMes > 0 ? `Este mês · ${formatarMoeda(aVencerNoMes)} a vencer` : 'Este mês';
+        aPagarNoMes > 0 ? `Este mês · ${formatarMoeda(aPagarNoMes)} a pagar` : 'Este mês';
     }
 
     preencherPendentes(transacoes.dados);
@@ -144,32 +136,38 @@ function preencherPendentes(transacoes) {
   if (!bloco || !lista) return;
 
   // A API devolve da data mais nova para a mais antiga. Aqui importa o
-  // que vence primeiro, então a ordem é a inversa: da mais próxima
-  // para a mais distante.
+  // que vence primeiro, então a ordem é a inversa: as atrasadas aparecem
+  // primeiro, depois da mais próxima para a mais distante.
   const pendentes = transacoes
-    .filter(ehPendente)
+    .filter(aPagar)
     .sort((a, b) => String(a.data_transacao).localeCompare(String(b.data_transacao)));
 
-  // Sem nada pendente, o bloco continua escondido.
+  // Sem nada a pagar, o bloco continua escondido.
   if (pendentes.length === 0) {
     bloco.classList.add('hidden');
     return;
   }
 
   const total = pendentes.reduce((soma, t) => soma + Number(t.valor_transacao), 0);
-  const quantidade = pendentes.length === 1 ? '1 conta a pagar' : `${pendentes.length} contas a pagar`;
+  const atrasadas = pendentes.filter((t) => statusTransacao(t) === 'atrasado').length;
+  const proxima = pendentes.find((t) => statusTransacao(t) === 'pendente');
+
+  const partes = [pendentes.length === 1 ? '1 conta a pagar' : `${pendentes.length} contas a pagar`];
+  if (atrasadas > 0) partes.push(atrasadas === 1 ? '1 atrasada' : `${atrasadas} atrasadas`);
+  if (proxima) partes.push(`a próxima ${textoVencimento(proxima.data_transacao)}`);
 
   document.getElementById('pendentesTotal').textContent = formatarMoeda(total);
-  document.getElementById('pendentesResumo').textContent =
-    `${quantidade} · a próxima ${textoVencimento(pendentes[0].data_transacao)}`;
+  document.getElementById('pendentesResumo').textContent = partes.join(' · ');
 
-  // Mostra só as 3 mais próximas, para o dashboard continuar um resumo.
+  // Mostra só as 3 primeiras, para o dashboard continuar um resumo.
   const LIMITE = 3;
 
   lista.innerHTML = pendentes
     .slice(0, LIMITE)
     .map((t) => {
       const titulo = t.descricao || t.categoria.nome_categoria;
+      // Atrasada em vermelho, pendente em amarelo.
+      const corPrazo = statusTransacao(t) === 'atrasado' ? 'text-red-600' : 'text-amber-600';
 
       return `
         <div class="flex justify-between items-center py-3">
@@ -179,7 +177,7 @@ function preencherPendentes(transacoes) {
           </div>
           <div class="text-right flex-shrink-0 ml-3">
             <p class="font-medium text-gray-900 text-sm">− ${formatarMoeda(t.valor_transacao)}</p>
-            <p class="text-xs text-amber-600">${formatarData(t.data_transacao)} · ${textoVencimento(t.data_transacao)}</p>
+            <p class="text-xs ${corPrazo}">${formatarData(t.data_transacao)} · ${textoVencimento(t.data_transacao)}</p>
           </div>
         </div>`;
     })
@@ -188,7 +186,7 @@ function preencherPendentes(transacoes) {
   if (pendentes.length > LIMITE) {
     lista.innerHTML += `
       <a href="/transacoes" class="block pt-3 text-center text-blue-600 text-sm font-medium hover:underline">
-        Ver todas as ${pendentes.length} contas pendentes
+        Ver todas as ${pendentes.length} contas a pagar
       </a>`;
   }
 
@@ -272,19 +270,23 @@ function preencherUltimasTransacoes(transacoes) {
     .slice(0, 4)
     .map((t) => {
       const ehReceita = t.categoria.tipo === 'receita';
-      const pendente = ehPendente(t);
+      const status = statusTransacao(t);
       const titulo = t.descricao || t.categoria.nome_categoria;
 
-      // Gasto pendente ganha relógio e etiqueta, para não parecer já pago.
-      let corIcone = ehReceita ? 'bg-green-50 text-green-500' : 'bg-blue-50 text-blue-500';
-      let icone = ehReceita ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down';
-      if (pendente) {
-        corIcone = 'bg-amber-50 text-amber-500';
-        icone = 'fa-regular fa-clock';
-      }
+      // O que ainda não aconteceu ganha ícone e etiqueta próprios, para
+      // não parecer já pago (ou já recebido).
+      const visual = {
+        pago: { cor: 'bg-blue-50 text-blue-500', icone: 'fa-solid fa-arrow-down' },
+        recebido: { cor: 'bg-green-50 text-green-500', icone: 'fa-solid fa-arrow-up' },
+        pendente: { cor: 'bg-amber-50 text-amber-500', icone: 'fa-regular fa-clock', texto: 'Pendente', corTexto: 'bg-amber-50 text-amber-600' },
+        atrasado: { cor: 'bg-red-50 text-red-500', icone: 'fa-solid fa-triangle-exclamation', texto: 'Atrasado', corTexto: 'bg-red-50 text-red-600' },
+        previsto: { cor: 'bg-gray-100 text-gray-400', icone: 'fa-regular fa-calendar', texto: 'Previsto', corTexto: 'bg-gray-100 text-gray-500' },
+      }[status];
 
-      const etiqueta = pendente
-        ? '<span class="inline-block px-2 py-0.5 mr-1 rounded-full bg-amber-50 text-amber-600 font-medium">Pendente</span>'
+      const corIcone = visual.cor;
+      const icone = visual.icone;
+      const etiqueta = visual.texto
+        ? `<span class="inline-block px-2 py-0.5 mr-1 rounded-full font-medium ${visual.corTexto}">${visual.texto}</span>`
         : '';
 
       return `

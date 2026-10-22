@@ -1,4 +1,5 @@
 const prisma = require('../prisma');
+const { hojeSemHorario, calcularAjustes } = require('../saldo');
 
 const STATUS_VALIDOS = ['em_progresso', 'concluida', 'cancelada'];
 
@@ -40,14 +41,6 @@ class ErroMeta extends Error {
     this.status = status;
     this.codigo = codigo;
   }
-}
-
-// O dia de hoje no relógio do servidor, como data "pura" (sem horário).
-// new Date() sozinho guardaria a data em UTC: às 22h no Brasil já seria
-// o dia seguinte, e o dashboard mostraria a transação como pendente.
-function hojeSemHorario() {
-  const agora = new Date();
-  return new Date(Date.UTC(agora.getFullYear(), agora.getMonth(), agora.getDate()));
 }
 
 // Confere a conta de onde o dinheiro vai sair. Mesmas regras de um
@@ -120,10 +113,21 @@ async function guardarNaMeta(tx, { id_meta, conta, valor }) {
 
   const guardado = Math.min(valorCentavos, faltaCentavos) / 100;
 
-  // Mesma checagem de saldo do lançamento manual: a condição vai no WHERE,
-  // então o banco confere e desconta na mesma instrução.
+  // Diferente de um gasto comum, guardar numa meta EXIGE saldo: guardar é
+  // mover dinheiro que existe. Sem esta regra, a meta mostraria progresso
+  // com dinheiro que a pessoa não tem.
+  //
+  // O saldo que vale é o de HOJE: o banco guarda também os ganhos com data
+  // futura (ver src/saldo.js), que ainda não chegaram e não podem ser
+  // guardados. Por isso eles entram na conta do WHERE.
+  //
+  // A condição vai no WHERE para o banco conferir e descontar na mesma
+  // instrução.
+  const ajustes = await calcularAjustes(tx, [conta.id_conta]);
+  const minimoCentavos = Math.round(guardado * 100) + ajustes.get(conta.id_conta).ganhosFuturos;
+
   const { count } = await tx.conta.updateMany({
-    where: { id_conta: conta.id_conta, saldo: { gte: guardado } },
+    where: { id_conta: conta.id_conta, saldo: { gte: minimoCentavos / 100 } },
     data: { saldo: { decrement: guardado } },
   });
 
@@ -142,6 +146,8 @@ async function guardarNaMeta(tx, { id_meta, conta, valor }) {
       descricao: `Meta: ${linha.titulo}`,
       id_categoria: categoria.id_categoria,
       id_conta: conta.id_conta,
+      // O dinheiro saiu da conta agora: é um gasto já pago.
+      data_pagamento: hojeSemHorario(),
     },
   });
 

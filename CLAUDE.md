@@ -94,7 +94,9 @@ const transacao = await prisma.transacao.create({
 
 **Não reintroduza esses dois campos em `Transacao` mesmo que pareça simplificar uma query.** Se uma consulta parecer difícil sem eles, o caminho é usar `include`/`where` aninhado do Prisma, não desnormalizar de volta.
 
-O campo `Conta.saldo` é a única redundância controlada que **foi mantida** — é a soma acumulada das transações, guardada por desempenho. Precisa ser sempre atualizado junto com a criação da transação, na mesma operação atômica (ver seção seguinte).
+O campo `Conta.saldo` é a única redundância controlada que **foi mantida**, guardada por desempenho: `saldo inicial + ganhos lançados − gastos PAGOS`. Gasto não pago não entra nele. Precisa ser sempre atualizado na mesma operação atômica que cria a transação ou muda o pagamento (ver as seções seguintes).
+
+`Transacao.data_pagamento` (data, opcional) diz se um **gasto** foi pago e quando. Não quebra a 3FN: "pago" é um fato que só a pessoa informa, não se deduz de outro campo. Já **pendente** e **atrasado** se deduzem da data e do dia de hoje, e por isso **não são gravados** (ver `statusTransacao` em `public/js/auth.js`). Em ganhos, `data_pagamento` fica sempre vazio.
 
 ---
 
@@ -128,6 +130,25 @@ const resultado = await prisma.$transaction(async (tx) => {
 
 Use este padrão sempre que implementar o registro de transação. Não separe em duas chamadas independentes ao Prisma.
 
+## Regra: gasto pago e não pago
+
+- **Ganho** entra no saldo ao ser lançado. **Gasto** só sai do saldo quando está pago.
+- No `POST /api/transacao`, o campo opcional `pago` decide. Sem ele, vale o mais comum: gasto de hoje ou de antes já foi pago; gasto com data futura é conta a pagar. Pago com data futura = pagou adiantado (`data_pagamento` = hoje).
+- `PATCH /api/transacao/:id/pagamento` com `{ "pago": true | false }` marca ou desmarca. A condição sobre `data_pagamento` vai no `WHERE` do `updateMany`, então dois cliques juntos não descontam duas vezes.
+- **Não existe mais "saldo insuficiente" para gastos.** O dinheiro das contas manuais é informado pela própria pessoa, e o saldo pode ficar negativo (inclusive o saldo inicial e a edição de saldo na tela de Contas).
+- Só gastos de **contas manuais** podem ser marcados. Conta importada: o banco é que diz o que foi pago (gastos importados entram pagos no próprio dia). Gasto de **meta**: já sai pago e não pode ser desmarcado.
+
+**O que depende do dia de hoje é calculado na leitura, não guardado** (`src/saldo.js`), porque mudaria sozinho à meia-noite:
+
+| Valor | Cálculo |
+|---|---|
+| `saldo` (o de hoje, devolvido pela API) | `Conta.saldo − ganhos com data futura` |
+| `saldo_previsto` | `Conta.saldo − gastos não pagos` |
+
+Contas importadas não têm esses ajustes: o saldo delas é o do banco. Ao editar o saldo de uma conta, a pessoa informa o saldo **de hoje**, e o servidor soma os ganhos futuros antes de gravar.
+
+A migration `pagamento_transacao` criou a coluna e acertou os dados antigos: gastos até hoje, importados e de metas viraram pagos; gastos futuros viraram não pagos, e o valor deles voltou para o saldo guardado.
+
 ## Regra: a Carteira nasce junto com o usuário
 
 Um usuário sem conta não tem onde registrar nada. `POST /api/usuario` deve criar `Usuario` e a `Conta` "Carteira" (saldo 0.00) na mesma operação — também dentro de um `$transaction`, pelo mesmo motivo.
@@ -137,8 +158,8 @@ Um usuário sem conta não tem onde registrar nada. `POST /api/usuario` deve cri
 Guardar dinheiro numa meta ("Adicionar valor", ou o valor inicial opcional ao criar) tira o valor de uma conta escolhida pelo usuário. Tudo acontece num `$transaction` só, em `guardarNaMeta` (`metaController.js`):
 
 1. trava a linha da meta (`SELECT ... FOR UPDATE`) e calcula quanto falta;
-2. desconta da conta só o que cabe na meta (pediu R$ 500 e faltavam R$ 200 → saem R$ 200), com a mesma checagem de saldo do lançamento manual;
-3. cria uma `Transacao` na categoria **"Metas"** (despesa), descrição `Meta: <título>`;
+2. desconta da conta só o que cabe na meta (pediu R$ 500 e faltavam R$ 200 → saem R$ 200). Diferente de um gasto comum, **guardar exige saldo de hoje** (sem contar ganhos futuros): guardar é mover dinheiro que existe;
+3. cria uma `Transacao` na categoria **"Metas"** (despesa), descrição `Meta: <título>`, já paga (`data_pagamento` = hoje);
 4. soma em `Meta.valor_atual` e recalcula o status.
 
 Por que vira transação: `Conta.saldo` é a soma das transações. Se o saldo baixasse sem uma transação, o histórico deixaria de explicar o saldo.
@@ -170,7 +191,7 @@ O usuário conecta um banco na tela de Contas e o Verdanz importa as contas e o 
 - **A importação também é atômica.** As transações novas de uma conta e a atualização do saldo entram no mesmo `$transaction`. O valor fica sempre positivo e a direção vem da categoria, como no registro manual.
 - **Sem duplicatas.** `Transacao.id_externo` guarda o código que o banco deu à transação, com `@@unique([id_conta, id_externo])`. Sincronizar de novo não grava nada repetido. O mesmo vale para `Conta.id_externo`.
 - **Conta importada só muda pelo banco.** O servidor recusa editar, excluir ou lançar transação manual numa conta com `id_conexao`. Para remover, desconecta-se o banco (Cascade apaga as contas importadas).
-- **Na importação não existe "saldo insuficiente".** Numa conta importada, quem manda é o banco. A checagem de saldo continua valendo para os lançamentos manuais.
+- **Numa conta importada, quem manda é o banco.** Gastos importados entram pagos no próprio dia e não podem ser marcados como não pagos.
 - **O `token_acesso` nunca sai do servidor.** A listagem de conexões usa `select` sem ele.
 - **O `state` é assinado com segredo próprio** (`JWT_SECRET + ':estado-conexao'`), e não com o `JWT_SECRET` puro. Ele passa pela URL; se usasse o mesmo segredo, serviria como token de login.
 
@@ -249,6 +270,7 @@ model Transacao {
   id_categoria     Int
   id_conta         Int
   id_externo       String?  @db.VarChar(50)  // código da transação no banco, só nas importadas
+  data_pagamento   DateTime? @db.Date        // gasto: dia em que foi pago (vazio = não pago); ganho: sempre vazio
   categoria  Categoria @relation(fields: [id_categoria], references: [id_categoria])
   conta      Conta     @relation(fields: [id_conta], references: [id_conta], onDelete: Cascade)
   @@unique([id_conta, id_externo])
@@ -310,8 +332,9 @@ As imagens da pasta são grandes (centenas de KB). Se em algum momento elas fore
 | POST | `/api/usuario/login` | Autenticar |
 | GET | `/api/categoria` | Listar categorias |
 | POST | `/api/transacao` | Registrar ganho ou gasto (atualiza saldo, atômico) |
+| PATCH | `/api/transacao/:id/pagamento` | Marcar gasto como pago / não pago (`{ "pago": true \| false }`) |
 | GET | `/api/usuario/:id/transacao` | Listar transações (via join com conta) |
-| GET | `/api/usuario/:id/conta` | Consultar saldo |
+| GET | `/api/usuario/:id/conta` | Consultar saldo (`saldo` de hoje e `saldo_previsto`) |
 | POST | `/api/meta` | Criar meta (`valor_inicial` + `id_conta` opcionais) |
 | GET | `/api/usuario/:id/meta` | Listar metas |
 | PUT | `/api/meta/:id` | Atualizar meta; `{ adicionar, id_conta }` guarda dinheiro tirado da conta |
@@ -341,7 +364,9 @@ Construa um recurso por vez, teste no Insomnia/Postman antes de avançar.
 
 ## O que NÃO existe mais no modelo (não sugerir de volta)
 
-`Perfil`, `UsuarioPerfil`, `PerguntaFormulario`, `FormularioPerfil`, `RespostaFormulario`, `Funcionalidade`, `UsuarioFuncionalidade`. Também não existem: hierarquia de subcategorias, contas domésticas com vencimento/status, `tipo_transacao`, `id_usuario` em `Transacao`, `cpf_cnpj`... (esse último continua existindo em `Usuario`, não remover).
+`Perfil`, `UsuarioPerfil`, `PerguntaFormulario`, `FormularioPerfil`, `RespostaFormulario`, `Funcionalidade`, `UsuarioFuncionalidade`. Também não existem: hierarquia de subcategorias, contas domésticas como entidade própria, `tipo_transacao`, `id_usuario` em `Transacao`, `cpf_cnpj`... (esse último continua existindo em `Usuario`, não remover).
+
+O "pago / não pago" de um gasto voltou a pedido do desenvolvedor, como um campo de `Transacao` (`data_pagamento`), e não como entidade própria — ver "Regra: gasto pago e não pago".
 
 Se o desenvolvedor pedir para trazer algo dessa lista de volta, é uma decisão dele para retomar depois — implemente apenas quando pedido explicitamente, sem sugerir por conta própria enquanto o escopo mínimo não estiver completo e funcionando.
 
