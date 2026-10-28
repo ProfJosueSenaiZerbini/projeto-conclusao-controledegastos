@@ -1,11 +1,13 @@
 const prisma = require('../prisma');
+const { calcularAjustes, comSaldos, emCentavos } = require('../saldo');
 
-// Converte o Decimal do Prisma para número comum.
-// O Prisma devolve Decimal (um objeto) para não perder precisão em dinheiro.
-// Isso é correto no banco, mas o JSON precisa de um número que o
-// JavaScript do navegador saiba formatar.
-function comSaldoNumerico(conta) {
-  return { ...conta, saldo: Number(conta.saldo) };
+// Devolve a conta com `saldo` (o de hoje) e `saldo_previsto`, em números
+// comuns. O Prisma devolve Decimal (um objeto) para não perder precisão em
+// dinheiro; o JSON precisa de um número que o navegador saiba formatar.
+// O cálculo dos dois saldos está explicado em src/saldo.js.
+async function comSaldoNumerico(conta) {
+  const ajustes = await calcularAjustes(prisma, [conta.id_conta]);
+  return comSaldos(conta, ajustes);
 }
 
 // Busca a conta e confere se ela é de quem está pedindo.
@@ -26,6 +28,14 @@ async function buscarContaDoUsuario(id_conta, id_usuario) {
   return { conta };
 }
 
+// Contas importadas de um banco espelham o extrato real. Editar o saldo
+// ou apagar uma delas faria o Verdanz discordar do banco (e a próxima
+// sincronização traria a conta de volta). Quem atualiza é o banco.
+const MENSAGEM_CONTA_IMPORTADA = {
+  editar: 'Contas importadas são atualizadas pelo banco. Use "Sincronizar" na tela de Contas.',
+  excluir: 'Para remover uma conta importada, desconecte o banco na tela de Contas.',
+};
+
 // POST /api/conta
 async function criarConta(req, res) {
   try {
@@ -41,13 +51,10 @@ async function criarConta(req, res) {
     if (saldo !== undefined && saldo !== null && saldo !== '') {
       saldoInicial = Number(saldo);
 
+      // Pode ser negativo: o dinheiro das contas manuais é informado pela
+      // própria pessoa (quem começa no cheque especial, por exemplo).
       if (!Number.isFinite(saldoInicial)) {
         return res.status(400).json({ erro: 'Saldo inválido' });
-      }
-
-      // Mesma regra dos gastos: nenhuma conta fica negativa.
-      if (saldoInicial < 0) {
-        return res.status(400).json({ erro: 'O saldo inicial não pode ser negativo' });
       }
     }
 
@@ -61,7 +68,7 @@ async function criarConta(req, res) {
       },
     });
 
-    res.status(201).json(comSaldoNumerico(conta));
+    res.status(201).json(await comSaldoNumerico(conta));
   } catch (erro) {
     console.error(erro);
     res.status(500).json({ erro: 'Erro ao criar conta' });
@@ -73,10 +80,15 @@ async function listarContas(req, res) {
   try {
     const contas = await prisma.conta.findMany({
       where: { id_usuario: req.usuario.id_usuario },
+      // O nome do banco vai junto para a tela mostrar o selo nas contas
+      // importadas. Nas contas manuais, `conexao` vem null.
+      include: { conexao: { select: { banco: true } } },
       orderBy: { id_conta: 'asc' },
     });
 
-    res.json(contas.map(comSaldoNumerico));
+    // Uma consulta só para todas as contas, em vez de uma por conta.
+    const ajustes = await calcularAjustes(prisma, contas.map((c) => c.id_conta));
+    res.json(contas.map((c) => comSaldos(c, ajustes)));
   } catch (erro) {
     console.error(erro);
     res.status(500).json({ erro: 'Erro ao listar contas' });
@@ -97,6 +109,10 @@ async function atualizarConta(req, res) {
       return res.status(resultado.status).json({ erro: resultado.erro });
     }
 
+    if (resultado.conta.id_conexao) {
+      return res.status(400).json({ erro: MENSAGEM_CONTA_IMPORTADA.editar });
+    }
+
     const { nome, saldo } = req.body;
 
     if (!nome || !nome.trim()) {
@@ -114,16 +130,16 @@ async function atualizarConta(req, res) {
     if (saldo !== undefined && saldo !== null && saldo !== '') {
       const novoSaldo = Number(saldo);
 
+      // Pode ser negativo, como o saldo inicial.
       if (!Number.isFinite(novoSaldo)) {
         return res.status(400).json({ erro: 'Saldo inválido' });
       }
 
-      // Mesma regra dos gastos: nenhuma conta fica negativa.
-      if (novoSaldo < 0) {
-        return res.status(400).json({ erro: 'O saldo não pode ser negativo' });
-      }
-
-      dados.saldo = novoSaldo;
+      // A pessoa informa o saldo de HOJE. O banco guarda também os ganhos
+      // com data futura (ver src/saldo.js), então eles são somados aqui;
+      // senão, o saldo mostrado depois da edição ficaria menor que o digitado.
+      const ajustes = await calcularAjustes(prisma, [id]);
+      dados.saldo = (emCentavos(novoSaldo) + ajustes.get(id).ganhosFuturos) / 100;
     }
 
     const conta = await prisma.conta.update({
@@ -131,7 +147,7 @@ async function atualizarConta(req, res) {
       data: dados,
     });
 
-    res.json(comSaldoNumerico(conta));
+    res.json(await comSaldoNumerico(conta));
   } catch (erro) {
     console.error(erro);
     res.status(500).json({ erro: 'Erro ao atualizar conta' });
@@ -150,6 +166,10 @@ async function deletarConta(req, res) {
     const resultado = await buscarContaDoUsuario(id, req.usuario.id_usuario);
     if (resultado.erro) {
       return res.status(resultado.status).json({ erro: resultado.erro });
+    }
+
+    if (resultado.conta.id_conexao) {
+      return res.status(400).json({ erro: MENSAGEM_CONTA_IMPORTADA.excluir });
     }
 
     // O schema usa onDelete: Cascade — apagar a conta apaga junto todas

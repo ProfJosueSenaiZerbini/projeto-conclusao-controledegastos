@@ -8,10 +8,62 @@ const salvarMeta = document.getElementById('salvarMeta');
 const painel = criarPainel('painelMeta', 'fundoPainel');
 document.getElementById('fecharPainel').addEventListener('click', painel.fechar);
 
+const selectContaMeta = document.getElementById('contaMeta');
+const campoValorInicial = document.getElementById('valorInicialMeta');
+
 function escapar(texto) {
   const div = document.createElement('div');
   div.textContent = texto;
   return div.innerHTML;
+}
+
+// ---- CONTAS DE ONDE O DINHEIRO SAI ----
+//
+// Guardar dinheiro numa meta tira o valor de uma conta. Só entram aqui as
+// contas criadas no Verdanz: conta importada de banco só muda pelo banco
+// (o servidor também recusa, esta lista só evita oferecer o que não vale).
+
+let contasManuais = [];
+
+async function carregarContas() {
+  const { ok, dados } = await chamarApi('/api/usuario/' + Sessao.idUsuario() + '/conta');
+  if (!ok) return;
+
+  contasManuais = dados.filter((c) => !c.id_conexao);
+
+  // textContent em vez de innerHTML: o nome da conta nunca vira HTML.
+  selectContaMeta.innerHTML = '';
+  contasManuais.forEach((c) => {
+    const opcao = document.createElement('option');
+    opcao.value = c.id_conta;
+    opcao.textContent = textoConta(c);
+    selectContaMeta.appendChild(opcao);
+  });
+
+  // Sem conta para usar, o valor inicial fica desligado.
+  campoValorInicial.disabled = contasManuais.length === 0;
+  selectContaMeta.disabled = contasManuais.length === 0;
+  if (contasManuais.length === 0) {
+    const opcao = document.createElement('option');
+    opcao.textContent = 'Nenhuma conta disponível';
+    selectContaMeta.appendChild(opcao);
+  }
+}
+
+// "Carteira · R$ 1.500,00": mostrar o saldo ajuda a escolher a conta.
+function textoConta(conta) {
+  return `${conta.nome} · ${formatarMoeda(conta.saldo)}`;
+}
+
+// Mesmo aviso da tela de Transações, para o usuário ver a mesma
+// explicação nos dois lugares.
+function avisarSaldoInsuficiente(conta, valor) {
+  return avisar({
+    titulo: 'Saldo insuficiente',
+    mensagem:
+      `A conta "${conta.nome}" tem ${formatarMoeda(conta.saldo)}, e você quer guardar ` +
+      `${formatarMoeda(valor)}. Escolha outra conta ou um valor menor.`,
+  });
 }
 
 function cartaoMeta(meta) {
@@ -100,38 +152,94 @@ function abrirNova() {
 
 // Somar direto em vez de abrir um formulário de edição inteiro: quem
 // guardou dinheiro quer informar quanto guardou, não recalcular o total.
+// O valor sai de uma conta escolhida pela pessoa.
 async function adicionarValor(meta) {
   const falta = Number(meta.valor_alvo) - Number(meta.valor_atual);
 
+  if (contasManuais.length === 0) {
+    await avisar({
+      titulo: 'Nenhuma conta disponível',
+      mensagem: 'O valor guardado sai de uma conta. Crie uma conta na tela de Contas para guardar dinheiro na meta.',
+    });
+    return;
+  }
+
   // O modal já valida o valor e mostra o erro dentro dele, então aqui
-  // só chega número válido — ou null, se a pessoa cancelou.
-  const valor = await pedirValor({
+  // só chega um valor válido com a conta escolhida — ou null, se cancelou.
+  const resposta = await pedirValor({
     titulo: 'Adicionar valor',
-    mensagem: `Quanto você guardou para "${meta.titulo}"? Faltam ${formatarMoeda(falta)}.`,
-    rotulo: 'Valor guardado',
+    mensagem:
+      `Quanto você quer guardar para "${meta.titulo}"? Faltam ${formatarMoeda(falta)}. ` +
+      'O valor sai da conta escolhida e aparece em Transações.',
+    rotulo: 'Valor a guardar',
+    escolha: {
+      rotulo: 'De qual conta sai o dinheiro?',
+      opcoes: contasManuais.map((c) => ({ valor: c.id_conta, texto: textoConta(c) })),
+    },
   });
 
-  if (valor === null) return;
+  if (resposta === null) return;
+
+  const { valor, escolha: idConta } = resposta;
+  const conta = contasManuais.find((c) => c.id_conta === idConta);
+
+  // Se a pessoa informou mais do que falta, só o que falta sai da conta.
+  // Checar o saldo aqui só agiliza o aviso; quem garante é o servidor.
+  const vaiSair = Math.min(valor, falta);
+  if (vaiSair > Number(conta.saldo)) {
+    await avisarSaldoInsuficiente(conta, vaiSair);
+    return;
+  }
 
   const { ok, dados } = await chamarApi('/api/meta/' + meta.id_meta, {
     method: 'PUT',
-    body: JSON.stringify({ adicionar: valor }),
+    body: JSON.stringify({ adicionar: valor, id_conta: idConta }),
   });
+
+  // O saldo que a tela conhecia estava velho (outra aba, por exemplo).
+  if (!ok && dados.codigo === 'SALDO_INSUFICIENTE') {
+    await avisar({ titulo: 'Valor não guardado', mensagem: dados.erro + '.' });
+    carregarContas();
+    return;
+  }
 
   if (!ok) {
     mostrarMensagem(dados.erro || 'Não foi possível atualizar a meta.', 'erro');
     return;
   }
 
-  esconderMensagem();
+  // valor_guardado é quanto saiu da conta de fato, segundo o servidor.
+  // Se a pessoa informou mais do que faltava, a tela conta o que
+  // aconteceu, em vez de o número mudar sem explicação.
+  const saiu = formatarMoeda(dados.valor_guardado);
+
+  if (valor > falta) {
+    mostrarMensagem(
+      `Meta "${meta.titulo}" concluída! Você informou ${formatarMoeda(valor)}, mas faltavam só ` +
+        `${saiu}, então só ${saiu} saíram da conta "${conta.nome}".`,
+      'sucesso'
+    );
+  } else {
+    mostrarMensagem(`${saiu} saíram da conta "${conta.nome}" e foram guardados em "${meta.titulo}".`, 'sucesso');
+  }
+
   carregarMetas();
+  carregarContas();
 }
 
 async function excluirMeta(meta) {
+  // O dinheiro guardado saiu de uma conta e está registrado em Transações.
+  // Excluir a meta não devolve esse valor, e a pessoa precisa saber disso
+  // antes de confirmar.
+  const aviso =
+    Number(meta.valor_atual) > 0
+      ? `Os ${formatarMoeda(meta.valor_atual)} guardados não voltam para a conta: eles continuam em Transações como "Meta: ${meta.titulo}". Essa ação não pode ser desfeita.`
+      : 'Essa ação não pode ser desfeita.';
+
   const confirmou = await confirmar({
     titulo: `Excluir "${meta.titulo}"?`,
     mensagem: `Você já guardou ${formatarMoeda(meta.valor_atual)} nessa meta.`,
-    aviso: 'Essa ação não pode ser desfeita.',
+    aviso,
     textoConfirmar: 'Excluir meta',
   });
 
@@ -171,14 +279,58 @@ formMeta.addEventListener('submit', async function (evento) {
     return;
   }
 
+  const corpo = { titulo, valor_alvo: valor, data_limite: prazo };
+
+  // Valor inicial é opcional: campo vazio = meta começa zerada.
+  const textoInicial = campoValorInicial.value.trim();
+  let conta = null;
+
+  if (textoInicial !== '') {
+    const valorInicial = Number(textoInicial);
+
+    if (!Number.isFinite(valorInicial) || valorInicial < 0) {
+      mostrarMensagem('O valor inicial deve ser um número maior que zero.', 'erro');
+      return;
+    }
+
+    if (valorInicial > valor) {
+      mostrarMensagem('O valor inicial não pode ser maior que o valor da meta.', 'erro');
+      return;
+    }
+
+    if (valorInicial > 0) {
+      conta = contasManuais.find((c) => c.id_conta === Number(selectContaMeta.value));
+
+      if (!conta) {
+        mostrarMensagem('Escolha de qual conta o valor inicial vai sair.', 'erro');
+        return;
+      }
+
+      if (valorInicial > Number(conta.saldo)) {
+        await avisarSaldoInsuficiente(conta, valorInicial);
+        return;
+      }
+
+      corpo.valor_inicial = valorInicial;
+      corpo.id_conta = conta.id_conta;
+    }
+  }
+
   salvarMeta.disabled = true;
 
   const { ok, dados } = await chamarApi('/api/meta', {
     method: 'POST',
-    body: JSON.stringify({ titulo, valor_alvo: valor, data_limite: prazo }),
+    body: JSON.stringify(corpo),
   });
 
   salvarMeta.disabled = false;
+
+  // Sem saldo, o servidor não cria nem a meta (é tudo uma operação só).
+  if (!ok && dados.codigo === 'SALDO_INSUFICIENTE') {
+    await avisar({ titulo: 'Meta não criada', mensagem: dados.erro + '.' });
+    carregarContas();
+    return;
+  }
 
   if (!ok) {
     mostrarMensagem(dados.erro || 'Não foi possível criar a meta.', 'erro');
@@ -186,7 +338,17 @@ formMeta.addEventListener('submit', async function (evento) {
   }
 
   painel.fechar();
+
+  if (conta) {
+    mostrarMensagem(
+      `Meta "${dados.titulo}" criada com ${formatarMoeda(dados.valor_atual)} tirados da conta "${conta.nome}".`,
+      'sucesso'
+    );
+  }
+
   carregarMetas();
+  carregarContas();
 });
 
 carregarMetas();
+carregarContas();

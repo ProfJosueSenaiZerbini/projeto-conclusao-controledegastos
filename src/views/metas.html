@@ -6,6 +6,9 @@
     <title>Metas | Verdanz</title>
     <link rel="icon" href="/img/VerdanzIcone.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tema claro/escuro: precisa vir no <head> para a tela já abrir na cor certa -->
+    <link href="/css/tema.css" rel="stylesheet">
+    <script src="/js/tema.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="/css/painel.css" rel="stylesheet">
@@ -35,7 +38,7 @@
                     <i class="fa-regular fa-credit-card w-5 text-center"></i> Contas
                 </a>
                 <a href="/transacoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
-                    <i class="fa-solid fa-money-bill-transfer w-5 text-center"></i> Transações
+                    <i class="fa-solid fa-right-left w-5 text-center"></i> Transações
                 </a>
                 <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-regular fa-calendar w-5 text-center"></i> Planejamento
@@ -43,7 +46,10 @@
                 <a href="/metas" aria-current="page" class="flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl font-medium shadow-sm shadow-blue-200">
                     <i class="fa-solid fa-bullseye w-5 text-center"></i> Metas
                 </a>
-                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                <a href="/meu-perfil" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-user-gear w-5 text-center"></i> Meu perfil
+                </a>
+                <a href="/configuracoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-solid fa-gear w-5 text-center"></i> Configurações
                 </a>
             </nav>
@@ -118,6 +124,24 @@
                 <label for="prazoMeta" class="block text-sm font-semibold text-gray-700 mb-2">Para quando?</label>
                 <input type="date" id="prazoMeta"
                        class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+            </div>
+
+            <!-- Opcional: já começar a meta com dinheiro tirado de uma conta.
+                 Vazio, a meta nasce zerada (como antes). -->
+            <div class="border-t border-gray-100 pt-5 space-y-3">
+                <div>
+                    <label for="valorInicialMeta" class="block text-sm font-semibold text-gray-700">
+                        Já quer guardar algum valor? <span class="font-normal text-gray-400">(opcional)</span>
+                    </label>
+                    <p class="text-xs text-gray-400 mt-1">O valor sai da conta escolhida e entra na meta.</p>
+                </div>
+                <input type="number" id="valorInicialMeta" step="0.01" min="0" placeholder="0,00" inputmode="decimal"
+                       class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                <div>
+                    <label for="contaMeta" class="block text-sm font-semibold text-gray-700 mb-2">De qual conta?</label>
+                    <select id="contaMeta"
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></select>
+                </div>
             </div>
 
             <button type="submit" id="salvarMeta"

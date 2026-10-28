@@ -1,29 +1,29 @@
 const prisma = require('../prisma');
+const { hojeSemHorario } = require('../saldo');
 
 // Transforma os Decimal do Prisma em números comuns para o JSON.
 function comValorNumerico(transacao) {
   return { ...transacao, valor_transacao: Number(transacao.valor_transacao) };
 }
 
-function formatarMoeda(valor) {
-  return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-// Separa a conta sem dinheiro nenhum da conta que tem, mas não o bastante.
-function mensagemSaldoInsuficiente(conta) {
-  const saldo = Number(conta.saldo);
-
-  if (saldo <= 0) {
-    return `A conta "${conta.nome}" não possui saldo`;
-  }
-
-  return `Saldo insuficiente: a conta "${conta.nome}" tem ${formatarMoeda(saldo)}`;
-}
+// O que a tela precisa saber da transação e da conta dela. id_conexao
+// diz se a conta é importada (aí o "pago" vem do banco, sem botão).
+const INCLUIR = {
+  categoria: true,
+  conta: { select: { id_conta: true, nome: true, id_conexao: true } },
+};
 
 // POST /api/transacao
+//
+// REGRA DO SALDO: um ganho entra no saldo ao ser lançado; um gasto só sai
+// do saldo quando está PAGO. Um gasto lançado como "não pago" (uma conta a
+// pagar) fica registrado, mas o saldo não muda até alguém marcar como pago.
+//
+// O saldo pode ficar negativo: o dinheiro das contas manuais é informado
+// pela própria pessoa, então o Verdanz não recusa o gasto.
 async function criarTransacao(req, res) {
   try {
-    const { valor_transacao, data_transacao, descricao, id_categoria, id_conta } = req.body;
+    const { valor_transacao, data_transacao, descricao, id_categoria, id_conta, pago } = req.body;
 
     // ---- VALIDAÇÕES (antes de encostar no banco) ----
 
@@ -41,9 +41,14 @@ async function criarTransacao(req, res) {
 
     // O campo é @db.Date no schema; o Prisma espera um objeto Date,
     // não a string "2026-09-06" que chega do formulário.
-    const data = data_transacao ? new Date(data_transacao) : new Date();
+    const hoje = hojeSemHorario();
+    const data = data_transacao ? new Date(data_transacao) : hoje;
     if (Number.isNaN(data.getTime())) {
       return res.status(400).json({ erro: 'Data inválida' });
+    }
+
+    if (pago !== undefined && typeof pago !== 'boolean') {
+      return res.status(400).json({ erro: 'O campo "pago" deve ser verdadeiro ou falso' });
     }
 
     // A conta é de quem está pedindo? Sem isso, alguém lançaria
@@ -56,6 +61,14 @@ async function criarTransacao(req, res) {
 
     if (conta.id_usuario !== req.usuario.id_usuario) {
       return res.status(403).json({ erro: 'Acesso negado a conta de outro usuário' });
+    }
+
+    // Conta importada recebe transações só do banco, pela sincronização.
+    // Um lançamento à mão nela faria o saldo discordar do extrato real.
+    if (conta.id_conexao) {
+      return res.status(400).json({
+        erro: `A conta "${conta.nome}" é importada do banco e recebe transações só pela sincronização. Escolha outra conta.`,
+      });
     }
 
     // ---- A OPERAÇÃO ATÔMICA ----
@@ -76,31 +89,37 @@ async function criarTransacao(req, res) {
         throw new Error('CATEGORIA_NAO_ENCONTRADA');
       }
 
+      // "Metas" é lançada só pelo "Adicionar valor" da tela de Metas, que
+      // também soma o valor na meta. À mão, o dinheiro sairia da conta sem
+      // entrar em meta nenhuma.
+      if (categoria.nome_categoria === 'Metas') {
+        throw new Error('CATEGORIA_SO_DE_METAS');
+      }
+
       // O sinal NÃO vem da transação — vem do tipo da categoria.
       // Uma transação em "Salário" é necessariamente receita.
       // Por isso `tipo_transacao` foi removido do modelo (3FN).
+      let dataPagamento = null;
+
       if (categoria.tipo === 'receita') {
         await tx.conta.update({
           where: { id_conta: idConta },
           data: { saldo: { increment: valor } },
         });
       } else {
-        // Um gasto só passa se a conta tiver saldo para cobri-lo.
-        //
-        // A condição "saldo >= valor" vai no próprio WHERE, em vez de ler
-        // o saldo antes e comparar no JavaScript. Assim o banco confere e
-        // desconta na MESMA instrução: dois gastos enviados ao mesmo tempo
-        // não conseguem passar os dois pela checagem e deixar a conta
-        // negativa. Se o saldo não cobrir, nenhuma linha é alterada.
-        const { count } = await tx.conta.updateMany({
-          where: { id_conta: idConta, saldo: { gte: valor } },
-          data: { saldo: { decrement: valor } },
-        });
+        // Sem a informação na requisição, vale o mais comum: um gasto de
+        // hoje ou de antes já foi pago; um gasto com data futura é uma
+        // conta a pagar.
+        const estaPago = pago !== undefined ? pago : data <= hoje;
 
-        if (count === 0) {
-          const erroSaldo = new Error('SALDO_INSUFICIENTE');
-          erroSaldo.conta = conta;
-          throw erroSaldo;
+        if (estaPago) {
+          // Pago com data futura = pagou adiantado, hoje.
+          dataPagamento = data <= hoje ? data : hoje;
+
+          await tx.conta.update({
+            where: { id_conta: idConta },
+            data: { saldo: { decrement: valor } },
+          });
         }
       }
 
@@ -111,8 +130,9 @@ async function criarTransacao(req, res) {
           descricao: descricao?.trim() || null,
           id_categoria: idCategoria,
           id_conta: idConta,
+          data_pagamento: dataPagamento,
         },
-        include: { categoria: true },
+        include: INCLUIR,
       });
     });
 
@@ -122,17 +142,100 @@ async function criarTransacao(req, res) {
       return res.status(400).json({ erro: 'Categoria não encontrada' });
     }
 
-    // O `codigo` deixa a tela reconhecer este erro e mostrar o pop-up,
-    // sem depender de comparar o texto da mensagem.
-    if (erro.message === 'SALDO_INSUFICIENTE') {
+    if (erro.message === 'CATEGORIA_SO_DE_METAS') {
       return res.status(400).json({
-        codigo: 'SALDO_INSUFICIENTE',
-        erro: mensagemSaldoInsuficiente(erro.conta),
+        erro: 'Para guardar dinheiro numa meta, use "Adicionar valor" na tela de Metas',
       });
     }
 
     console.error(erro);
     res.status(500).json({ erro: 'Erro ao registrar transação' });
+  }
+}
+
+// PATCH /api/transacao/:id/pagamento   corpo: { "pago": true } ou { "pago": false }
+//
+// Marcar como pago tira o valor do saldo; desmarcar devolve. As duas
+// escritas (a data de pagamento e o saldo) vão no mesmo $transaction.
+async function marcarPagamento(req, res) {
+  try {
+    const id = Number(req.params.id);
+    const { pago } = req.body;
+
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ erro: 'ID inválido' });
+    }
+
+    if (typeof pago !== 'boolean') {
+      return res.status(400).json({ erro: 'Envie "pago": true ou "pago": false' });
+    }
+
+    const transacao = await prisma.transacao.findUnique({
+      where: { id_transacao: id },
+      include: { categoria: true, conta: true },
+    });
+
+    if (!transacao) {
+      return res.status(404).json({ erro: 'Transação não encontrada' });
+    }
+
+    if (transacao.conta.id_usuario !== req.usuario.id_usuario) {
+      return res.status(403).json({ erro: 'Acesso negado a transação de outro usuário' });
+    }
+
+    // Numa conta importada, quem diz o que foi pago é o banco: as
+    // transações dela são dinheiro que já se movimentou de verdade.
+    if (transacao.conta.id_conexao) {
+      return res.status(400).json({
+        erro: 'Transações de conta importada vêm do banco e não podem ser marcadas como pagas ou não pagas',
+      });
+    }
+
+    if (transacao.categoria.tipo !== 'despesa') {
+      return res.status(400).json({ erro: 'Só gastos podem ser marcados como pagos' });
+    }
+
+    // O dinheiro guardado numa meta já saiu da conta. Desmarcar devolveria
+    // o valor à conta sem tirar da meta.
+    if (transacao.categoria.nome_categoria === 'Metas') {
+      return res.status(400).json({ erro: 'Gastos de meta já saem pagos e não podem ser alterados' });
+    }
+
+    const valor = transacao.valor_transacao;
+
+    const atualizada = await prisma.$transaction(async (tx) => {
+      // A condição sobre data_pagamento vai no WHERE: se dois cliques
+      // chegarem juntos, só o primeiro muda a linha (count = 1) e só ele
+      // mexe no saldo. O segundo encontra count = 0 e para.
+      const { count } = await tx.transacao.updateMany({
+        where: { id_transacao: id, data_pagamento: pago ? null : { not: null } },
+        data: { data_pagamento: pago ? hojeSemHorario() : null },
+      });
+
+      if (count === 0) {
+        throw new Error(pago ? 'JA_PAGO' : 'JA_NAO_PAGO');
+      }
+
+      await tx.conta.update({
+        where: { id_conta: transacao.id_conta },
+        data: { saldo: pago ? { decrement: valor } : { increment: valor } },
+      });
+
+      return tx.transacao.findUnique({ where: { id_transacao: id }, include: INCLUIR });
+    });
+
+    res.json(comValorNumerico(atualizada));
+  } catch (erro) {
+    if (erro.message === 'JA_PAGO') {
+      return res.status(409).json({ erro: 'Este gasto já está marcado como pago' });
+    }
+
+    if (erro.message === 'JA_NAO_PAGO') {
+      return res.status(409).json({ erro: 'Este gasto já está como não pago' });
+    }
+
+    console.error(erro);
+    res.status(500).json({ erro: 'Erro ao atualizar o pagamento' });
   }
 }
 
@@ -143,10 +246,7 @@ async function listarTransacoes(req, res) {
     // dono passa pela conta: toda conta pertence a um usuário.
     const transacoes = await prisma.transacao.findMany({
       where: { conta: { id_usuario: req.usuario.id_usuario } },
-      include: {
-        categoria: true,
-        conta: { select: { id_conta: true, nome: true } },
-      },
+      include: INCLUIR,
       orderBy: [{ data_transacao: 'desc' }, { id_transacao: 'desc' }],
     });
 
@@ -157,4 +257,4 @@ async function listarTransacoes(req, res) {
   }
 }
 
-module.exports = { criarTransacao, listarTransacoes };
+module.exports = { criarTransacao, marcarPagamento, listarTransacoes };

@@ -6,6 +6,9 @@
     <title>Transações | Verdanz</title>
     <link rel="icon" href="/img/VerdanzIcone.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tema claro/escuro: precisa vir no <head> para a tela já abrir na cor certa -->
+    <link href="/css/tema.css" rel="stylesheet">
+    <script src="/js/tema.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="/css/painel.css" rel="stylesheet">
@@ -35,7 +38,7 @@
                     <i class="fa-regular fa-credit-card w-5 text-center"></i> Contas
                 </a>
                 <a href="/transacoes" aria-current="page" class="flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl font-medium shadow-sm shadow-blue-200">
-                    <i class="fa-solid fa-money-bill-transfer w-5 text-center"></i> Transações
+                    <i class="fa-solid fa-right-left w-5 text-center"></i> Transações
                 </a>
                 <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-regular fa-calendar w-5 text-center"></i> Planejamento
@@ -43,7 +46,10 @@
                 <a href="/metas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-solid fa-bullseye w-5 text-center"></i> Metas
                 </a>
-                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                <a href="/meu-perfil" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-user-gear w-5 text-center"></i> Meu perfil
+                </a>
+                <a href="/configuracoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-solid fa-gear w-5 text-center"></i> Configurações
                 </a>
             </nav>
@@ -55,6 +61,7 @@
                     <p class="text-sm font-semibold text-gray-700">Saldo total</p>
                     <p class="text-2xl font-bold text-gray-900 mt-1" id="saldoTotal">R$ 0,00</p>
                     <p class="text-xs text-gray-500 mt-1">Somando todas as contas</p>
+                    <p class="text-xs text-gray-500 mt-1" id="saldoPrevisto"></p>
                 </div>
                 <i class="fa-solid fa-leaf absolute -bottom-2 -right-2 text-6xl text-green-200/50 -rotate-12"></i>
             </div>
@@ -87,6 +94,68 @@
                     class="w-full mb-6 py-4 rounded-2xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 transition hover:bg-blue-700 flex items-center justify-center gap-2">
                 <i class="fa-solid fa-plus"></i> Nova transação
             </button>
+
+            <!-- FILTROS: tudo é filtrado no navegador, sobre a lista que a
+                 API já devolveu. Por isso nenhum filtro faz nova chamada. -->
+            <section aria-label="Filtros" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div>
+                        <label for="filtroTipo" class="block text-xs font-semibold text-gray-500 mb-1">Tipo</label>
+                        <select id="filtroTipo" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            <option value="todos">Todos</option>
+                            <option value="despesa">Gastos</option>
+                            <option value="receita">Ganhos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filtroStatus" class="block text-xs font-semibold text-gray-500 mb-1">Status</label>
+                        <select id="filtroStatus" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-50">
+                            <option value="todos">Todos</option>
+                            <option value="pago">Pagos</option>
+                            <option value="pendente">Pendentes</option>
+                            <option value="atrasado">Atrasados</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filtroConta" class="block text-xs font-semibold text-gray-500 mb-1">Conta</label>
+                        <select id="filtroConta" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            <option value="todas">Todas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filtroCategoria" class="block text-xs font-semibold text-gray-500 mb-1">Categoria</label>
+                        <select id="filtroCategoria" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            <option value="todas">Todas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filtroOrdem" class="block text-xs font-semibold text-gray-500 mb-1">Data</label>
+                        <select id="filtroOrdem" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            <option value="recentes">Mais recentes</option>
+                            <option value="antigas">Mais antigas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filtroNome" class="block text-xs font-semibold text-gray-500 mb-1">Nome</label>
+                        <select id="filtroNome" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            <option value="padrao">Sem ordem</option>
+                            <option value="az">A-Z</option>
+                            <option value="za">Z-A</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filtroDia" class="block text-xs font-semibold text-gray-500 mb-1">Dia</label>
+                        <input type="date" id="filtroDia" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="button" id="limparFiltros"
+                                class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 font-medium transition hover:bg-gray-100">
+                            <i class="fa-solid fa-xmark mr-1"></i> Limpar filtros
+                        </button>
+                    </div>
+                </div>
+                <p id="contagemFiltro" class="text-xs text-gray-400 mt-3" aria-live="polite"></p>
+            </section>
 
             <!-- A lista entra aqui pelo JavaScript, agrupada por dia -->
             <div id="listaTransacoes"></div>
@@ -164,6 +233,16 @@
                     </div>
                 </div>
             </details>
+
+            <!-- Só aparece para gastos. Vem marcado para data de hoje ou de
+                 antes, e desmarcado para data futura (uma conta a pagar). -->
+            <label id="campoPago" class="flex items-start gap-3 p-4 rounded-xl border border-gray-200 cursor-pointer">
+                <input type="checkbox" id="pagoTransacao" class="mt-1 w-4 h-4 accent-green-600">
+                <span>
+                    <span class="block text-sm font-semibold text-gray-700">Já está pago</span>
+                    <span class="block text-xs text-gray-400 mt-0.5">Se não estiver, o valor só sai do saldo quando você marcar como pago.</span>
+                </span>
+            </label>
 
             <button type="submit" id="salvarTransacao"
                     class="w-full py-3.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">

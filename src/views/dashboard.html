@@ -6,6 +6,9 @@
     <title>Verdanz Dashboard</title>
     <link rel="icon" href="/img/VerdanzIcone.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tema claro/escuro: precisa vir no <head> para a tela já abrir na cor certa -->
+    <link href="/css/tema.css" rel="stylesheet">
+    <script src="/js/tema.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -61,7 +64,7 @@
                     <i class="fa-regular fa-credit-card w-5 text-center"></i> Contas
                 </a>
                 <a href="/transacoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
-                    <i class="fa-solid fa-money-bill-transfer w-5 text-center"></i> Transações
+                    <i class="fa-solid fa-right-left w-5 text-center"></i> Transações
                 </a>
                 <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-regular fa-calendar w-5 text-center"></i> Planejamento
@@ -69,7 +72,10 @@
                 <a href="/metas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-solid fa-bullseye w-5 text-center"></i> Metas
                 </a>
-                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                <a href="/meu-perfil" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-user-gear w-5 text-center"></i> Meu perfil
+                </a>
+                <a href="/configuracoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
                     <i class="fa-solid fa-gear w-5 text-center"></i> Configurações
                 </a>
             </nav>
@@ -105,7 +111,7 @@
                      conta como filho do flex, o espaçamento também some junto. -->
                 <div id="acoesPerfil" class="hidden items-center gap-4">
                     <button title="Notificações" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fa-regular fa-bell text-xl"></i></button>
-                    <button title="Configurações" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fa-solid fa-gear text-xl"></i></button>
+                    <a href="/configuracoes" title="Configurações" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fa-solid fa-gear text-xl"></i></a>
                     <button id="botaoSair" title="Sair" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-right-from-bracket text-xl"></i></button>
                 </div>
 
@@ -145,6 +151,32 @@
                 <p class="text-xs text-gray-400 mt-2">Nenhuma meta criada</p>
             </div>
         </div>
+
+        <!-- Contas a pagar: gastos ainda não pagos (pendentes e atrasados).
+             Nasce com "hidden" (escondido). O dashboard.js tira o "hidden"
+             só quando existe pelo menos um gasto não pago. -->
+        <section id="blocoPendentes" aria-labelledby="tituloPendentes"
+                 class="hidden bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-6">
+            <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-regular fa-clock"></i>
+                    </div>
+                    <div>
+                        <h4 id="tituloPendentes" class="font-bold text-gray-900">Contas a pagar</h4>
+                        <p id="pendentesResumo" class="text-xs text-gray-500"></p>
+                    </div>
+                </div>
+                <!-- No celular o total desce para baixo do título e fica à
+                     esquerda; a partir de telas médias (sm:) vai para a direita. -->
+                <div class="sm:text-right">
+                    <p id="pendentesTotal" class="text-xl font-bold text-gray-900">R$ 0,00</p>
+                    <p class="text-xs text-gray-400">Ainda não saiu do saldo</p>
+                </div>
+            </div>
+
+            <div id="pendentesLista" class="divide-y divide-gray-100"></div>
+        </section>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             
@@ -199,8 +231,8 @@
                     <div class="flex items-start gap-4">
                         <div class="text-green-600 text-2xl mt-1"><i class="fa-regular fa-lightbulb"></i></div>
                         <div>
-                            <p class="text-sm font-medium text-gray-800 mb-1">Evite compras por impulso e mantenha o foco nas suas metas.</p>
-                            <ul class="text-xs text-gray-600 space-y-1 mt-2 list-none">
+                            <p id="dicaTitulo" class="text-sm font-medium text-gray-800 mb-1">Evite compras por impulso e mantenha o foco nas suas metas.</p>
+                            <ul id="dicaCorpo" class="text-xs text-gray-600 space-y-1 mt-2 list-none">
                                 <li><i class="fa-solid fa-angle-right text-green-500 mr-1"></i> 1. Compare preços.</li>
                                 <li><i class="fa-solid fa-angle-right text-green-500 mr-1"></i> 2. Automatize investimentos.</li>
                             </ul>
@@ -208,9 +240,9 @@
                     </div>
                 </div>
 
-                <div class="mt-4 text-center text-blue-600 text-sm font-medium cursor-pointer hover:underline">
-                    Ver mais dicas
-                </div>
+                <a id="dicaLink" href="/perfil" class="mt-4 block text-center text-blue-600 text-sm font-medium hover:underline">
+                    Descobrir meu perfil
+                </a>
             </div>
 
         </div>
@@ -219,6 +251,9 @@
     <script src="/js/auth.js"></script>
     <script src="/js/layout.js"></script>
     <script src="/js/dashboard.js"></script>
+    <script src="/js/perfil-perguntas.js"></script>
+    <script src="/js/perfil-conteudo.js"></script>
+    <script src="/js/dica-perfil.js"></script>
 
 </body>
 </html>

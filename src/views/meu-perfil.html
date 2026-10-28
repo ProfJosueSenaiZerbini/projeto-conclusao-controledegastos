@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu perfil | Verdanz</title>
+    <link rel="icon" href="/img/VerdanzIcone.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tema claro/escuro: precisa vir no <head> para a tela já abrir na cor certa -->
+    <link href="/css/tema.css" rel="stylesheet">
+    <script src="/js/tema.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Mesma animação dos ícones do perfil das outras telas internas. */
+        @keyframes surgirAcoes {
+            from { opacity: 0; transform: translateX(12px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes recolherAcoes {
+            from { opacity: 1; transform: translateX(0); }
+            to   { opacity: 0; transform: translateX(12px); }
+        }
+        #acoesPerfil:not(.hidden) { animation: surgirAcoes .18s ease-out; }
+        #acoesPerfil.recolhendo { animation: recolherAcoes .18s ease-in forwards; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #acoesPerfil:not(.hidden),
+            #acoesPerfil.recolhendo { animation: none; }
+        }
+
+        /* Campos numéricos sem as setinhas do navegador: num valor em
+           reais elas só atrapalham. */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+</head>
+
+<!--
+    Tela "Meu perfil": as ferramentas de cada perfil que o usuário escolheu
+    na pesquisa (/perfil). Uma aba por perfil, de 1 a 3.
+
+    Quem monta o conteúdo é o meu-perfil.js, com:
+      - perfil-perguntas.js → nomes e ícones dos perfis (PERFIS)
+      - perfil-conteudo.js  → contexto, dicas e meta sugerida de cada perfil
+      - perfil-calculos.js  → as contas (INSS, seguro-desemprego, etc.)
+-->
+
+<body class="bg-[#f8faff] h-screen flex overflow-hidden text-gray-800">
+
+    <aside class="w-64 bg-[#f8faff] flex flex-col justify-between hidden md:flex h-full border-r border-gray-100">
+        <div>
+            <div class="p-6 flex items-center gap-3 cursor-pointer">
+                <img src="/img/VerdanzIcone.png" alt="" class="w-14 h-14 object-contain">
+                <div>
+                   <h1 class="text-4xl font-bold text-[#071b3a]">
+                        Verdan<span class="text-green-500">z</span>
+                    </h1>
+                    <p class="text-[10px] text-gray-500">Seu dinheiro, seu futuro</p>
+                </div>
+            </div>
+
+            <nav class="px-4 space-y-1 mt-2">
+                <a href="/dashboard" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-house-chimney w-5 text-center"></i> Dashboard
+                </a>
+                <a href="/contas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-regular fa-credit-card w-5 text-center"></i> Contas
+                </a>
+                <a href="/transacoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-right-left w-5 text-center"></i> Transações
+                </a>
+                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-regular fa-calendar w-5 text-center"></i> Planejamento
+                </a>
+                <a href="/metas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-bullseye w-5 text-center"></i> Metas
+                </a>
+                <a href="/meu-perfil" aria-current="page" class="flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl font-medium shadow-sm shadow-blue-200">
+                    <i class="fa-solid fa-user-gear w-5 text-center"></i> Meu perfil
+                </a>
+                <a href="/configuracoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
+                    <i class="fa-solid fa-gear w-5 text-center"></i> Configurações
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f8faff]">
+
+        <header class="flex justify-between items-start mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Meu perfil</h2>
+                <p class="text-gray-500 text-sm mt-1">
+                    Ferramentas pensadas para a sua realidade, <span id="nomeUsuario">...</span>.
+                </p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="acoesPerfil" class="hidden items-center gap-4">
+                    <button id="botaoSair" title="Sair" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-right-from-bracket text-xl"></i></button>
+                </div>
+                <button id="perfilToggle" type="button" aria-expanded="false" aria-controls="acoesPerfil"
+                        title="Opções do perfil"
+                        class="rounded-full transition-shadow duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2">
+                    <img id="avatarUsuario" src="https://ui-avatars.com/api/?name=%20&background=0D8ABC&color=fff" alt="Perfil" class="w-10 h-10 rounded-full border-2 border-white shadow-sm cursor-pointer block">
+                </button>
+            </div>
+        </header>
+
+        <div id="mensagem" class="hidden"></div>
+
+        <!-- Quem ainda não escolheu perfil vê só este aviso. -->
+        <section id="semPerfil" class="hidden bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center max-w-xl mx-auto">
+            <div class="w-14 h-14 mx-auto rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
+                <i class="fa-solid fa-user-gear"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mt-4">Você ainda não escolheu seu perfil</h3>
+            <p class="text-sm text-gray-500 mt-2">
+                Responda algumas perguntas rápidas para liberar as ferramentas que combinam com a sua vida.
+            </p>
+            <a href="/perfil" class="inline-block mt-6 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
+                Descobrir meu perfil
+            </a>
+        </section>
+
+        <section id="comPerfil" class="hidden">
+            <!-- ABAS: uma por perfil escolhido -->
+            <div class="flex flex-wrap items-center gap-3 mb-6">
+                <div id="abasPerfil" role="tablist" aria-label="Seus perfis" class="flex flex-wrap gap-2"></div>
+                <a href="/perfil" class="ml-auto text-sm font-medium text-blue-600 hover:underline">
+                    <i class="fa-solid fa-arrows-rotate mr-1"></i> Trocar perfis
+                </a>
+            </div>
+
+            <!-- CONTEÚDO DA ABA ATIVA: montado pelo meu-perfil.js -->
+            <div id="conteudoPerfil" role="tabpanel"></div>
+        </section>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/layout.js"></script>
+    <script src="/js/perfil-perguntas.js"></script>
+    <script src="/js/perfil-calculos.js"></script>
+    <script src="/js/perfil-conteudo.js"></script>
+    <script src="/js/meu-perfil.js"></script>
+</body>
+</html>

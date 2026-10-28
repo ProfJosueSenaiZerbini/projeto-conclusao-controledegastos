@@ -30,6 +30,53 @@ const Sessao = {
   },
 };
 
+// ---- PERFIS ESCOLHIDOS ----
+// Por enquanto os perfis ficam só no navegador, porque o banco ainda não
+// tem tabela de perfil (o escopo atual tem 5 entidades). A chave leva o id
+// do usuário para que duas pessoas no mesmo computador não misturem perfis.
+//
+// Limitação conhecida: entrando por outro navegador, a pesquisa aparece de
+// novo. Isso se resolve quando os perfis passarem a ser gravados no banco.
+//
+// Não é apagado no Sessao.limpar() de propósito: sair da conta não muda
+// o perfil de ninguém.
+
+const PerfisSalvos = {
+  chave() {
+    return 'perfis_' + Sessao.idUsuario();
+  },
+
+  salvar(listaDePerfis) {
+    localStorage.setItem(this.chave(), JSON.stringify(listaDePerfis));
+  },
+
+  // Devolve a lista salva, ou [] se o usuário ainda não escolheu.
+  ler() {
+    try {
+      return JSON.parse(localStorage.getItem(this.chave())) || [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  // Apaga TUDO o que foi guardado no navegador sobre o perfil de um
+  // usuário: os perfis escolhidos, a sugestão da pesquisa e o que ele
+  // digitou nas ferramentas do Meu perfil.
+  //
+  // Recebe o id explicitamente (e não o da sessão) porque é chamada no
+  // cadastro, quando ainda não existe sessão do usuário novo.
+  //
+  // Por que isso é necessário: as chaves usam o id do usuário
+  // ("perfis_1"). Se o banco for zerado durante os testes, o próximo
+  // cadastro ganha de novo o id 1 e "herdaria" os perfis de quem usou
+  // esse número antes. Um usuário novo tem que começar sem nada.
+  apagarTudo(idUsuario) {
+    ['perfis_', 'sugestao_perfis_', 'perfil_ferramentas_'].forEach((prefixo) =>
+      localStorage.removeItem(prefixo + idUsuario)
+    );
+  },
+};
+
 // ---- MENSAGENS NA TELA ----
 // Mostra o aviso no <div id="mensagem"> em vez de usar alert(),
 // que trava a página e tem aparência de site antigo.
@@ -70,6 +117,50 @@ function formatarMoeda(valor) {
 function formatarData(iso) {
   const [ano, mes, dia] = String(iso).slice(0, 10).split('-');
   return `${dia}/${mes}/${ano}`;
+}
+
+// ---- DATAS E STATUS DE PAGAMENTO ----
+// Usado pelas telas de transações e pelo dashboard.
+
+// A data de hoje no formato "2026-10-22", no fuso do navegador.
+// Não usamos toISOString() de propósito: ele converte para UTC, e
+// depois das 21h no Brasil já devolveria o dia seguinte.
+function hojeTexto() {
+  const hoje = new Date();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  return `${hoje.getFullYear()}-${mes}-${dia}`;
+}
+
+// Quantos dias faltam até a data (negativo = já passou). Date.UTC nos
+// dois lados deixa a conta livre de fuso e de horário de verão.
+function diasAte(iso) {
+  const [ano, mes, dia] = String(iso).slice(0, 10).split('-').map(Number);
+  const [anoHoje, mesHoje, diaHoje] = hojeTexto().split('-').map(Number);
+  const umDia = 24 * 60 * 60 * 1000;
+  return Math.round((Date.UTC(ano, mes - 1, dia) - Date.UTC(anoHoje, mesHoje - 1, diaHoje)) / umDia);
+}
+
+// A situação de uma transação, calculada na hora (não fica no banco):
+//
+//   gasto: 'pago'      → tem data de pagamento
+//          'atrasado'  → não pago e a data já passou
+//          'pendente'  → não pago, vence hoje ou depois
+//   ganho: 'previsto'  → data futura (ainda não entrou no saldo)
+//          'recebido'  → data de hoje ou de antes
+//
+// Datas no formato "AAAA-MM-DD" podem ser comparadas como texto:
+// "2026-10-30" > "2026-10-22" dá o mesmo resultado que comparar datas.
+function statusTransacao(t) {
+  const data = String(t.data_transacao).slice(0, 10);
+  const hoje = hojeTexto();
+
+  if (t.categoria.tipo === 'receita') {
+    return data > hoje ? 'previsto' : 'recebido';
+  }
+
+  if (t.data_pagamento) return 'pago';
+  return data < hoje ? 'atrasado' : 'pendente';
 }
 
 // ---- CHAMADAS À API ----
