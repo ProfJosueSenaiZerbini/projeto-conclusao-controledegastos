@@ -11,6 +11,8 @@
     <script src="/js/tema.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Traz as animações de abrir e fechar do modal de trocar e-mail. -->
+    <link href="/css/painel.css" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
 
@@ -25,7 +27,14 @@
 </head>
 <body class="bg-[#f8faff] h-screen flex overflow-hidden text-gray-800">
 
-    <aside class="w-64 bg-[#f8faff] flex flex-col justify-between hidden md:flex h-full border-r border-gray-100">
+    <!-- No computador a barra fica fixa à esquerda. No celular ela sai de
+         cena (-translate-x-full) e desliza para dentro quando o usuário toca
+         no botão de menu. Antes ela era simplesmente escondida com
+         "hidden md:flex", e no celular não sobrava NENHUMA navegação. -->
+    <aside id="barraLateral"
+           class="w-64 bg-[#f8faff] flex flex-col justify-between h-full border-r border-gray-100
+                  fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-200
+                  md:static md:translate-x-0 md:transition-none">
         <div>
             <div class="p-6 flex items-center gap-3">
                 <img src="/img/VerdanzIcone.png" alt="" class="w-14 h-14 object-contain">
@@ -63,12 +72,22 @@
         </div>
     </aside>
 
+    <!-- Escurece o conteúdo enquanto o menu está aberto no celular. -->
+    <div id="fundoMenu" class="hidden fixed inset-0 bg-black/40 z-40 md:hidden"></div>
+
+
     <main class="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f8faff]">
 
         <header class="flex justify-between items-start mb-8">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900">Configurações</h2>
+            <div class="flex items-start gap-3 min-w-0">
+                <button id="abrirMenu" type="button" title="Abrir menu" aria-label="Abrir menu"
+                        class="md:hidden w-10 h-10 -ml-1 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="min-w-0">
+                    <h2 class="text-2xl font-bold text-gray-900">Configurações</h2>
                 <p class="text-gray-500 text-sm mt-1">Ajuste o Verdanz do seu jeito.</p>
+                </div>
             </div>
             <div class="flex items-center gap-4">
                 <div id="acoesPerfil" class="hidden items-center gap-4">
@@ -103,10 +122,13 @@
                         <input type="text" id="nomePerfil" maxlength="100"
                                class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
                     </div>
+                    <!-- Só leitura: o e-mail é a chave que destranca a conta,
+                         então a troca tem fluxo próprio logo abaixo. -->
                     <div>
                         <label for="emailPerfil" class="block text-sm font-semibold text-gray-700 mb-2">E-mail</label>
-                        <input type="email" id="emailPerfil" maxlength="100"
-                               class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                        <input type="email" id="emailPerfil" maxlength="100" readonly
+                               class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 outline-none cursor-not-allowed">
+                        <p class="text-xs text-gray-400 mt-2">Para trocar, use "Trocar e-mail" abaixo.</p>
                     </div>
                     <p class="text-xs text-gray-400" id="membroDesde"></p>
                     <button type="submit" id="salvarPerfil"
@@ -215,6 +237,40 @@
                             </span>
                         </label>
                     </div>
+
+                    <!-- ===== TAMANHO DA LETRA ===== -->
+                    <p class="text-sm font-semibold text-gray-700 mb-1 mt-6">Tamanho da letra</p>
+                    <p class="text-xs text-gray-500 mb-3">Aumenta o texto de todo o sistema, para quem tem dificuldade de enxergar letras pequenas.</p>
+
+                    <!-- Mesma estrutura do Tema: o sr-only esconde a bolinha do
+                         rádio, e o "relative" no <label> impede que ela role a
+                         página ao ser clicada.
+
+                         Cada opção mostra um "A" no tamanho que ela aplica —
+                         assim a escolha é visível antes de clicar. -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="fonte" value="normal" class="peer sr-only">
+                            <span class="flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 border-gray-200 text-gray-600 peer-checked:border-blue-500 peer-checked:text-blue-600 transition-colors">
+                                <span class="font-bold leading-none" style="font-size: 1rem">A</span>
+                                <span class="text-sm font-medium">Normal</span>
+                            </span>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="fonte" value="grande" class="peer sr-only">
+                            <span class="flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 border-gray-200 text-gray-600 peer-checked:border-blue-500 peer-checked:text-blue-600 transition-colors">
+                                <span class="font-bold leading-none" style="font-size: 1.25rem">A</span>
+                                <span class="text-sm font-medium">Grande</span>
+                            </span>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="fonte" value="maior" class="peer sr-only">
+                            <span class="flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 border-gray-200 text-gray-600 peer-checked:border-blue-500 peer-checked:text-blue-600 transition-colors">
+                                <span class="font-bold leading-none" style="font-size: 1.5rem">A</span>
+                                <span class="text-sm font-medium">Maior</span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
             </details>
 
@@ -240,11 +296,82 @@
                             class="w-full py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
                         <i class="fa-regular fa-envelope mr-1"></i> Enviar link de verificação
                     </button>
+
+                    <div class="pt-4 mt-2 border-t border-gray-100 space-y-3">
+                        <p class="text-sm font-semibold text-gray-700">Trocar e-mail</p>
+                        <p class="text-sm text-gray-500">
+                            O e-mail é a chave da sua conta: é por ele que a senha é recuperada.
+                            Por isso a troca pede sua senha e precisa ser confirmada no endereço novo.
+                        </p>
+                        <button type="button" id="abrirTrocaEmail"
+                                class="w-full py-3 rounded-xl border border-gray-200 text-gray-700 font-bold transition hover:bg-gray-50">
+                            <i class="fa-regular fa-envelope mr-1"></i> Trocar e-mail
+                        </button>
+                    </div>
                 </div>
             </details>
 
         </div>
     </main>
+
+    <!-- MODAL: trocar e-mail.
+         Marcação própria, e não o modal.js, porque aquele serve a
+         confirmações e a um campo numérico — aqui são dois campos com
+         validação e mensagens próprias. As animações vêm do painel.css. -->
+    <div id="fundoEmail" class="hidden fixed inset-0 bg-black/40 z-[60]"></div>
+
+    <div id="caixaEmail" role="dialog" aria-modal="true" aria-labelledby="tituloEmail"
+         class="hidden fixed inset-0 z-[70] items-center justify-center p-4 pointer-events-none">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md pointer-events-auto overflow-hidden">
+
+            <div class="flex justify-between items-center p-6 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
+                        <i class="fa-regular fa-envelope"></i>
+                    </div>
+                    <h3 id="tituloEmail" class="font-bold text-gray-900">Trocar e-mail</h3>
+                </div>
+                <button type="button" id="fecharTrocaEmail" title="Fechar"
+                        class="text-gray-400 hover:text-gray-700 transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="formTrocarEmail" class="p-6 space-y-4">
+                <div id="mensagemEmail" class="hidden px-4 py-3 rounded-xl text-sm"></div>
+
+                <p class="text-sm text-gray-500">
+                    Seu e-mail atual é <span id="emailAtualModal" class="font-medium text-gray-700"></span>.
+                    Ele só muda depois que você clicar no link que vamos enviar ao endereço novo.
+                </p>
+
+                <div>
+                    <label for="emailNovo" class="block text-sm font-semibold text-gray-700 mb-2">Novo e-mail</label>
+                    <input type="email" id="emailNovo" maxlength="100" autocomplete="email" placeholder="seu-novo@email.com"
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                </div>
+
+                <div>
+                    <label for="senhaAtual" class="block text-sm font-semibold text-gray-700 mb-2">Sua senha atual</label>
+                    <input type="password" id="senhaAtual" autocomplete="current-password" placeholder="Digite sua senha"
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <p class="text-xs text-gray-400 mt-2">Pedimos a senha para impedir que alguém com seu computador aberto troque seu e-mail e tome a conta.</p>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" id="cancelarTrocaEmail"
+                            class="flex-1 py-3 rounded-xl border border-gray-200 bg-white text-gray-600 font-medium transition hover:bg-gray-100">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="pedirTrocaEmail"
+                            class="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold transition hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                        Enviar link
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
 
     <script src="/js/auth.js"></script>
     <script src="/js/layout.js"></script>

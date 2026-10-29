@@ -44,7 +44,14 @@
 </head>
 <body class="bg-[#f8faff] h-screen flex overflow-hidden text-gray-800">
 
-    <aside class="w-64 bg-[#f8faff] flex flex-col justify-between hidden md:flex h-full border-r border-gray-100">
+    <!-- No computador a barra fica fixa à esquerda. No celular ela sai de
+         cena (-translate-x-full) e desliza para dentro quando o usuário toca
+         no botão de menu. Antes ela era simplesmente escondida com
+         "hidden md:flex", e no celular não sobrava NENHUMA navegação. -->
+    <aside id="barraLateral"
+           class="w-64 bg-[#f8faff] flex flex-col justify-between h-full border-r border-gray-100
+                  fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-200
+                  md:static md:translate-x-0 md:transition-none">
         <div>
             <div class="p-6 flex items-center gap-3 cursor-pointer">
                 <img src="/img/VerdanzIcone.png" alt="" class="w-14 h-14 object-contain">
@@ -98,12 +105,22 @@
         </div>
     </aside>
 
+    <!-- Escurece o conteúdo enquanto o menu está aberto no celular. -->
+    <div id="fundoMenu" class="hidden fixed inset-0 bg-black/40 z-40 md:hidden"></div>
+
+
     <main class="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f8faff]">
         
         <header class="flex justify-between items-start mb-8">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900">Olá, <span id="nomeUsuario">...</span>! 👋</h2>
+            <div class="flex items-start gap-3 min-w-0">
+                <button id="abrirMenu" type="button" title="Abrir menu" aria-label="Abrir menu"
+                        class="md:hidden w-10 h-10 -ml-1 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="min-w-0">
+                    <h2 class="text-2xl font-bold text-gray-900">Olá, <span id="nomeUsuario">...</span>! 👋</h2>
                 <p class="text-gray-500 text-sm mt-1">Aqui está o resumo da sua vida financeira.</p>
+                </div>
             </div>
             <div class="flex items-center gap-4">
                 <!-- Nasce com a classe "hidden" (display:none). O clique no avatar
@@ -186,7 +203,11 @@
                         <h4 class="font-bold text-gray-900">Gastos por categoria</h4>
                         <p class="text-xs text-gray-400">Este mês</p>
                     </div>
-                    <button class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-arrow-right"></i></button>
+                    <!-- w-10 h-10 dá 40px de área clicável sem aumentar o ícone:
+                         o -mr-2 puxa de volta o espaço extra, para o visual
+                         ficar igual ao de antes. Uma seta de 14px era pequena
+                         demais para acertar com o dedo no celular. -->
+                    <button class="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"><i class="fa-solid fa-arrow-right"></i></button>
                 </div>
                 
                 <div id="blocoCategorias" class="flex-1 flex flex-col items-center justify-center text-center gap-2 py-6">
@@ -199,7 +220,7 @@
                 <div class="flex justify-between items-center mb-6">
                     <h4 class="font-bold text-gray-900">Metas</h4>
                     <a href="/metas" title="Ver todas as metas"
-                       class="text-gray-400 hover:text-gray-600 transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2">
+                       class="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2">
                         <i class="fa-solid fa-arrow-right"></i>
                     </a>
                 </div>
@@ -240,7 +261,9 @@
                     </div>
                 </div>
 
-                <a id="dicaLink" href="/perfil" class="mt-4 block text-center text-blue-600 text-sm font-medium hover:underline">
+                <!-- py-2 leva a altura de 20px para ~36px: no celular, um link
+                     de uma linha de texto é difícil de acertar com o dedo. -->
+                <a id="dicaLink" href="/perfil" class="mt-4 block text-center py-2 rounded-lg text-blue-600 text-sm font-medium hover:underline hover:bg-blue-50 transition-colors">
                     Descobrir meu perfil
                 </a>
             </div>

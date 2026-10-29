@@ -48,19 +48,20 @@ formPerfil.addEventListener('submit', async function (event) {
   esconderMensagem();
 
   const nome = nomePerfil.value.trim();
-  const email = emailPerfil.value.trim();
   const documento = documentoPerfil
     ? documentoPerfil.value.replace(/\D/g, '')
     : perfilOriginal.cpf_cnpj;
 
-  if (!nome || !email || !documento) {
-    mostrarMensagem('Preencha nome, e-mail e CPF/CNPJ.', 'erro');
+  if (!nome || !documento) {
+    mostrarMensagem('Preencha nome e CPF/CNPJ.', 'erro');
     return;
   }
 
+  // O e-mail não entra aqui: ele tem o fluxo próprio mais abaixo, que
+  // pede a senha atual e confirma por link. Mandar o e-mail neste PUT
+  // agora é recusado pelo servidor de propósito.
   const alterados = {};
   if (nome !== perfilOriginal.nome_usuario) alterados.nome_usuario = nome;
-  if (email !== perfilOriginal.email) alterados.email = email;
   if (documento !== perfilOriginal.cpf_cnpj) alterados.cpf_cnpj = documento;
 
   if (Object.keys(alterados).length === 0) {
@@ -95,6 +96,143 @@ formPerfil.addEventListener('submit', async function (event) {
     salvarPerfil.textContent = 'Salvar alterações';
   }
 });
+
+// ---- TROCAR E-MAIL ----
+//
+// Fluxo separado do resto do perfil porque o e-mail é a chave da conta:
+// quem troca o e-mail consegue, logo em seguida, pedir "esqueci a senha"
+// e receber o link na própria caixa.
+//
+// São duas barreiras: a senha atual (que um token roubado não dá) e a
+// confirmação por link no endereço novo. A troca só vale depois do clique.
+
+const formTrocarEmail = document.getElementById('formTrocarEmail');
+const emailNovo = document.getElementById('emailNovo');
+const senhaAtual = document.getElementById('senhaAtual');
+const pedirTrocaEmail = document.getElementById('pedirTrocaEmail');
+const mensagemEmail = document.getElementById('mensagemEmail');
+
+// ---- ABRIR E FECHAR O MODAL ----
+//
+// Mesma mecânica do modal.js e do painel lateral: alterna 'hidden' e
+// 'flex', e ao fechar espera a animação de saída terminar antes de
+// esconder de verdade — senão ela seria cortada pelo display:none.
+//
+// O prazo máximo existe porque o navegador congela animações em abas em
+// segundo plano, e aí o evento 'animationend' nunca chega. Sem ele, o
+// modal ficaria preso na tela atrás do fundo escuro.
+
+const fundoEmail = document.getElementById('fundoEmail');
+const caixaEmail = document.getElementById('caixaEmail');
+const emailAtualModal = document.getElementById('emailAtualModal');
+const semMovimento = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function esconderModalEmail() {
+  caixaEmail.classList.remove('flex', 'recolhendo');
+  caixaEmail.classList.add('hidden');
+  fundoEmail.classList.remove('recolhendo');
+  fundoEmail.classList.add('hidden');
+}
+
+function abrirModalEmail() {
+  // Começa limpo: senha digitada antes não pode ficar na tela, e um
+  // aviso de erro de uma tentativa anterior confundiria.
+  formTrocarEmail.reset();
+  mensagemEmail.className = 'hidden';
+  emailAtualModal.textContent = perfilOriginal.email || '';
+
+  caixaEmail.classList.remove('hidden', 'recolhendo');
+  caixaEmail.classList.add('flex');
+  fundoEmail.classList.remove('hidden', 'recolhendo');
+
+  emailNovo.focus();
+}
+
+function fecharModalEmail() {
+  if (caixaEmail.classList.contains('hidden')) return;
+
+  if (semMovimento.matches) {
+    esconderModalEmail();
+    return;
+  }
+
+  caixaEmail.classList.add('recolhendo');
+  fundoEmail.classList.add('recolhendo');
+
+  let jaEscondeu = false;
+  const esconderUmaVez = () => {
+    if (jaEscondeu) return;
+    jaEscondeu = true;
+    clearTimeout(prazo);
+    caixaEmail.removeEventListener('animationend', esconderUmaVez);
+    if (caixaEmail.classList.contains('recolhendo')) esconderModalEmail();
+  };
+
+  const prazo = setTimeout(esconderUmaVez, 400);
+  caixaEmail.addEventListener('animationend', esconderUmaVez);
+}
+
+document.getElementById('abrirTrocaEmail')?.addEventListener('click', abrirModalEmail);
+document.getElementById('fecharTrocaEmail')?.addEventListener('click', fecharModalEmail);
+document.getElementById('cancelarTrocaEmail')?.addEventListener('click', fecharModalEmail);
+fundoEmail?.addEventListener('click', fecharModalEmail);
+
+document.addEventListener('keydown', (evento) => {
+  if (evento.key === 'Escape') fecharModalEmail();
+});
+
+// Esta seção tem caixa de mensagem própria: a do topo fica longe do
+// formulário, e o aviso passaria despercebido.
+function avisoEmail(texto, tipo) {
+  const cores = {
+    erro: 'bg-red-50 text-red-700 border border-red-200',
+    sucesso: 'bg-green-50 text-green-700 border border-green-200',
+  };
+  // Sem margem no topo: dentro do modal, a mensagem é o primeiro
+  // elemento do formulário e o espaçamento já vem do `space-y`.
+  mensagemEmail.className = 'px-4 py-3 rounded-xl text-sm ' + (cores[tipo] || cores.erro);
+  mensagemEmail.textContent = texto;
+}
+
+if (formTrocarEmail) {
+  formTrocarEmail.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    mensagemEmail.className = 'hidden';
+
+    const novo = emailNovo.value.trim();
+    const senha = senhaAtual.value;
+
+    if (!novo || !senha) {
+      avisoEmail('Preencha o e-mail novo e sua senha atual.', 'erro');
+      return;
+    }
+
+    pedirTrocaEmail.disabled = true;
+    pedirTrocaEmail.textContent = 'Enviando...';
+
+    try {
+      const { ok, dados } = await chamarApi('/api/usuario/' + idUsuario + '/email', {
+        method: 'POST',
+        body: JSON.stringify({ email_novo: novo, senha_atual: senha }),
+      });
+
+      if (!ok) {
+        avisoEmail(dados.erro || 'Não foi possível pedir a troca.', 'erro');
+        return;
+      }
+
+      avisoEmail(dados.mensagem, 'sucesso');
+
+      // A senha some da tela assim que deixa de ser necessária.
+      formTrocarEmail.reset();
+    } catch (erro) {
+      avisoEmail('Erro de conexão com o servidor.', 'erro');
+    } finally {
+      pedirTrocaEmail.disabled = false;
+      pedirTrocaEmail.textContent = 'Enviar link';
+    }
+  });
+}
 
 // ---- CONTAS E CARTÕES ----
 // Aqui é só um resumo. Criar, editar e excluir continua na tela de
@@ -192,6 +330,17 @@ function carregarPreferencias() {
       salvarPreferencia('tema', opcao.value);
       // tema.js: troca as cores na hora, sem recarregar a página.
       aplicarTema(opcao.value);
+    });
+  });
+
+  const fonteAtual = preferencias.fonte || 'normal';
+  document.querySelectorAll('input[name="fonte"]').forEach(function (opcao) {
+    opcao.checked = opcao.value === fonteAtual;
+    opcao.addEventListener('change', function () {
+      salvarPreferencia('fonte', opcao.value);
+      // tema.js: muda o tamanho na hora, para a pessoa ver o resultado
+      // enquanto escolhe, em vez de ter que navegar para outra tela.
+      aplicarFonte(opcao.value);
     });
   });
 }

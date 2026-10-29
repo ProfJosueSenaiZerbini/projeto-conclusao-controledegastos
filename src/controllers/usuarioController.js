@@ -260,17 +260,24 @@ async function atualizarUsuario(req, res) {
 
       dados.cpf_cnpj = documento;
     }
-    if (email) {
-      if (!email.includes('@')) {
-        return res.status(400).json({ erro: 'Email inválido' });
-      }
-      dados.email = email;
-    }
-    if (senha) {
-      if (senha.length < 6) {
-        return res.status(400).json({ erro: 'A senha deve ter no mínimo 6 caracteres' });
-      }
-      dados.senha = await bcrypt.hash(senha, 10);
+    // E-mail e senha NÃO são alterados por aqui, de propósito.
+    //
+    // Esta rota só exige o token de login. Quem pegasse uma sessão aberta
+    // trocaria o e-mail, pediria "esqueci a senha" e receberia o link na
+    // própria caixa — assumindo a conta sem saber a senha de ninguém.
+    //
+    // Cada um tem seu caminho protegido:
+    //   e-mail -> POST /api/usuario/:id/email  (pede a senha atual e
+    //             confirma por link no endereço novo)
+    //   senha  -> POST /api/usuario/esqueci-senha  (confirma por link)
+    //
+    // Recusar explicitamente é melhor que ignorar em silêncio: quem
+    // chamar do jeito antigo descobre na hora, em vez de achar que
+    // funcionou.
+    if (email !== undefined || senha !== undefined) {
+      return res.status(400).json({
+        erro: 'E-mail e senha não podem ser alterados por aqui. Use as opções próprias em Configurações.',
+      });
     }
 
     if (Object.keys(dados).length === 0) {

@@ -45,7 +45,11 @@ model Usuario {
 model TokenUsuario {
   id_token      Int       @id @default(autoincrement())
   token_hash    String    @unique @db.Char(64) // SHA-256 em hexadecimal
-  tipo          String    @db.VarChar(30)      // 'redefinir_senha'
+  tipo          String    @db.VarChar(30)      // 'redefinir_senha' | 'trocar_email'
+  // Só é preenchido quando tipo = 'trocar_email'. Guarda o endereço novo
+  // enquanto a troca está pendente: ela só vale depois do clique no link,
+  // então o e-mail não pode ir direto para a tabela usuario.
+  email_novo    String?   @db.VarChar(100)
   expira_em     DateTime
   usado_em      DateTime?                      // preenchido quando o link é usado
   data_criacao  DateTime  @default(now())

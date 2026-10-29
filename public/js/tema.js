@@ -1,4 +1,8 @@
-// Tema claro / escuro / sistema.
+// Preferências de aparência: tema (claro/escuro/sistema) e tamanho da letra.
+//
+// As duas moram no mesmo arquivo porque precisam da mesma coisa: serem
+// aplicadas no <head>, ANTES de a página aparecer. Separar em dois
+// arquivos só somaria mais uma requisição em cada tela.
 //
 // A escolha é feita em Configurações > Aparência e fica guardada no
 // localStorage, no mesmo objeto "preferencias_<id>" que o configuracoes.js
@@ -16,15 +20,20 @@
   // Pergunta ao navegador se o sistema operacional está no modo escuro.
   const midiaEscura = window.matchMedia('(prefers-color-scheme: dark)');
 
-  function temaSalvo() {
+  // Lê uma preferência salva. Devolve o padrão se não houver escolha,
+  // ou se o localStorage estiver bloqueado / com dado inválido.
+  function preferencia(nome, padrao) {
     try {
       const id = localStorage.getItem('id_usuario');
       const preferencias = JSON.parse(localStorage.getItem('preferencias_' + id)) || {};
-      return preferencias.tema || 'claro';
+      return preferencias[nome] || padrao;
     } catch (e) {
-      // localStorage bloqueado ou com dado inválido: segue no claro.
-      return 'claro';
+      return padrao;
     }
+  }
+
+  function temaSalvo() {
+    return preferencia('tema', 'claro');
   }
 
   // tema: 'claro', 'escuro' ou 'sistema'. Sem parâmetro, usa o salvo.
@@ -40,9 +49,35 @@
     if (temaSalvo() === 'sistema') aplicarTema('sistema');
   });
 
-  // Deixa a função disponível para o configuracoes.js aplicar o tema
-  // na hora em que o usuário clica, sem recarregar a página.
+  // ---- TAMANHO DA LETRA ----
+  //
+  // Para quem tem dificuldade de enxergar letras pequenas.
+  //
+  // Funciona mudando o tamanho da fonte da tag <html>. Isso basta porque
+  // o Tailwind mede quase tudo em "rem" — uma unidade que é sempre um
+  // múltiplo do tamanho do <html>. Assim, uma única linha aumenta textos,
+  // ícones e espaçamentos juntos, mantendo a proporção.
+  //
+  // A alternativa seria reescrever o tamanho de cada classe de texto do
+  // sistema, uma por uma. Além de muito maior, quebraria toda vez que
+  // alguém usasse uma classe nova numa tela.
+
+  const TAMANHOS = {
+    normal: '100%',
+    grande: '112.5%',
+    maior: '125%',
+  };
+
+  function aplicarFonte(fonte) {
+    fonte = fonte || preferencia('fonte', 'normal');
+    document.documentElement.style.fontSize = TAMANHOS[fonte] || TAMANHOS.normal;
+  }
+
+  // Deixa as funções disponíveis para o configuracoes.js aplicar na hora
+  // em que o usuário clica, sem recarregar a página.
   window.aplicarTema = aplicarTema;
+  window.aplicarFonte = aplicarFonte;
 
   aplicarTema();
+  aplicarFonte();
 })();

@@ -130,6 +130,54 @@ if (perfilToggle && acoesPerfil) {
   });
 }
 
+// ---- MENU DO CELULAR ----
+//
+// No computador a barra lateral fica sempre visível. No celular não cabe,
+// então ela sai da tela e volta deslizando quando a pessoa toca no botão
+// de menu.
+//
+// Antes a barra era simplesmente escondida abaixo de 768px de largura, e
+// nada aparecia no lugar: quem entrava pelo celular ficava preso na tela
+// inicial, sem como chegar em Contas, Transações, Metas ou Configurações.
+//
+// Só mexe nas classes de posição; o conteúdo do menu é o mesmo nos dois
+// tamanhos. Assim não existe um "menu de celular" separado para esquecer
+// de atualizar quando alguém adicionar um item novo.
+
+const barraLateral = document.getElementById('barraLateral');
+const fundoMenu = document.getElementById('fundoMenu');
+const abrirMenu = document.getElementById('abrirMenu');
+
+function fecharMenu() {
+  if (!barraLateral) return;
+  barraLateral.classList.add('-translate-x-full');
+  fundoMenu?.classList.add('hidden');
+  abrirMenu?.setAttribute('aria-expanded', 'false');
+}
+
+function alternarMenu() {
+  if (!barraLateral) return;
+
+  const fechado = barraLateral.classList.contains('-translate-x-full');
+  barraLateral.classList.toggle('-translate-x-full', !fechado);
+  fundoMenu?.classList.toggle('hidden', !fechado);
+  abrirMenu?.setAttribute('aria-expanded', String(fechado));
+}
+
+abrirMenu?.addEventListener('click', alternarMenu);
+fundoMenu?.addEventListener('click', fecharMenu);
+
+document.addEventListener('keydown', function (evento) {
+  if (evento.key === 'Escape') fecharMenu();
+});
+
+// Ao voltar para a largura de computador, a barra precisa estar na
+// posição normal. Sem isto, quem abre o menu no celular e gira o aparelho
+// encontraria a tela escurecida e a barra deslocada.
+window.matchMedia('(min-width: 768px)').addEventListener('change', function (evento) {
+  if (evento.matches) fecharMenu();
+});
+
 // ---- SAIR ----
 
 const botaoSair = document.getElementById('botaoSair');

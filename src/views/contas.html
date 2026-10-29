@@ -18,7 +18,14 @@
 </head>
 <body class="bg-[#f8faff] h-screen flex overflow-hidden text-gray-800">
 
-    <aside class="w-64 bg-[#f8faff] flex flex-col justify-between hidden md:flex h-full border-r border-gray-100">
+    <!-- No computador a barra fica fixa à esquerda. No celular ela sai de
+         cena (-translate-x-full) e desliza para dentro quando o usuário toca
+         no botão de menu. Antes ela era simplesmente escondida com
+         "hidden md:flex", e no celular não sobrava NENHUMA navegação. -->
+    <aside id="barraLateral"
+           class="w-64 bg-[#f8faff] flex flex-col justify-between h-full border-r border-gray-100
+                  fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-200
+                  md:static md:translate-x-0 md:transition-none">
         <div>
             <div class="p-6 flex items-center gap-3">
                 <img src="/img/VerdanzIcone.png" alt="" class="w-14 h-14 object-contain">
@@ -67,12 +74,22 @@
         </div>
     </aside>
 
+    <!-- Escurece o conteúdo enquanto o menu está aberto no celular. -->
+    <div id="fundoMenu" class="hidden fixed inset-0 bg-black/40 z-40 md:hidden"></div>
+
+
     <main class="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f8faff]">
 
         <header class="flex justify-between items-start mb-8">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900">Suas contas</h2>
+            <div class="flex items-start gap-3 min-w-0">
+                <button id="abrirMenu" type="button" title="Abrir menu" aria-label="Abrir menu"
+                        class="md:hidden w-10 h-10 -ml-1 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="min-w-0">
+                    <h2 class="text-2xl font-bold text-gray-900">Suas contas</h2>
                 <p class="text-gray-500 text-sm mt-1">Onde seu dinheiro está guardado.</p>
+                </div>
             </div>
             <div class="flex items-center gap-4">
                 <div id="acoesPerfil" class="hidden items-center gap-4">

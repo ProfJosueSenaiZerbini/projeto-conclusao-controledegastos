@@ -60,11 +60,21 @@
     to   { opacity: 0; transform: scale(.96); }
 }
 
-#caixaModal:not(.hidden) { animation: modalEntra .16s ease-out; }
-#fundoModal:not(.hidden) { animation: fundoEntra .16s ease-out; }
+/* #caixaEmail é o modal de trocar e-mail, em Configurações. Ele tem
+   marcação própria (dois campos e validação específica) em vez de usar o
+   modal.js, que serve a confirmações e a um campo só. As animações, porém,
+   são as mesmas — não faz sentido duplicar keyframes. */
+#caixaModal:not(.hidden),
+#caixaEmail:not(.hidden) { animation: modalEntra .16s ease-out; }
 
-#caixaModal.recolhendo { animation: modalSai .16s ease-in forwards; }
-#fundoModal.recolhendo { animation: fundoSai .16s ease-in forwards; }
+#fundoModal:not(.hidden),
+#fundoEmail:not(.hidden) { animation: fundoEntra .16s ease-out; }
+
+#caixaModal.recolhendo,
+#caixaEmail.recolhendo { animation: modalSai .16s ease-in forwards; }
+
+#fundoModal.recolhendo,
+#fundoEmail.recolhendo { animation: fundoSai .16s ease-in forwards; }
 
 @media (prefers-reduced-motion: reduce) {
     #caixaModal, #fundoModal { animation: none !important; }
