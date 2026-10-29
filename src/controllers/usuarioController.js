@@ -317,8 +317,17 @@ async function deletarUsuario(req, res) {
     }
 
     // O schema usa onDelete: Cascade — apagar o usuário apaga junto
-    // suas contas, transações, metas, perfis vinculados e formulários.
-    await prisma.usuario.delete({ where: { id_usuario: id } });
+    // suas contas, transações, metas, categorias e limites.
+    //
+    // As contas saem PRIMEIRO, levando as transações junto. Motivo: uma
+    // categoria personalizada não pode ser apagada enquanto houver
+    // transação nela, e o MySQL não garante a ordem das cascatas. Sem este
+    // passo, ele poderia tentar apagar a categoria antes das transações e
+    // recusar a exclusão inteira.
+    await prisma.$transaction([
+      prisma.conta.deleteMany({ where: { id_usuario: id } }),
+      prisma.usuario.delete({ where: { id_usuario: id } }),
+    ]);
 
     res.json({ mensagem: 'Usuário removido com sucesso' });
   } catch (erro) {

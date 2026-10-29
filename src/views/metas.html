@@ -108,6 +108,14 @@
         <!-- As metas entram aqui pelo JavaScript -->
         <div id="listaMetas" class="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-5xl"></div>
 
+        <!-- Limites de gasto: a meta "ao contrário". Em vez de juntar até um
+             valor, a pessoa quer gastar ATÉ um valor por mês numa categoria. -->
+        <section class="max-w-5xl mt-10">
+            <h3 class="text-lg font-bold text-gray-900">Limites de gasto</h3>
+            <p class="text-gray-500 text-sm mt-1">Quanto você quer gastar, no máximo, por mês em cada categoria. Renova todo dia 1.</p>
+            <div id="listaLimites" class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4"></div>
+        </section>
+
     </main>
 
     <!-- PAINEL LATERAL: nova meta -->
@@ -124,6 +132,39 @@
 
         <form id="formMeta" class="p-6 space-y-5 flex-1 overflow-y-auto">
             <input type="hidden" id="idMeta">
+
+            <!-- Os dois tipos de meta. Cada botão mostra os campos do seu
+                 tipo e esconde os do outro (ver escolherModo em metas.js). -->
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" data-modo="meta" id="botaoModoMeta"
+                        class="py-3 rounded-xl border-2 text-sm font-semibold transition">
+                    <i class="fa-solid fa-piggy-bank mr-1"></i> Juntar dinheiro
+                </button>
+                <button type="button" data-modo="limite" id="botaoModoLimite"
+                        class="py-3 rounded-xl border-2 text-sm font-semibold transition">
+                    <i class="fa-solid fa-gauge-high mr-1"></i> Gastar menos
+                </button>
+            </div>
+
+            <!-- ===== CAMPOS DO LIMITE ===== -->
+            <div id="camposLimite" class="hidden space-y-5">
+                <div>
+                    <label for="categoriaLimite" class="block text-sm font-semibold text-gray-700 mb-2">Em qual categoria?</label>
+                    <select id="categoriaLimite"
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></select>
+                    <p id="gastoCategoriaLimite" class="text-xs text-gray-400 mt-2"></p>
+                </div>
+
+                <div>
+                    <label for="valorLimite" class="block text-sm font-semibold text-gray-700 mb-2">Quanto, no máximo, por mês?</label>
+                    <input type="number" id="valorLimite" step="0.01" min="0" placeholder="0,00" inputmode="decimal"
+                           class="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 outline-none transition text-2xl font-bold text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                    <p class="text-xs text-gray-400 mt-2">Você recebe um aviso ao chegar em 70% do limite.</p>
+                </div>
+            </div>
+
+            <!-- ===== CAMPOS DA META (juntar dinheiro) ===== -->
+            <div id="camposMeta" class="space-y-5">
 
             <div>
                 <label for="tituloMeta" class="block text-sm font-semibold text-gray-700 mb-2">O que você quer?</label>
@@ -160,6 +201,9 @@
                             class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></select>
                 </div>
             </div>
+
+            </div>
+            <!-- ===== FIM DOS CAMPOS DA META ===== -->
 
             <button type="submit" id="salvarMeta"
                     class="w-full py-3.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">

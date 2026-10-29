@@ -240,6 +240,59 @@ function diasAteVencimento(diaVencimento, hoje) {
   return Math.round((vencimento - inicioDeHoje) / 86400000);
 }
 
+// Situação de uma conta fixa da casa NESTE mês.
+//
+// Antes só existia diasAteVencimento, que pula para o mês seguinte assim
+// que o dia passa: uma conta de luz não paga, vencida ontem, aparecia como
+// "em 30 dias" — nunca como atrasada. Agora a pessoa marca "paguei", e a
+// conta que passou do dia sem estar paga fica atrasada.
+//
+// conta: { dia, pagaEm, criadaEm }
+//   pagaEm:   "2026-10" = paga em outubro (vazio = não paga este mês)
+//   criadaEm: "2026-10-29" = dia em que foi cadastrada
+//
+// Devolve { situacao, dias }:
+//   'paga'      → dias até o vencimento do mês que vem
+//   'atrasada'  → dias de atraso
+//   'a_vencer'  → dias até o vencimento (0 = vence hoje)
+//
+// Conta cadastrada DEPOIS do vencimento deste mês não fica atrasada: a
+// pessoa pode ter pago antes de cadastrar. Ela vale a partir do mês que vem.
+function situacaoContaFixa(conta, hoje) {
+  const umDia = 86400000;
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+  const inicioDeHoje = new Date(ano, mes, hoje.getDate());
+
+  // Dia 31 em abril cai no dia 30 (último dia do mês).
+  function dataNoMes(a, m) {
+    const ultimoDia = new Date(a, m + 1, 0).getDate();
+    return new Date(a, m, Math.min(conta.dia, ultimoDia));
+  }
+  // Math.round, e não floor: no horário de verão um "dia" pode ter 23h.
+  const diasEntre = (de, ate) => Math.round((ate - de) / umDia);
+
+  const esteMes = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+  const vencimento = dataNoMes(ano, mes);
+  const proximo = dataNoMes(ano, mes + 1);
+
+  if (conta.pagaEm === esteMes) {
+    return { situacao: 'paga', dias: diasEntre(inicioDeHoje, proximo) };
+  }
+
+  if (vencimento < inicioDeHoje) {
+    const [a, m, d] = String(conta.criadaEm || '').split('-').map(Number);
+    const criada = conta.criadaEm ? new Date(a, m - 1, d) : null;
+
+    if (criada && criada > vencimento) {
+      return { situacao: 'a_vencer', dias: diasEntre(inicioDeHoje, proximo) };
+    }
+    return { situacao: 'atrasada', dias: diasEntre(vencimento, inicioDeHoje) };
+  }
+
+  return { situacao: 'a_vencer', dias: diasEntre(inicioDeHoje, vencimento) };
+}
+
 // Quanto custa pagar uma conta com atraso: multa fixa + juros por dia.
 function custoDoAtraso(valor, diasDeAtraso) {
   if (diasDeAtraso <= 0) return 0;
@@ -303,6 +356,7 @@ if (typeof module !== 'undefined') {
     limiteSemanal,
     situacaoDoLimite,
     diasAteVencimento,
+    situacaoContaFixa,
     custoDoAtraso,
     custoDoEmprestimo,
   };

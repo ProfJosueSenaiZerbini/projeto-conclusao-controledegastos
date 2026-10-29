@@ -88,6 +88,10 @@ async function carregarContas() {
 
   const total = dados.reduce((soma, c) => soma + Number(c.saldo), 0);
   totalGeral.textContent = formatarMoeda(total);
+  // Valor alto não sai do card: diminui a letra (auth.js). Refeito quando a
+  // fonte Inter termina de carregar, porque ela muda a largura do texto.
+  caberNaLargura(totalGeral);
+  document.fonts.ready.then(() => caberNaLargura(totalGeral));
 
   listaContas.innerHTML = dados.map(cartaoConta).join('') + cartaoNovaConta;
 

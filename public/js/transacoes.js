@@ -73,7 +73,7 @@ const ESTILO_STATUS = {
 function etiquetaStatus(status) {
   const estilo = ESTILO_STATUS[status];
   if (!estilo.etiqueta) return '';
-  return `<span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium ${estilo.cor}">${estilo.etiqueta}</span>`;
+  return `<span class="inline-block px-2 py-0.5 rounded-full text-[0.6875rem] font-medium ${estilo.cor}">${estilo.etiqueta}</span>`;
 }
 
 // "vence em 5 dias", "venceu há 3 dias"...
@@ -429,6 +429,10 @@ async function carregarContas() {
   const total = contas.reduce((soma, c) => soma + Number(c.saldo), 0);
   const previsto = contas.reduce((soma, c) => soma + Number(c.saldo_previsto), 0);
   saldoTotal.textContent = formatarMoeda(total);
+  // Valor alto não sai do card: diminui a letra (auth.js). Refeito quando a
+  // fonte Inter termina de carregar, porque ela muda a largura do texto.
+  caberNaLargura(saldoTotal);
+  document.fonts.ready.then(() => caberNaLargura(saldoTotal));
   saldoTotal.classList.toggle('text-red-600', total < 0);
   saldoTotal.classList.toggle('text-gray-900', total >= 0);
 
@@ -468,6 +472,73 @@ function preencherCategorias() {
     .join('');
 }
 
+// ---- NOVA CATEGORIA (atalho dentro do formulário) ----
+//
+// Criar a categoria sem sair do lançamento: ela nasce com o tipo que está
+// escolhido (gasto ou ganho) e já fica selecionada.
+
+const abrirNovaCategoria = document.getElementById('abrirNovaCategoria');
+const caixaNovaCategoria = document.getElementById('caixaNovaCategoria');
+const nomeNovaCategoria = document.getElementById('nomeNovaCategoria');
+const criarNovaCategoria = document.getElementById('criarNovaCategoria');
+const erroNovaCategoria = document.getElementById('erroNovaCategoria');
+
+function mostrarNovaCategoria(aberta) {
+  caixaNovaCategoria.classList.toggle('hidden', !aberta);
+  abrirNovaCategoria.setAttribute('aria-expanded', String(aberta));
+  erroNovaCategoria.classList.add('hidden');
+  nomeNovaCategoria.value = '';
+  document.getElementById('tipoNovaCategoria').textContent = tipoSelecionado === 'receita' ? 'ganho' : 'gasto';
+  if (aberta) nomeNovaCategoria.focus();
+}
+
+abrirNovaCategoria.addEventListener('click', () => {
+  mostrarNovaCategoria(caixaNovaCategoria.classList.contains('hidden'));
+});
+
+async function criarCategoriaRapida() {
+  const nome = nomeNovaCategoria.value.trim();
+
+  if (!nome) {
+    erroNovaCategoria.textContent = 'Dê um nome para a categoria.';
+    erroNovaCategoria.classList.remove('hidden');
+    return;
+  }
+
+  criarNovaCategoria.disabled = true;
+
+  const { ok, dados } = await chamarApi('/api/categoria', {
+    method: 'POST',
+    body: JSON.stringify({ nome_categoria: nome, tipo: tipoSelecionado }),
+  });
+
+  criarNovaCategoria.disabled = false;
+
+  if (!ok) {
+    erroNovaCategoria.textContent = dados.erro || 'Não foi possível criar a categoria.';
+    erroNovaCategoria.classList.remove('hidden');
+    return;
+  }
+
+  categorias.push(dados);
+  categorias.sort((a, b) => a.nome_categoria.localeCompare(b.nome_categoria, 'pt-BR'));
+  preencherCategorias();
+  preencherFiltroCategoria();
+  selectCategoria.value = dados.id_categoria;
+  mostrarNovaCategoria(false);
+}
+
+criarNovaCategoria.addEventListener('click', criarCategoriaRapida);
+
+// Enter no campo cria a categoria, em vez de enviar o formulário inteiro
+// da transação (que é o que o Enter faria por padrão).
+nomeNovaCategoria.addEventListener('keydown', (evento) => {
+  if (evento.key === 'Enter') {
+    evento.preventDefault();
+    criarCategoriaRapida();
+  }
+});
+
 // Atualiza o texto recolhido do <details>, para dar a informação sem
 // obrigar a abrir: "Nubank · hoje".
 function atualizarResumo() {
@@ -503,6 +574,8 @@ function selecionarTipo(tipo) {
   // Ganho não tem "pago": ele entra no saldo no dia dele.
   campoPago.classList.toggle('hidden', !ativoDespesa);
 
+  // A nova categoria nasce do tipo escolhido: trocou o tipo, o atalho fecha.
+  mostrarNovaCategoria(false);
   preencherCategorias();
 }
 
@@ -561,6 +634,14 @@ formTransacao.addEventListener('submit', async function (evento) {
 
   salvarTransacao.disabled = true;
 
+  // Antes de gravar: se o gasto deixa a categoria perto do limite (ou
+  // acima dele), a pessoa confirma. Cancelar deixa o painel aberto com
+  // tudo o que ela digitou, para trocar o valor ou desistir.
+  if (tipoSelecionado === 'despesa' && !(await confirmarLimite(corpo))) {
+    salvarTransacao.disabled = false;
+    return;
+  }
+
   const { ok, dados } = await chamarApi('/api/transacao', {
     method: 'POST',
     body: JSON.stringify(corpo),
@@ -579,6 +660,59 @@ formTransacao.addEventListener('submit', async function (evento) {
   carregarTransacoes();
   carregarContas();
 });
+
+// ---- CONFIRMAÇÃO DE LIMITE DE GASTO ----
+//
+// Antes de registrar um gasto, a tela confere o limite da categoria e
+// calcula como ele FICARIA com este gasto. Se passar de 70% (ou estourar),
+// abre um pop-up perguntando se a pessoa quer registrar mesmo assim.
+//
+// Devolve true para seguir com o registro e false se a pessoa cancelou.
+//
+// É só um aviso: quem decide é a pessoa. O servidor não recusa gasto
+// acima do limite — o dinheiro é dela, e o gasto pode já ter acontecido.
+
+// Mesmo número de PERCENTUAL_ATENCAO em src/controllers/limiteController.js.
+// Se mudar lá, mude aqui também.
+const PERCENTUAL_ATENCAO = 70;
+
+async function confirmarLimite(corpo) {
+  // O limite é do mês atual: um gasto lançado para outro mês não mexe nele.
+  const data = corpo.data_transacao || hojeTexto();
+  if (data.slice(0, 7) !== hojeTexto().slice(0, 7)) return true;
+
+  const { ok, dados } = await chamarApi('/api/usuario/' + Sessao.idUsuario() + '/limite');
+
+  // Sem conseguir conferir, o lançamento não fica travado por causa do aviso.
+  if (!ok) return true;
+
+  const limite = dados.find((l) => l.id_categoria === corpo.id_categoria);
+  if (!limite) return true;
+
+  // Em centavos, para fugir dos erros de arredondamento do JavaScript.
+  const limiteCentavos = Math.round(limite.valor_limite * 100);
+  const depoisCentavos = Math.round(limite.gasto_mes * 100) + Math.round(corpo.valor_transacao * 100);
+  const pct = Math.round((depoisCentavos / limiteCentavos) * 100);
+
+  if (pct < PERCENTUAL_ATENCAO) return true;
+
+  const estoura = depoisCentavos > limiteCentavos;
+  const sobra = Math.abs(limiteCentavos - depoisCentavos) / 100;
+
+  return confirmar({
+    titulo: estoura
+      ? `Este gasto passa do limite de ${limite.nome_categoria}`
+      : `Você está perto do limite de ${limite.nome_categoria}`,
+    mensagem:
+      `Este mês você já gastou ${formatarMoeda(limite.gasto_mes)} de ${formatarMoeda(limite.valor_limite)}. ` +
+      `Com este gasto de ${formatarMoeda(corpo.valor_transacao)}, vai para ${formatarMoeda(depoisCentavos / 100)} (${pct}% do limite).`,
+    aviso: estoura
+      ? `Você vai passar ${formatarMoeda(sobra)} do limite do mês.`
+      : `Depois dele, restam ${formatarMoeda(sobra)} para o resto do mês.`,
+    textoConfirmar: 'Registrar mesmo assim',
+    tom: 'alerta',
+  });
+}
 
 carregarContas();
 carregarCategorias();

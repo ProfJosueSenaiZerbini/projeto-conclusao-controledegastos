@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-sem-tema>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seu perfil | Verdanz</title>
     <link rel="icon" href="/img/VerdanzIcone.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Só o tamanho da letra escolhido em Configurações: esta tela não tem
+         versão escura (data-sem-tema no <html>, ver tema.js). -->
+    <script src="/js/tema.js"></script>
     <script>
         // Mesmas cores da tela Perguntas.html (telas do Victor), para as
         // perguntas terem a mesma cara do modelo que o grupo aprovou.
@@ -46,7 +49,7 @@
 <!--
     Esta página tem TRÊS etapas, que o perfil.js mostra uma de cada vez:
 
-      1. etapaIntro      → apresenta a pesquisa e os 6 perfis
+      1. etapaIntro      → apresenta a pesquisa (os perfis ficam em segredo até o fim)
       2. etapaPerguntas  → uma pergunta por vez (layout da Perguntas.html)
       3. etapaSelecao    → mostra a sugestão e o usuário escolhe de 1 a 3 perfis
 
@@ -76,27 +79,61 @@
         <!-- ================================
              ETAPA 1: INTRODUÇÃO
              ================================ -->
-        <section id="etapaIntro" class="etapa text-center">
+        <section id="etapaIntro" class="etapa">
 
-            <div class="w-14 h-14 mx-auto rounded-full bg-soft text-brand
-                        flex items-center justify-center text-2xl">
-                <i class="fa-solid fa-user" aria-hidden="true"></i>
+            <!-- Altura mínima (no computador) igual à que a introdução tinha
+                 quando mostrava os 6 cartões de perfis, para o card não
+                 encolher depois que os perfis viraram surpresa.
+                 O min-h fica nesta div, e não na <section>, porque a section
+                 usa a classe "hidden" para sumir, e um "md:flex" nela venceria
+                 o "hidden" e deixaria a etapa sempre visível. -->
+            <div class="md:min-h-[505px] flex flex-col">
+
+            <!-- DESTAQUE: textos à esquerda, presos a uma linha verde, e uma
+                 planta decorativa à direita. Ocupa o espaço que sobra, e o
+                 quadro do botão fica embaixo, no mesmo lugar do botão das
+                 perguntas. Os perfis não aparecem aqui de propósito: são uma
+                 surpresa que só se revela na etapa 3. -->
+            <div class="flex-1 flex">
+                <div class="w-full rounded-2xl bg-gradient-to-br from-white to-soft
+                            px-5 py-8 md:px-10 md:py-10 text-left
+                            flex items-center justify-between gap-6">
+
+                    <div class="border-l-4 border-brand pl-5 md:pl-6 max-w-xl">
+                        <div class="w-14 h-14 rounded-full bg-soft text-brand
+                                    flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-user" aria-hidden="true"></i>
+                        </div>
+
+                        <h1 class="text-2xl md:text-3xl font-bold leading-snug mt-4">
+                            Antes de começar, faremos uma pesquisa rápida
+                        </h1>
+
+                        <p class="text-sub text-[0.9375rem] leading-relaxed mt-2">
+                            São 7 perguntas de alternativa para descobrir quais perfis combinam
+                            com você hoje. No fim, você mesmo escolhe de 1 a 3 perfis — a
+                            sugestão é só uma ajuda.
+                        </p>
+                    </div>
+
+                    <!-- Planta só de enfeite (não é a logo do Verdanz).
+                         aria-hidden: o leitor de tela ignora, porque não
+                         acrescenta informação. Some no celular para sobrar
+                         espaço para o texto. -->
+                    <svg viewBox="0 0 160 200" class="hidden md:block w-44 shrink-0 text-brand" aria-hidden="true">
+                        <g fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="3" stroke-linecap="round">
+                            <path d="M80 196 C80 150 82 110 92 58"/>
+                            <path d="M81 150 C70 132 56 122 40 116"/>
+                            <path d="M85 112 C100 100 114 95 130 92"/>
+                        </g>
+                        <g fill="currentColor">
+                            <path fill-opacity=".28" d="M92 58 C70 42 74 12 100 2 C116 26 112 50 92 58 Z"/>
+                            <path fill-opacity=".18" d="M40 116 C20 112 4 92 8 70 C30 72 46 92 40 116 Z"/>
+                            <path fill-opacity=".22" d="M130 92 C150 88 160 68 156 50 C136 54 125 72 130 92 Z"/>
+                        </g>
+                    </svg>
+                </div>
             </div>
-
-            <h1 class="text-2xl md:text-3xl font-bold leading-snug mt-4">
-                Antes de começar, faremos uma pesquisa rápida
-            </h1>
-
-            <p class="text-sub text-[15px] leading-relaxed mt-2 max-w-xl mx-auto">
-                São 7 perguntas de alternativa para descobrir quais perfis combinam
-                com você hoje. No fim, você mesmo escolhe de 1 a 3 perfis — a
-                sugestão é só uma ajuda.
-            </p>
-
-            <p class="text-sm font-semibold mt-8 mb-4">Estes são os perfis do Verdanz:</p>
-
-            <!-- Preenchido pelo perfil.js a partir da lista PERFIS -->
-            <div id="listaPerfisIntro" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"></div>
 
             <div class="mt-8 flex flex-col md:flex-row items-center gap-4
                         bg-soft border border-softBorder rounded-2xl p-4 text-left">
@@ -113,7 +150,7 @@
 
                 <button type="button" id="botaoComecar"
                     class="bg-brand hover:bg-brandDark text-white font-semibold text-sm px-6 py-3
-                           rounded-xl transition flex items-center gap-2
+                           rounded-xl transition flex items-center gap-2 whitespace-nowrap
                            focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
                     Vamos começar <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                 </button>
@@ -126,6 +163,8 @@
                            focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
                     Pular perguntas <i class="fa-solid fa-forward ml-1" aria-hidden="true"></i>
                 </button>
+            </div>
+
             </div>
         </section>
 
@@ -164,7 +203,7 @@
                          class="w-14 h-14 rounded-full bg-soft text-brand flex items-center justify-center text-2xl mb-4">
                     </div>
                     <h2 id="textoPergunta" class="text-2xl md:text-3xl font-bold leading-snug mb-2"></h2>
-                    <p id="ajudaPergunta" class="text-sub text-[15px] leading-relaxed"></p>
+                    <p id="ajudaPergunta" class="text-sub text-[0.9375rem] leading-relaxed"></p>
                 </div>
 
                 <div>
@@ -197,7 +236,7 @@
                 <h1 class="text-2xl md:text-3xl font-bold leading-snug">
                     Selecione os perfis com que você mais se identifica
                 </h1>
-                <p id="textoSugestao" class="text-sub text-[15px] leading-relaxed mt-2 max-w-2xl mx-auto"></p>
+                <p id="textoSugestao" class="text-sub text-[0.9375rem] leading-relaxed mt-2 max-w-2xl mx-auto"></p>
             </div>
 
             <!-- Cartões preenchidos pelo perfil.js -->

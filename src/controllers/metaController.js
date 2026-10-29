@@ -1,5 +1,6 @@
 const prisma = require('../prisma');
 const { hojeSemHorario, calcularAjustes } = require('../saldo');
+const { CATEGORIA_METAS } = require('../categorias');
 
 const STATUS_VALIDOS = ['em_progresso', 'concluida', 'cancelada'];
 
@@ -31,7 +32,6 @@ async function recalcularStatus(tx, id_meta) {
 // uma transação de verdade, na categoria "Metas", porque Conta.saldo é a
 // soma das transações: se o saldo baixasse sem uma transação, o histórico
 // deixaria de explicar o saldo.
-const CATEGORIA_METAS = 'Metas';
 
 // Erro com status HTTP, para ser lançado de dentro do $transaction.
 // Lançar um erro lá dentro desfaz TUDO o que já tinha sido feito nele.
@@ -80,8 +80,11 @@ async function buscarContaDeOrigem(id_conta, id_usuario) {
 // Devolve quanto entrou de fato na meta: se faltavam R$ 200 e a pessoa
 // informou R$ 500, entram (e saem da conta) só R$ 200.
 async function guardarNaMeta(tx, { id_meta, conta, valor }) {
+  // id_usuario: null = só a categoria do SISTEMA. Nenhum usuário consegue
+  // criar uma "Metas" (o nome é reservado), mas o filtro deixa isso
+  // garantido também aqui.
   const categoria = await tx.categoria.findFirst({
-    where: { nome_categoria: CATEGORIA_METAS, tipo: 'despesa' },
+    where: { nome_categoria: CATEGORIA_METAS, tipo: 'despesa', id_usuario: null },
   });
 
   if (!categoria) {

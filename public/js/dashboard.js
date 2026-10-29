@@ -24,6 +24,16 @@ function prepararBloco(caixa) {
   caixa.innerHTML = '';
 }
 
+// Os três valores em dinheiro dos cards do topo diminuem a letra quando
+// não cabem (caberNaLargura, em auth.js).
+function ajustarValoresDosCards() {
+  [statSaldo, statReceitas, statDespesas].forEach((elemento) => caberNaLargura(elemento));
+}
+
+// A largura dos cards muda com a janela (e o menu lateral some no
+// celular), então a conta é refeita a cada mudança de tamanho.
+window.addEventListener('resize', ajustarValoresDosCards);
+
 function mesmoMes(iso) {
   const hoje = new Date();
   const data = String(iso).slice(0, 7); // "2026-09"
@@ -56,12 +66,13 @@ async function carregarResumo() {
   const id = Sessao.idUsuario();
   if (!id) return;
 
-  // As três chamadas são independentes, então vão juntas em vez de
-  // uma esperar a outra.
-  const [contas, transacoes, metas] = await Promise.all([
+  // As chamadas são independentes, então vão juntas em vez de uma
+  // esperar a outra.
+  const [contas, transacoes, metas, limites] = await Promise.all([
     chamarApi('/api/usuario/' + id + '/conta'),
     chamarApi('/api/usuario/' + id + '/transacao'),
     chamarApi('/api/usuario/' + id + '/meta'),
+    chamarApi('/api/usuario/' + id + '/limite'),
   ]);
 
   if (contas.ok) {
@@ -92,13 +103,12 @@ async function carregarResumo() {
     const doMes = transacoes.dados.filter((t) => mesmoMes(t.data_transacao));
 
     // O tipo vem da categoria, nunca de um campo da transação.
-    const soma = (tipo) =>
-      doMes
-        .filter((t) => t.categoria.tipo === tipo)
-        .reduce((total, t) => total + Number(t.valor_transacao), 0);
+    // Despesas = só gastos de verdade: o dinheiro guardado em metas fica de
+    // fora (ehGasto, em auth.js), porque ele continua sendo da pessoa.
+    const somar = (lista) => lista.reduce((total, t) => total + Number(t.valor_transacao), 0);
 
-    statReceitas.textContent = formatarMoeda(soma('receita'));
-    statDespesas.textContent = formatarMoeda(soma('despesa'));
+    statReceitas.textContent = formatarMoeda(somar(doMes.filter((t) => t.categoria.tipo === 'receita')));
+    statDespesas.textContent = formatarMoeda(somar(doMes.filter(ehGasto)));
 
     // As despesas do mês incluem as que ainda não foram pagas.
     // A legenda deixa isso claro, para o número não parecer "já pago".
@@ -113,7 +123,7 @@ async function carregarResumo() {
     }
 
     preencherPendentes(transacoes.dados);
-    preencherGastosPorCategoria(doMes);
+    preencherGastosPorCategoria(doMes, limites.ok ? limites.dados : []);
     preencherUltimasTransacoes(transacoes.dados);
   }
 
@@ -128,6 +138,12 @@ async function carregarResumo() {
 
     preencherMetas(ativas);
   }
+
+  ajustarValoresDosCards();
+
+  // A fonte Inter vem da internet e pode chegar depois: com ela, o texto
+  // muda de largura, então a medida é refeita quando ela termina de carregar.
+  document.fonts.ready.then(ajustarValoresDosCards);
 }
 
 function preencherPendentes(transacoes) {
@@ -193,38 +209,85 @@ function preencherPendentes(transacoes) {
   bloco.classList.remove('hidden');
 }
 
-function preencherGastosPorCategoria(transacoesDoMes) {
+// Cor da barra de uma categoria com limite, pela situação que o servidor
+// calculou (ver limiteController.js).
+const COR_LIMITE = { ok: 'bg-green-500', atencao: 'bg-amber-500', estourado: 'bg-red-500' };
+const TEXTO_LIMITE = { ok: 'text-gray-400', atencao: 'text-amber-600', estourado: 'text-red-600' };
+
+function preencherGastosPorCategoria(transacoesDoMes, limites) {
   const caixa = document.getElementById('blocoCategorias');
   if (!caixa) return;
 
-  const despesas = transacoesDoMes.filter((t) => t.categoria.tipo === 'despesa');
+  // Dinheiro guardado em metas não é gasto e não entra aqui (ehGasto, em auth.js).
+  const despesas = transacoesDoMes.filter(ehGasto);
 
   if (despesas.length === 0) return;
 
   prepararBloco(caixa);
 
-  // Soma por categoria e ordena da maior para a menor.
+  // Soma por categoria e ordena da maior para a menor. A chave é o id, e
+  // não o nome: uma categoria personalizada pode ter o mesmo nome que a de
+  // outra pessoa, e o id é o que liga a categoria ao limite dela.
   const porCategoria = new Map();
   despesas.forEach((t) => {
-    const nome = t.categoria.nome_categoria;
-    porCategoria.set(nome, (porCategoria.get(nome) || 0) + Number(t.valor_transacao));
+    const atual = porCategoria.get(t.categoria.id_categoria) || {
+      id: t.categoria.id_categoria,
+      nome: t.categoria.nome_categoria,
+      valor: 0,
+    };
+    atual.valor += Number(t.valor_transacao);
+    porCategoria.set(t.categoria.id_categoria, atual);
   });
 
-  const total = [...porCategoria.values()].reduce((a, b) => a + b, 0);
-  const ordenadas = [...porCategoria.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const total = [...porCategoria.values()].reduce((soma, c) => soma + c.valor, 0);
+  const ordenadas = [...porCategoria.values()].sort((a, b) => b.valor - a.valor).slice(0, 5);
+  const limitePorCategoria = new Map(limites.map((l) => [l.id_categoria, l]));
+
+  // A categoria que mais gastou e ainda não tem limite ganha o botão
+  // "Definir limite": é o caso "gastei muito em Lazer, quero gastar menos".
+  const sugerida = ordenadas.find((c) => !limitePorCategoria.has(c.id));
 
   caixa.innerHTML = ordenadas
-    .map(([nome, valor]) => {
-      const pct = Math.round((valor / total) * 100);
+    .map((c) => {
+      const limite = limitePorCategoria.get(c.id);
+
+      // Com limite, a barra mede o quanto do LIMITE já foi usado, e a cor
+      // segue a situação. Sem limite, mede a parte do total do mês.
+      if (limite) {
+        const pct = Math.round(limite.percentual);
+        return `
+          <div class="mb-3">
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-gray-600">${escapar(c.nome)}</span>
+              <span class="text-gray-900 font-medium">${formatarMoeda(limite.gasto_mes)}
+                <span class="text-gray-400 font-normal">/ ${formatarMoeda(limite.valor_limite)}</span>
+              </span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-1.5">
+              <div class="${COR_LIMITE[limite.situacao]} h-1.5 rounded-full" style="width: ${Math.min(100, pct)}%"></div>
+            </div>
+            <p class="text-[0.6875rem] mt-1 ${TEXTO_LIMITE[limite.situacao]}">${pct}% do limite do mês</p>
+          </div>`;
+      }
+
+      const pct = Math.round((c.valor / total) * 100);
+      const botaoLimite =
+        c === sugerida
+          ? `<a href="/metas?limite=${c.id}" class="text-[0.6875rem] text-blue-600 font-medium hover:underline">
+               <i class="fa-solid fa-gauge-high mr-0.5"></i> Definir limite
+             </a>`
+          : '';
+
       return `
         <div class="mb-3">
           <div class="flex justify-between text-xs mb-1">
-            <span class="text-gray-600">${escapar(nome)}</span>
-            <span class="text-gray-900 font-medium">${formatarMoeda(valor)}</span>
+            <span class="text-gray-600">${escapar(c.nome)}</span>
+            <span class="text-gray-900 font-medium">${formatarMoeda(c.valor)}</span>
           </div>
           <div class="w-full bg-gray-100 rounded-full h-1.5">
             <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${pct}%"></div>
           </div>
+          ${botaoLimite}
         </div>`;
     })
     .join('');

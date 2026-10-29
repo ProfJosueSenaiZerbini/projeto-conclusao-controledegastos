@@ -1,8 +1,9 @@
 // prisma/schema.prisma
 //
 // Escopo atual: as 5 entidades do núcleo (Usuario, Conta, Categoria,
-// Transacao, Meta), mais TokenUsuario (links por e-mail) e
-// ConexaoBancaria (importação do banco simulado).
+// Transacao, Meta), mais TokenUsuario (links por e-mail),
+// ConexaoBancaria (importação do banco simulado) e LimiteCategoria
+// (meta de gastar menos numa categoria).
 // O modelo está na 3ª Forma Normal — ver comentários em Transacao.
 
 generator client {
@@ -25,10 +26,12 @@ model Usuario {
   senha          String   @db.VarChar(255)
   data_cadastro  DateTime @default(now())
 
-  contas    Conta[]
-  metas     Meta[]
-  tokens    TokenUsuario[]
-  conexoes  ConexaoBancaria[]
+  contas      Conta[]
+  metas       Meta[]
+  tokens      TokenUsuario[]
+  conexoes    ConexaoBancaria[]
+  categorias  Categoria[]
+  limites     LimiteCategoria[]
 
   @@map("usuario")
 }
@@ -113,15 +116,28 @@ model ConexaoBancaria {
 }
 
 // ================================
-// CATEGORIA — lista fixa de 12
+// CATEGORIA — as 13 do sistema + as personalizadas
 // ================================
+// id_usuario vazio = categoria do SISTEMA (do seed, igual para todos).
+// id_usuario preenchido = categoria PERSONALIZADA, criada por um usuário
+// e visível só para ele. Ver src/categorias.js.
+//
+// Continua na 3FN: o tipo segue morando na categoria, e a transação não
+// ganhou campo nenhum.
 model Categoria {
   id_categoria    Int    @id @default(autoincrement())
   nome_categoria  String @db.VarChar(100)
   tipo            String @db.VarChar(20) // 'receita' ou 'despesa'
+  id_usuario      Int?
 
+  usuario     Usuario?          @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   transacoes  Transacao[]
+  limites     LimiteCategoria[]
 
+  // O mesmo usuário não repete nome. Atenção: no MySQL um índice único
+  // aceita vários nulos, então ele NÃO impede repetir o nome de uma
+  // categoria do sistema — isso é conferido no categoriaController.
+  @@unique([id_usuario, nome_categoria])
   @@map("categoria")
 }
 
@@ -183,4 +199,30 @@ model Meta {
 
   @@index([id_usuario, status])
   @@map("meta")
+}
+
+// ================================
+// LIMITE_CATEGORIA — meta de gastar menos numa categoria
+// ================================
+// Ex.: "no máximo R$ 500 por mês em Lazer". Vale para o mês atual e
+// renova sozinho no dia 1.
+//
+// Não é uma Meta: a meta é cumprida quando o valor CHEGA ao alvo, e o
+// limite quando o gasto fica ABAIXO dele. Na tabela Meta, um limite
+// estourado viraria "concluída".
+//
+// O quanto já foi gasto no mês NÃO é gravado: é a soma das transações da
+// categoria, calculada na leitura (ver limiteController.js). Guardar um
+// valor que se deduz das transações permitiria os dois se contradizerem.
+model LimiteCategoria {
+  id_limite     Int     @id @default(autoincrement())
+  valor_limite  Decimal @db.Decimal(12, 2)
+  id_usuario    Int
+  id_categoria  Int
+
+  usuario    Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  categoria  Categoria @relation(fields: [id_categoria], references: [id_categoria], onDelete: Cascade)
+
+  @@unique([id_usuario, id_categoria]) // um limite por categoria
+  @@map("limite_categoria")
 }

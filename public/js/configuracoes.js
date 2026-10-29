@@ -5,6 +5,7 @@
 //
 //   Perfil           -> GET e PUT /api/usuario/:id
 //   Contas e Cartões -> GET /api/usuario/:id/conta (lista resumida)
+//   Categorias       -> GET, POST, PUT e DELETE /api/categoria
 //   Segurança        -> POST /api/usuario/esqueci-senha (mesmo fluxo da tela de login)
 //   Notificações e Aparência -> guardadas no navegador (ver PREFERÊNCIAS)
 
@@ -258,6 +259,193 @@ async function carregarContas() {
     .join('');
 }
 
+// ---- CATEGORIAS ----
+//
+// Só as categorias PERSONALIZADAS aparecem na lista: as do Verdanz são
+// fixas e não têm o que gerenciar. As regras de verdade (nome repetido,
+// tipo que não pode trocar) estão no servidor; a tela só repete a
+// mensagem que ele devolve.
+
+const formCategoria = document.getElementById('formCategoria');
+const idCategoria = document.getElementById('idCategoria');
+const nomeCategoria = document.getElementById('nomeCategoria');
+const tipoCategoria = document.getElementById('tipoCategoria');
+const avisoTipoCategoria = document.getElementById('avisoTipoCategoria');
+const tituloFormCategoria = document.getElementById('tituloFormCategoria');
+const salvarCategoria = document.getElementById('salvarCategoria');
+const cancelarCategoria = document.getElementById('cancelarCategoria');
+const listaCategorias = document.getElementById('listaCategorias');
+
+let todasCategorias = [];
+
+const NOME_TIPO = { despesa: 'Gasto', receita: 'Ganho' };
+
+function linhaCategoria(c) {
+  const corTipo = c.tipo === 'receita' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600';
+  const quantas = c.total_transacoes === 1 ? '1 transação' : `${c.total_transacoes} transações`;
+
+  return `
+    <li class="flex items-center justify-between gap-3 py-3">
+      <span class="min-w-0">
+        <span class="block text-sm font-medium text-gray-800 truncate">${escapar(c.nome_categoria)}</span>
+        <span class="text-xs text-gray-400">
+          <span class="inline-block px-2 py-0.5 rounded-full text-[0.6875rem] font-medium ${corTipo}">${NOME_TIPO[c.tipo]}</span>
+          · ${quantas}
+        </span>
+      </span>
+      <span class="flex items-center gap-1 flex-shrink-0">
+        <button type="button" data-editar-categoria="${c.id_categoria}" title="Editar categoria"
+                class="w-9 h-9 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+          <i class="fa-solid fa-pen text-xs"></i>
+        </button>
+        <button type="button" data-excluir-categoria="${c.id_categoria}" title="Excluir categoria"
+                class="w-9 h-9 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+          <i class="fa-solid fa-trash text-xs"></i>
+        </button>
+      </span>
+    </li>`;
+}
+
+async function carregarCategorias() {
+  const { ok, dados } = await chamarApi('/api/categoria');
+  if (!ok) return;
+
+  todasCategorias = dados;
+  const minhas = dados.filter((c) => c.personalizada);
+
+  listaCategorias.innerHTML =
+    minhas.length === 0
+      ? '<li class="py-3 text-sm text-gray-500">Você ainda não criou nenhuma categoria.</li>'
+      : minhas.map(linhaCategoria).join('');
+}
+
+// Volta o formulário para "Nova categoria".
+function limparFormCategoria() {
+  formCategoria.reset();
+  idCategoria.value = '';
+  tipoCategoria.disabled = false;
+  avisoTipoCategoria.classList.add('hidden');
+  cancelarCategoria.classList.add('hidden');
+  tituloFormCategoria.textContent = 'Nova categoria';
+  salvarCategoria.innerHTML = '<i class="fa-solid fa-plus mr-1"></i> Criar categoria';
+}
+
+function editarCategoria(categoria) {
+  idCategoria.value = categoria.id_categoria;
+  nomeCategoria.value = categoria.nome_categoria;
+  tipoCategoria.value = categoria.tipo;
+
+  // Com transações, trocar o tipo inverteria o efeito delas no saldo.
+  // O servidor recusa; a tela já trava o campo e explica o porquê.
+  const temTransacoes = categoria.total_transacoes > 0;
+  tipoCategoria.disabled = temTransacoes;
+  avisoTipoCategoria.classList.toggle('hidden', !temTransacoes);
+
+  cancelarCategoria.classList.remove('hidden');
+  tituloFormCategoria.textContent = `Editando "${categoria.nome_categoria}"`;
+  salvarCategoria.textContent = 'Salvar alterações';
+  nomeCategoria.focus();
+}
+
+async function excluirCategoria(categoria) {
+  let url = '/api/categoria/' + categoria.id_categoria;
+  let aviso = 'Essa ação não pode ser desfeita.';
+
+  // Uma transação não pode ficar sem categoria. As dela vão para a
+  // categoria "Outras" do mesmo tipo, e o saldo não muda.
+  if (categoria.total_transacoes > 0) {
+    const nomeDestino = categoria.tipo === 'receita' ? 'Outras receitas' : 'Outras despesas';
+    const destino = todasCategorias.find((c) => !c.personalizada && c.nome_categoria === nomeDestino);
+
+    if (!destino) {
+      mostrarMensagem(`Não encontramos a categoria "${nomeDestino}" para receber as transações.`, 'erro');
+      return;
+    }
+
+    url += '?mover_para=' + destino.id_categoria;
+    const quantas = categoria.total_transacoes === 1 ? 'A transação dela vai' : `As ${categoria.total_transacoes} transações dela vão`;
+    aviso = `${quantas} para "${nomeDestino}". Nenhum saldo muda.`;
+  }
+
+  const confirmou = await confirmar({
+    titulo: `Excluir "${categoria.nome_categoria}"?`,
+    mensagem: 'Se ela tiver um limite de gasto, ele também será removido.',
+    aviso,
+    textoConfirmar: 'Excluir categoria',
+  });
+
+  if (!confirmou) return;
+
+  const { ok, dados } = await chamarApi(url, { method: 'DELETE' });
+
+  if (!ok) {
+    mostrarMensagem(dados.erro || 'Não foi possível excluir a categoria.', 'erro');
+    return;
+  }
+
+  mostrarMensagem(
+    dados.transacoes_movidas > 0
+      ? `Categoria excluída. ${dados.transacoes_movidas} ${dados.transacoes_movidas === 1 ? 'transação foi' : 'transações foram'} para "${dados.movidas_para}".`
+      : 'Categoria excluída.',
+    'sucesso'
+  );
+
+  // Se ela estava aberta no formulário, o formulário volta ao normal.
+  if (Number(idCategoria.value) === categoria.id_categoria) limparFormCategoria();
+  carregarCategorias();
+}
+
+// Um único "ouvinte" na lista inteira: ela é redesenhada a cada mudança,
+// e assim nada precisa ser religado.
+listaCategorias.addEventListener('click', (evento) => {
+  const botao = evento.target.closest('[data-editar-categoria], [data-excluir-categoria]');
+  if (!botao) return;
+
+  const editar = 'editarCategoria' in botao.dataset;
+  const id = Number(editar ? botao.dataset.editarCategoria : botao.dataset.excluirCategoria);
+  const categoria = todasCategorias.find((c) => c.id_categoria === id);
+  if (!categoria) return;
+
+  if (editar) editarCategoria(categoria);
+  else excluirCategoria(categoria);
+});
+
+cancelarCategoria.addEventListener('click', limparFormCategoria);
+
+formCategoria.addEventListener('submit', async function (evento) {
+  evento.preventDefault();
+  esconderMensagem();
+
+  const nome = nomeCategoria.value.trim();
+  if (!nome) {
+    mostrarMensagem('Dê um nome para a categoria.', 'erro');
+    return;
+  }
+
+  const editando = idCategoria.value !== '';
+  const corpo = { nome_categoria: nome };
+  // Campo travado não é enviado: o tipo daquela categoria não muda.
+  if (!tipoCategoria.disabled) corpo.tipo = tipoCategoria.value;
+
+  salvarCategoria.disabled = true;
+
+  const { ok, dados } = await chamarApi(editando ? '/api/categoria/' + idCategoria.value : '/api/categoria', {
+    method: editando ? 'PUT' : 'POST',
+    body: JSON.stringify(corpo),
+  });
+
+  salvarCategoria.disabled = false;
+
+  if (!ok) {
+    mostrarMensagem(dados.erro || 'Não foi possível salvar a categoria.', 'erro');
+    return;
+  }
+
+  mostrarMensagem(editando ? 'Categoria atualizada.' : `Categoria "${dados.nome_categoria}" criada.`, 'sucesso');
+  limparFormCategoria();
+  carregarCategorias();
+});
+
 // ---- SEGURANÇA ----
 // Reaproveita o "esqueci a senha": o link chega no e-mail e abre a tela
 // /redefinir-senha. Pedir a confirmação por e-mail garante que, se alguém
@@ -347,4 +535,5 @@ function carregarPreferencias() {
 
 carregarPerfil();
 carregarContas();
+carregarCategorias();
 carregarPreferencias();

@@ -87,25 +87,8 @@ function criarIcone(classe) {
 
 // ---- ETAPA 1: INTRODUÇÃO ----
 
-function montarIntro() {
-  const lista = document.getElementById('listaPerfisIntro');
-
-  Object.values(PERFIS).forEach((perfil) => {
-    const cartao = document.createElement('div');
-    cartao.className = 'rounded-2xl border border-slate-200 bg-white p-4 flex flex-col items-center';
-    cartao.innerHTML = `
-      <div class="w-11 h-11 rounded-full bg-soft text-brand flex items-center justify-center text-lg"></div>
-      <p class="font-bold text-sm mt-3"></p>
-      <p class="text-[11.5px] text-sub mt-1 leading-snug"></p>
-    `;
-    cartao.querySelector('div').appendChild(criarIcone(perfil.icone));
-    // textContent em vez de colocar o texto no innerHTML: o navegador trata
-    // como texto puro, nunca como HTML. É um bom hábito mesmo com texto fixo.
-    cartao.querySelectorAll('p')[0].textContent = perfil.nome;
-    cartao.querySelectorAll('p')[1].textContent = perfil.resumo;
-    lista.appendChild(cartao);
-  });
-}
+// A introdução é fixa no HTML: os perfis não aparecem nela de propósito,
+// para serem uma surpresa no fim da pesquisa.
 
 document.getElementById('botaoComecar').addEventListener('click', function () {
   perguntaAtual = 0;
@@ -152,7 +135,7 @@ function marcadorHtml(marcada, multipla) {
   if (multipla) {
     return `<span class="w-5 h-5 shrink-0 rounded-md border flex items-center justify-center
                   ${marcada ? 'bg-brand border-brand' : 'border-slate-300 bg-white'}">
-              ${marcada ? '<i class="fa-solid fa-check text-white text-[10px]" aria-hidden="true"></i>' : ''}
+              ${marcada ? '<i class="fa-solid fa-check text-white text-[0.625rem]" aria-hidden="true"></i>' : ''}
             </span>`;
   }
   return `<span class="w-5 h-5 shrink-0 rounded-full border flex items-center justify-center
@@ -182,8 +165,8 @@ function desenharAlternativas() {
     botao.innerHTML = `
       <span class="w-9 h-9 shrink-0 rounded-lg bg-soft text-brand flex items-center justify-center"></span>
       <span class="flex-1">
-        <span class="block text-[13.5px] font-semibold text-ink" data-campo="texto"></span>
-        <span class="block text-[11.5px] text-sub mt-0.5" data-campo="sub"></span>
+        <span class="block text-[0.84375rem] font-semibold text-ink" data-campo="texto"></span>
+        <span class="block text-[0.71875rem] text-sub mt-0.5" data-campo="sub"></span>
       </span>
       ${marcadorHtml(marcada, pergunta.multipla)}
     `;
@@ -328,7 +311,7 @@ function desenharCartoesSelecao() {
       (selecionado ? 'border-brand bg-soft' : 'border-slate-200');
 
     cartao.innerHTML = `
-      ${sugerido ? `<span class="absolute -top-3 left-5 px-3 py-1 rounded-full text-[11px] font-bold
+      ${sugerido ? `<span class="absolute -top-3 left-5 px-3 py-1 rounded-full text-[0.6875rem] font-bold
                        bg-brand text-white">
                        <i class="fa-solid fa-star mr-1" aria-hidden="true"></i> Sugerido para você</span>` : ''}
       <div class="flex items-center gap-3">
@@ -406,5 +389,3 @@ document.getElementById('botaoConfirmar').addEventListener('click', function () 
   PerfisSalvos.salvar(selecionados);
   window.location.href = '/dashboard';
 });
-
-montarIntro();

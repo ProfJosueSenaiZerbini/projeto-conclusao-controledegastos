@@ -52,18 +52,23 @@ A **simulação bancária voltou**, a pedido do desenvolvedor, numa forma enxuta
 
 **Usuario** — cadastro e login
 **Conta** — a Carteira do usuário, com saldo
-**Categoria** — lista fixa de 13 categorias (9 despesa, 4 receita), sem hierarquia. "Metas" é usada só pelo sistema (ver "o dinheiro da meta sai de uma conta")
+**Categoria** — 13 categorias do sistema (9 despesa, 4 receita), sem hierarquia, mais as **personalizadas** que cada usuário cria (ver "Regra: categorias personalizadas"). "Metas" é usada só pelo sistema (ver "o dinheiro da meta sai de uma conta")
 **Transacao** — um gasto ou um ganho
 **Meta** — objetivo financeiro; o valor guardado sai de uma conta do usuário
 
-### Relacionamentos (4 no total)
+Além das 5, a Sprint 02 trouxe **LimiteCategoria** — a meta de gastar menos numa categoria (ver "Regra: limite de gasto por categoria").
+
+### Relacionamentos
 
 | De | Relação | Para | Cardinalidade |
 |---|---|---|---|
 | Usuario | possui | Conta | 1:N |
 | Usuario | define | Meta | 1:N |
+| Usuario | cria | Categoria (personalizada) | 1:N (opcional do lado da categoria) |
+| Usuario | define | LimiteCategoria | 1:N |
 | Conta | origina | Transacao | 1:N |
 | Categoria | classifica | Transacao | 1:N |
+| Categoria | é limitada por | LimiteCategoria | 1:N (um por usuário) |
 
 Não existe relacionamento direto entre Usuario e Transacao. Isso é intencional — ver normalização abaixo.
 
@@ -168,7 +173,31 @@ Por que vira transação: `Conta.saldo` é a soma das transações. Se o saldo b
 - **`valor_atual` não é editado direto** pelo `PUT`, e o `valor_alvo` não pode ficar menor que o que já foi guardado — senão parte do dinheiro sumiria sem voltar para conta nenhuma.
 - **A categoria "Metas" não aparece no formulário de transações**, e o servidor recusa lançá-la à mão.
 - **Excluir a meta não devolve o dinheiro** à conta: as transações "Meta: ..." continuam no histórico. A tela avisa antes de excluir.
+- **Dinheiro guardado não é gasto.** A transação "Metas" é despesa (para o saldo bater), mas fica de fora de toda soma de GASTOS nas telas: card "Despesas" e "Gastos por categoria" do dashboard e as médias de `/meu-perfil`. Use `ehGasto(t)` / `ehDinheiroGuardado(t)` de `auth.js` em vez de `t.categoria.tipo === 'despesa'` quando o assunto for "quanto a pessoa gastou". Sem isso, quanto mais ela guarda, maiores ficam as reservas sugeridas e menor o "quanto tempo o dinheiro dura".
 - A categoria entra pelo seed (bancos novos) e pela migration `categoria_metas` (bancos que já existiam). Nos dois casos fica com o id 13.
+
+## Regra: categorias personalizadas
+
+`Categoria.id_usuario` vazio = categoria do **sistema** (as 13 do seed, de todos). Preenchido = categoria **personalizada**, visível só para aquele usuário. As regras compartilhadas ficam em `src/categorias.js`.
+
+- **Nunca busque categoria só pelo id ou só pelo nome.** Use `buscarCategoriaVisivel` / `visiveisPara` (sistema + do usuário) ou filtre `id_usuario: null` (só sistema). Sem isso, um usuário usa a categoria de outro, ou uma "Lazer" personalizada toma o lugar da do sistema. Por isso `importacao.js`, `guardarNaMeta` e o seed filtram `id_usuario: null`.
+- **Nome:** único por usuário e não pode repetir o nome de uma categoria do sistema (comparação sem maiúsculas nem acentos). Isso é conferido no controller, porque no MySQL o `@@unique([id_usuario, nome_categoria])` aceita vários nulos. "Metas" fica reservada assim.
+- **Tipo:** só muda enquanto a categoria não tem transações — trocar depois inverteria o efeito delas no saldo. A condição `transacoes: { none: {} }` vai no `WHERE` do `updateMany`.
+- **Excluir:** sem transações, apaga direto. Com transações, `DELETE /api/categoria/:id?mover_para=ID` move-as antes para uma categoria do **mesmo tipo** (o saldo não muda), tudo num `$transaction`. A tela usa "Outras despesas" / "Outras receitas".
+- **Categorias do sistema** não são editadas nem excluídas por ninguém.
+- **Excluir usuário** apaga as contas antes do usuário (`deletarUsuario`): o MySQL não garante a ordem das cascatas, e a categoria personalizada não pode sair antes das transações dela.
+- Telas: seção "Categorias" em Configurações e o atalho "Nova categoria" no formulário de Transações.
+
+## Regra: limite de gasto por categoria
+
+"No máximo R$ 500 por mês em Lazer". Tabela `LimiteCategoria` (um por categoria por usuário), rotas em `limiteController.js`.
+
+- **Não é uma Meta.** A meta se cumpre quando o valor chega ao alvo; o limite, quando o gasto fica abaixo. Na tabela `Meta`, o `recalcularStatus` marcaria um limite estourado como "concluída".
+- **O gasto do mês não é gravado**: é a soma das despesas da categoria com `data_transacao` no mês atual, **pagas ou não** (decisão: conta a pagar já é dinheiro comprometido), incluindo as importadas. Renova sozinho no dia 1.
+- A API devolve `gasto_mes`, `restante`, `percentual` e `situacao` (`ok` < 70% ≤ `atencao` < 100% ≤ `estourado`) já calculados — as telas não repetem a regra.
+- Só categorias de **despesa**, e nunca "Metas" (dinheiro guardado não é gasto).
+- Telas: seção "Limites de gasto" e modo "Gastar menos" no painel da tela de Metas; barras com limite e botão "Definir limite" (`/metas?limite=ID`) no bloco "Gastos por categoria" do dashboard.
+- **Pop-up ANTES de registrar** (`confirmarLimite` em `transacoes.js`): se o gasto deixa a categoria em 70% ou mais do limite do mês, a tela pergunta "Registrar mesmo assim?" (`confirmar({ tom: 'alerta' })` do `modal.js`). Cancelar mantém o painel aberto com o que foi digitado. É só aviso: o servidor **não** recusa gasto acima do limite. O 70% está repetido em `PERCENTUAL_ATENCAO` no `limiteController.js` e no `transacoes.js` — mudar nos dois.
 
 ---
 
@@ -259,7 +288,21 @@ model Categoria {
   id_categoria    Int    @id @default(autoincrement())
   nome_categoria  String @db.VarChar(100)
   tipo            String @db.VarChar(20)  // 'receita' ou 'despesa'
+  id_usuario      Int?                    // vazio = do sistema; preenchido = personalizada
+  usuario     Usuario?          @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   transacoes  Transacao[]
+  limites     LimiteCategoria[]
+  @@unique([id_usuario, nome_categoria])
+}
+
+model LimiteCategoria {
+  id_limite     Int     @id @default(autoincrement())
+  valor_limite  Decimal @db.Decimal(12, 2)
+  id_usuario    Int
+  id_categoria  Int
+  usuario    Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  categoria  Categoria @relation(fields: [id_categoria], references: [id_categoria], onDelete: Cascade)
+  @@unique([id_usuario, id_categoria])
 }
 
 model Transacao {
@@ -330,7 +373,14 @@ As imagens da pasta são grandes (centenas de KB). Se em algum momento elas fore
 |---|---|---|
 | POST | `/api/usuario` | Cadastrar (cria a Carteira junto, atômico) |
 | POST | `/api/usuario/login` | Autenticar |
-| GET | `/api/categoria` | Listar categorias |
+| GET | `/api/categoria` | Listar categorias (sistema + personalizadas do usuário) |
+| POST | `/api/categoria` | Criar categoria personalizada (`nome_categoria`, `tipo`) |
+| PUT | `/api/categoria/:id` | Renomear / trocar tipo (só sem transações) |
+| DELETE | `/api/categoria/:id` | Excluir (`?mover_para=ID` se tiver transações) |
+| POST | `/api/limite` | Criar limite de gasto (`id_categoria`, `valor_limite`) |
+| GET | `/api/usuario/:id/limite` | Listar limites com gasto do mês e situação |
+| PUT | `/api/limite/:id` | Alterar o valor do limite |
+| DELETE | `/api/limite/:id` | Remover limite |
 | POST | `/api/transacao` | Registrar ganho ou gasto (atualiza saldo, atômico) |
 | PATCH | `/api/transacao/:id/pagamento` | Marcar gasto como pago / não pago (`{ "pago": true \| false }`) |
 | GET | `/api/usuario/:id/transacao` | Listar transações (via join com conta) |

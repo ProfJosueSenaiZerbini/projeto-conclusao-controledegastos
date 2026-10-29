@@ -195,6 +195,59 @@
                 </div>
             </details>
 
+            <!-- ===== CATEGORIAS ===== -->
+            <details class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <summary class="flex items-center gap-4 p-5 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-500 flex items-center justify-center"><i class="fa-solid fa-tags"></i></div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-900">Categorias</p>
+                        <p class="text-xs text-gray-500">Crie categorias do seu jeito, além das do Verdanz</p>
+                    </div>
+                    <i class="seta fa-solid fa-chevron-down text-gray-400 transition-transform"></i>
+                </summary>
+
+                <div class="px-5 pb-5 pt-4 border-t border-gray-100 space-y-5">
+                    <!-- O mesmo formulário cria e edita: com idCategoria
+                         preenchido, o botão vira "Salvar alterações". -->
+                    <form id="formCategoria" class="space-y-3">
+                        <input type="hidden" id="idCategoria">
+                        <p id="tituloFormCategoria" class="text-sm font-semibold text-gray-700">Nova categoria</p>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="nomeCategoria" maxlength="50" placeholder="Ex.: Pets, Oportunidades..."
+                                   aria-label="Nome da categoria"
+                                   class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                            <select id="tipoCategoria" aria-label="Tipo da categoria"
+                                    class="sm:w-40 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100 disabled:text-gray-400">
+                                <option value="despesa">Gasto</option>
+                                <option value="receita">Ganho</option>
+                            </select>
+                        </div>
+                        <p id="avisoTipoCategoria" class="hidden text-xs text-gray-400">
+                            O tipo não pode mais ser trocado: a categoria já tem transações.
+                        </p>
+                        <div class="flex gap-3">
+                            <button type="button" id="cancelarCategoria"
+                                    class="hidden flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium transition hover:bg-gray-50">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="salvarCategoria"
+                                    class="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-plus mr-1"></i> Criar categoria
+                            </button>
+                        </div>
+                    </form>
+
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700 mb-1">Suas categorias</p>
+                        <ul id="listaCategorias" class="divide-y divide-gray-100"></ul>
+                    </div>
+
+                    <p class="text-xs text-gray-400">
+                        As categorias do Verdanz (Alimentação, Moradia, Lazer...) são fixas e continuam disponíveis para todos.
+                    </p>
+                </div>
+            </details>
+
             <!-- ===== APARÊNCIA ===== -->
             <details class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <summary class="flex items-center gap-4 p-5 cursor-pointer hover:bg-gray-50 transition-colors">
@@ -375,6 +428,8 @@
 
     <script src="/js/auth.js"></script>
     <script src="/js/layout.js"></script>
+    <!-- modal.js: confirmação antes de excluir uma categoria -->
+    <script src="/js/modal.js"></script>
     <script src="/js/configuracoes.js"></script>
 
 </body>

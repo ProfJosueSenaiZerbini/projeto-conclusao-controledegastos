@@ -52,10 +52,15 @@ function normalizar(texto) {
   return String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
 }
 
-// Carrega as 12 categorias num Map por nome, para não consultar o banco
-// a cada transação.
+// Carrega as categorias do sistema num Map por nome, para não consultar o
+// banco a cada transação.
+//
+// Só as do SISTEMA (id_usuario vazio). Sem o filtro, viriam também as
+// categorias personalizadas de todos os usuários, e uma "Lazer" criada por
+// alguém tomaria o lugar da "Lazer" do sistema no Map: as transações
+// importadas de outra pessoa cairiam na categoria desse usuário.
 async function carregarCategorias(cliente) {
-  const lista = await cliente.categoria.findMany();
+  const lista = await cliente.categoria.findMany({ where: { id_usuario: null } });
   const porNome = new Map(lista.map((c) => [c.nome_categoria, c]));
 
   if (!porNome.has('Outras despesas') || !porNome.has('Outras receitas')) {

@@ -1,5 +1,6 @@
 const prisma = require('../prisma');
 const { hojeSemHorario } = require('../saldo');
+const { CATEGORIA_METAS, buscarCategoriaVisivel } = require('../categorias');
 
 // Transforma os Decimal do Prisma em números comuns para o JSON.
 function comValorNumerico(transacao) {
@@ -80,9 +81,10 @@ async function criarTransacao(req, res) {
     //
     // Dentro do $transaction, ou tudo é gravado, ou nada é.
     const transacao = await prisma.$transaction(async (tx) => {
-      const categoria = await tx.categoria.findUnique({
-        where: { id_categoria: idCategoria },
-      });
+      // A categoria precisa ser do sistema ou do próprio usuário. Buscar só
+      // pelo id deixaria alguém lançar gastos na categoria personalizada de
+      // outra pessoa.
+      const categoria = await buscarCategoriaVisivel(tx, idCategoria, req.usuario.id_usuario);
 
       // Lançar erro aqui desfaz a transação inteira automaticamente.
       if (!categoria) {
@@ -92,7 +94,7 @@ async function criarTransacao(req, res) {
       // "Metas" é lançada só pelo "Adicionar valor" da tela de Metas, que
       // também soma o valor na meta. À mão, o dinheiro sairia da conta sem
       // entrar em meta nenhuma.
-      if (categoria.nome_categoria === 'Metas') {
+      if (categoria.nome_categoria === CATEGORIA_METAS) {
         throw new Error('CATEGORIA_SO_DE_METAS');
       }
 
@@ -197,7 +199,7 @@ async function marcarPagamento(req, res) {
 
     // O dinheiro guardado numa meta já saiu da conta. Desmarcar devolveria
     // o valor à conta sem tirar da meta.
-    if (transacao.categoria.nome_categoria === 'Metas') {
+    if (transacao.categoria.nome_categoria === CATEGORIA_METAS) {
       return res.status(400).json({ erro: 'Gastos de meta já saem pagos e não podem ser alterados' });
     }
 

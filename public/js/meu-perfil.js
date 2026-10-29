@@ -59,12 +59,17 @@ function mesesAnteriores(quantidade) {
   return lista;
 }
 
-// "2026-10-12": a segunda-feira da semana atual, para somar os gastos da semana.
-function inicioDaSemana() {
-  const d = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  const diaDaSemana = (d.getDay() + 6) % 7; // segunda = 0 ... domingo = 6
-  d.setDate(d.getDate() - diaDaSemana);
-  return `${chaveDoMes(d)}-${String(d.getDate()).padStart(2, '0')}`;
+// A semana atual, de segunda a domingo, como textos "2026-10-26" e
+// "2026-11-01", para somar os gastos da semana.
+//
+// O FIM da semana importa: sem ele, uma conta a pagar com data no mês que
+// vem (já lançada em Transações) entraria como "gasto desta semana".
+function semanaAtual() {
+  const texto = (d) => `${chaveDoMes(d)}-${String(d.getDate()).padStart(2, '0')}`;
+  const diaDaSemana = (hoje.getDay() + 6) % 7; // segunda = 0 ... domingo = 6
+  const segunda = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - diaDaSemana);
+  const domingo = new Date(segunda.getFullYear(), segunda.getMonth(), segunda.getDate() + 6);
+  return { inicio: texto(segunda), fim: texto(domingo) };
 }
 
 function media(lista) {
@@ -93,8 +98,13 @@ function escapar(texto) {
 // "3,5 meses" → "3 meses e 15 dias". É mais fácil de entender.
 function textoDosMeses(meses) {
   if (meses === Infinity) return 'não acaba';
-  const inteiros = Math.floor(meses);
-  const dias = Math.round((meses - inteiros) * 30);
+  let inteiros = Math.floor(meses);
+  let dias = Math.round((meses - inteiros) * 30);
+  // 3,99 meses arredondava para "3 meses e 30 dias". 30 dias já é 1 mês.
+  if (dias === 30) {
+    inteiros += 1;
+    dias = 0;
+  }
   const partes = [];
   if (inteiros > 0) partes.push(inteiros === 1 ? '1 mês' : `${inteiros} meses`);
   if (dias > 0) partes.push(dias === 1 ? '1 dia' : `${dias} dias`);
@@ -111,16 +121,26 @@ function mesAnoDaqui(meses) {
 //
 // Transforma a lista de transações em números que as ferramentas usam.
 // Lembrete do modelo: se é receita ou despesa vem de categoria.tipo.
+//
+// Dinheiro guardado em metas NÃO entra nas despesas (ehDinheiroGuardado,
+// em auth.js): ele saiu da conta, mas não foi gasto. Se entrasse, quanto
+// mais a pessoa guardasse, maior ficaria o "gasto médio" — e com ele as
+// reservas sugeridas, enquanto o "quanto tempo o dinheiro dura" encolheria.
 function resumir(contas, transacoes) {
   const porMes = {};
-  const semana = inicioDaSemana();
+  const semana = semanaAtual();
   const mesAtual = chaveDoMes(hoje);
   const anoAtual = String(hoje.getFullYear());
+  const textoDeHoje = hojeTexto();
   let gastoDaSemana = 0;
-  let receitasDoAno = 0;
+  let receitasDoAno = 0;          // do ano, até hoje (sem ganhos agendados)
+  let receitasFechadasDoAno = 0;  // do ano, só dos meses que já terminaram
 
   for (const t of transacoes) {
+    if (ehDinheiroGuardado(t)) continue;
+
     const mes = chaveMes(t.data_transacao);
+    const dia = String(t.data_transacao).slice(0, 10);
     const valor = Number(t.valor_transacao);
     const ehReceita = t.categoria.tipo === 'receita';
 
@@ -128,13 +148,16 @@ function resumir(contas, transacoes) {
 
     if (ehReceita) {
       porMes[mes].receitas += valor;
-      if (mes.startsWith(anoAtual)) receitasDoAno += valor;
+      // Para o limite do MEI vale o que JÁ entrou: um ganho lançado com
+      // data futura ainda não é faturamento.
+      if (mes.startsWith(anoAtual) && dia <= textoDeHoje) receitasDoAno += valor;
+      if (mes.startsWith(anoAtual) && mes < mesAtual) receitasFechadasDoAno += valor;
     } else {
       porMes[mes].despesas += valor;
       if (t.categoria.nome_categoria === 'Saúde') porMes[mes].saude += valor;
       // Lazer e Compras são o que dá para segurar primeiro num aperto.
       if (['Lazer', 'Compras'].includes(t.categoria.nome_categoria)) porMes[mes].naoEssenciais += valor;
-      if (String(t.data_transacao).slice(0, 10) >= semana) gastoDaSemana += valor;
+      if (dia >= semana.inicio && dia <= semana.fim) gastoDaSemana += valor;
     }
   }
 
@@ -147,6 +170,9 @@ function resumir(contas, transacoes) {
 
   return {
     saldoTotal: contas.reduce((soma, c) => soma + Number(c.saldo), 0),
+    // O saldo depois de pagar as contas a pagar e receber os ganhos já
+    // lançados (calculado no servidor, em src/saldo.js).
+    saldoPrevistoTotal: contas.reduce((soma, c) => soma + Number(c.saldo_previsto), 0),
     gastoMedioMensal: daBase('despesas'),
     receitaMediaMensal: daBase('receitas'),
     gastoSaudeMedio: daBase('saude'),
@@ -157,6 +183,7 @@ function resumir(contas, transacoes) {
       .filter((m) => porMes[m] && porMes[m].receitas > 0)
       .map((m) => porMes[m].receitas),
     receitasDoAno,
+    receitasFechadasDoAno,
     receitasDoMes: porMes[mesAtual] ? porMes[mesAtual].receitas : 0,
     despesasDoMes: porMes[mesAtual] ? porMes[mesAtual].despesas : 0,
     gastoDaSemana,
@@ -181,17 +208,46 @@ function cartao(icone, titulo, subtitulo, corpo) {
     </div>`;
 }
 
-function campo(id, rotulo, valor, { prefixo = 'R$', dica = '', tipo = 'text' } = {}) {
+// As dicas usam text-[0.6875rem] (11px) e não text-[11px]: medida em "rem",
+// ela cresce junto quando a pessoa escolhe a letra "Maior" em Configurações.
+// Em pixel, ficava sempre em 11px.
+function campo(id, rotulo, valor, { prefixo = 'R$', dica = '', tipo = 'text', exemplo = '' } = {}) {
   return `
     <label class="block">
       <span class="block text-xs font-semibold text-gray-600 mb-1.5">${rotulo}</span>
       <span class="flex items-center rounded-xl border border-gray-200 bg-gray-50 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition">
         ${prefixo ? `<span class="pl-3 text-sm text-gray-400">${prefixo}</span>` : ''}
         <input id="${id}" type="${tipo}" inputmode="decimal" value="${valor ? String(Math.round(valor * 100) / 100).replace('.', ',') : ''}"
+               ${exemplo ? `placeholder="${exemplo}"` : ''}
                class="w-full bg-transparent px-3 py-2.5 text-sm outline-none" autocomplete="off">
       </span>
-      ${dica ? `<span class="block text-[11px] text-gray-400 mt-1">${dica}</span>` : ''}
+      <span id="${id}Erro" class="hidden block text-xs text-red-600 mt-1"></span>
+      ${dica ? `<span class="block text-[0.6875rem] text-gray-400 mt-1">${dica}</span>` : ''}
     </label>`;
+}
+
+// Avisa, embaixo do campo, quando o que foi digitado não é um número que
+// dá para usar. Sem isto, "-500" ou "abc" eram tratados como campo vazio, e
+// a ferramenta pedia "Digite seu salário" — como se a pessoa não tivesse
+// digitado nada.
+function conferirCampo(entrada) {
+  const erro = document.getElementById(entrada.id + 'Erro');
+  if (!erro) return;
+
+  const texto = entrada.value.trim();
+  const ehZero = /^[0\s.,]+$/.test(texto); // "0" e "0,00" são válidos
+  let mensagem = '';
+
+  if (texto && !ehZero && lerNumero(entrada) === 0) {
+    mensagem = texto.includes('-')
+      ? 'Digite o valor sem o sinal de menos.'
+      : 'Use só números, como 1.500,50.';
+  }
+
+  erro.textContent = mensagem;
+  erro.classList.toggle('hidden', !mensagem);
+  entrada.setAttribute('aria-invalid', mensagem ? 'true' : 'false');
+  entrada.parentElement.classList.toggle('border-red-400', Boolean(mensagem));
 }
 
 function seletor(id, rotulo, opcoes, selecionado) {
@@ -233,15 +289,26 @@ function aviso(tipo, texto) {
 function aoDigitar(ids, funcao) {
   ids.forEach((id) => {
     const elemento = document.getElementById(id);
+    elemento.addEventListener('input', () => conferirCampo(elemento));
     elemento.addEventListener('input', funcao);
     elemento.addEventListener('change', funcao);
   });
 }
 
+// O que a pessoa salvou, ou o valor sugerido se ela ainda não mexeu no campo.
+//
+// Usa "=== undefined" de propósito, e não "||": um campo que a pessoa
+// APAGOU fica salvo como 0, e o "||" trata 0 como "nunca preenchido" —
+// ao recarregar a página, a sugestão voltava para o campo que ela tinha
+// esvaziado.
+function salvoOuSugerido(valorSalvo, sugestao) {
+  return valorSalvo === undefined ? sugestao : valorSalvo;
+}
+
 // Aviso de que a média usa poucos dados (pessoa começou a usar agora).
 function avisoPoucosDados(d) {
   if (d.mesesNaMedia >= 2) return '';
-  return `<p class="text-[11px] text-gray-400 mt-3">
+  return `<p class="text-[0.6875rem] text-gray-400 mt-3">
     <i class="fa-solid fa-circle-info mr-1"></i>
     Calculado com ${d.mesesNaMedia === 0 ? 'nenhum mês' : 'só 1 mês'} de registros. Quanto mais você registrar, mais preciso fica.
   </p>`;
@@ -258,7 +325,11 @@ const FERRAMENTAS = {
   // ---------- CLT ----------
   clt(area, d) {
     const prefs = Preferencias.ler();
-    const salarioInicial = prefs.salario || Math.round(d.receitaMediaMensal);
+    // O salário NÃO vem preenchido com a média das entradas: elas são o
+    // valor líquido (depois do INSS) e incluem tudo o que entrou — freela,
+    // rendimentos... O 13º é calculado sobre o BRUTO do holerite, então
+    // qualquer sugestão daqui sairia errada sem a pessoa perceber.
+    const salarioInicial = prefs.salario || 0;
     const mesesInicial = prefs.mesesTrabalhados || 12;
 
     area.innerHTML = cartao(
@@ -267,7 +338,10 @@ const FERRAMENTAS = {
       'Veja quanto cai em cada parcela antes de o dinheiro chegar.',
       `
       <div class="grid sm:grid-cols-2 gap-4">
-        ${campo('cltSalario', 'Salário bruto (do holerite)', salarioInicial, { dica: 'O valor antes dos descontos.' })}
+        ${campo('cltSalario', 'Salário bruto (do holerite)', salarioInicial, {
+          dica: 'O valor antes dos descontos, que aparece no seu holerite.',
+          exemplo: 'Ex.: 3.000,00',
+        })}
         ${seletor(
           'cltMeses',
           'Meses trabalhados neste ano',
@@ -297,7 +371,7 @@ const FERRAMENTAS = {
         ${linha('1ª parcela — até 30 de novembro (sem descontos)', formatarMoeda(r.primeiraParcela), { cor: 'text-green-600' })}
         ${linha('INSS do 13º (sai da 2ª parcela)', '− ' + formatarMoeda(r.inss), { cor: 'text-red-500' })}
         ${linha('2ª parcela — até 20 de dezembro', formatarMoeda(r.segundaParcela), { destaque: true })}
-        <p class="text-[11px] text-gray-400 mt-1 mb-4">
+        <p class="text-[0.6875rem] text-gray-400 mt-1 mb-4">
           A 2ª parcela também pode ter desconto de Imposto de Renda, que depende de dependentes e outras
           deduções. Ele não é calculado aqui — confira no seu holerite.
         </p>
@@ -351,9 +425,15 @@ const FERRAMENTAS = {
 
     const atividade = prefs.atividadeMEI || 'servicos';
     const diasAteDAS = diasAteVencimento(VALORES_2026.diaVencimentoDAS, hoje);
-    const mesesDoAno = hoje.getMonth() + 1;
-    const projecaoAno = (d.receitasDoAno / mesesDoAno) * 12;
-    const usoLimite = Math.min(100, (d.receitasDoAno / VALORES_2026.limiteAnualMEI) * 100);
+    // Projeção do ano: média dos meses que JÁ TERMINARAM × 12. Antes o mês
+    // atual entrava na conta pela metade, e no começo do mês a projeção
+    // ficava baixa demais. Em janeiro ainda não há mês fechado: sem projeção.
+    const mesesFechados = hoje.getMonth();
+    const projecaoAno = mesesFechados > 0 ? (d.receitasFechadasDoAno / mesesFechados) * 12 : 0;
+    const limite = VALORES_2026.limiteAnualMEI;
+    const jaPassou = d.receitasDoAno > limite;
+    const vaiPassar = jaPassou || projecaoAno > limite;
+    const usoLimite = Math.min(100, (d.receitasDoAno / limite) * 100);
 
     area.innerHTML = `
       <div class="space-y-6">
@@ -375,19 +455,24 @@ const FERRAMENTAS = {
               <span>${formatarMoeda(d.receitasDoAno)} de ${formatarMoeda(VALORES_2026.limiteAnualMEI)}</span>
             </div>
             <div class="w-full bg-gray-100 rounded-full h-2">
-              <div class="${projecaoAno > VALORES_2026.limiteAnualMEI ? 'bg-amber-500' : 'bg-blue-600'} h-2 rounded-full" style="width: ${usoLimite}%"></div>
+              <div class="${jaPassou ? 'bg-red-500' : vaiPassar ? 'bg-amber-500' : 'bg-blue-600'} h-2 rounded-full" style="width: ${usoLimite}%"></div>
             </div>
-            <p class="text-[11px] text-gray-400 mt-2">
-              Considera todas as entradas registradas no Verdanz, então é uma aproximação do seu faturamento.
+            <p class="text-[0.6875rem] text-gray-400 mt-2">
+              Considera as entradas registradas no Verdanz até hoje, então é uma aproximação do seu faturamento.
             </p>
             ${
-              projecaoAno > VALORES_2026.limiteAnualMEI
+              jaPassou
                 ? `<div class="mt-3">${aviso(
-                    'atencao',
-                    `No ritmo atual, você fecha o ano com cerca de ${formatarMoeda(projecaoAno)} — acima do limite do MEI.
-                     Converse com um contador antes de passar dele.`
+                    'perigo',
+                    `Suas entradas deste ano já passam do limite do MEI. Converse com um contador sobre a mudança de categoria.`
                   )}</div>`
-                : ''
+                : vaiPassar
+                  ? `<div class="mt-3">${aviso(
+                      'atencao',
+                      `No ritmo dos meses que já fecharam, você termina o ano com cerca de ${formatarMoeda(projecaoAno)} —
+                       acima do limite do MEI. Converse com um contador antes de passar dele.`
+                    )}</div>`
+                  : ''
             }
           </div>
           `
@@ -412,7 +497,7 @@ const FERRAMENTAS = {
   // ---------- ESTUDANTE ----------
   estudante(area, d) {
     const prefs = Preferencias.ler();
-    const valorInicial = prefs.mesada || Math.round(d.receitaMediaMensal);
+    const valorInicial = salvoOuSugerido(prefs.mesada, Math.round(d.receitaMediaMensal));
     const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
     const diasRestantes = diasNoMes - hoje.getDate() + 1;
 
@@ -506,13 +591,47 @@ const FERRAMENTAS = {
     );
 
     function contas() {
-      return Preferencias.ler().contasFixas || [];
+      const lista = Preferencias.ler().contasFixas || [];
+
+      // Contas cadastradas antes de existir o "paguei" não têm a data de
+      // cadastro. Elas ganham a de hoje: assim nenhuma aparece de repente
+      // como "atrasada" por um vencimento que a pessoa talvez já tenha
+      // pago. A partir do mês que vem, passam a ser acompanhadas.
+      if (lista.some((c) => !c.criadaEm)) {
+        lista.forEach((c) => {
+          if (!c.criadaEm) c.criadaEm = hojeTexto();
+        });
+        Preferencias.salvar('contasFixas', lista);
+      }
+      return lista;
+    }
+
+    // Ordem da lista: atrasadas primeiro (a mais atrasada no topo), depois
+    // as que vão vencer (a mais próxima no topo) e, no fim, as já pagas.
+    function ordem(c) {
+      if (c.situacao === 'atrasada') return -1 - c.dias;
+      if (c.situacao === 'paga') return 1000 + c.dias;
+      return c.dias;
+    }
+
+    const plural = (n, palavra) => `${n} ${palavra}${n === 1 ? '' : 's'}`;
+    const etiqueta = (cor, texto) =>
+      `<span class="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${cor}">${texto}</span>`;
+
+    // Quanto mais urgente, mais forte a cor.
+    function seloDaConta(c) {
+      if (c.situacao === 'paga') return etiqueta('text-green-700 bg-green-50', '<i class="fa-solid fa-check mr-1"></i>paga');
+      if (c.situacao === 'atrasada') return etiqueta('text-red-600 bg-red-50', `atrasada há ${plural(c.dias, 'dia')}`);
+      if (c.dias === 0) return etiqueta('text-red-600 bg-red-50', 'vence hoje');
+      if (c.dias <= 3) return etiqueta('text-red-600 bg-red-50', `em ${plural(c.dias, 'dia')}`);
+      if (c.dias <= 7) return etiqueta('text-amber-700 bg-amber-50', `em ${c.dias} dias`);
+      return `<span class="text-xs text-gray-400">em ${plural(c.dias, 'dia')}</span>`;
     }
 
     function desenhar() {
       const lista = contas()
-        .map((c, indice) => ({ ...c, indice, dias: diasAteVencimento(c.dia, hoje) }))
-        .sort((a, b) => a.dias - b.dias);
+        .map((c, indice) => ({ ...c, indice, ...situacaoContaFixa(c, hoje) }))
+        .sort((a, b) => ordem(a) - ordem(b));
 
       const ul = document.getElementById('domLista');
       if (lista.length === 0) {
@@ -520,22 +639,31 @@ const FERRAMENTAS = {
       } else {
         ul.innerHTML = lista
           .map((c) => {
-            // Quanto mais perto do vencimento, mais forte a cor.
-            let selo = `<span class="text-xs text-gray-400">em ${c.dias} dias</span>`;
-            if (c.dias === 0) selo = `<span class="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">vence hoje</span>`;
-            else if (c.dias <= 3) selo = `<span class="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">em ${c.dias} ${c.dias === 1 ? 'dia' : 'dias'}</span>`;
-            else if (c.dias <= 7) selo = `<span class="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">em ${c.dias} dias</span>`;
+            const selo = seloDaConta(c);
+            const paga = c.situacao === 'paga';
 
+            // A etiqueta de prazo fica na segunda linha, junto do dia, e não
+            // numa coluna própria: no celular não sobrava espaço, e o nome da
+            // conta era cortado para "L..." — justamente o que a pessoa
+            // precisa ler. O valor não tem mais largura fixa pelo mesmo motivo.
             return `
               <li class="flex items-center gap-3 py-3">
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-gray-800 truncate">${escapar(c.nome)}</p>
-                  <p class="text-xs text-gray-400">Vence todo dia ${c.dia}</p>
+                  <p class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5 text-xs text-gray-400">
+                    <span>Todo dia ${c.dia}</span>
+                    ${selo}
+                  </p>
                 </div>
-                ${selo}
-                <span class="text-sm font-semibold w-28 text-right">${formatarMoeda(c.valor)}</span>
-                <button type="button" data-remover="${c.indice}" title="Remover ${escapar(c.nome)}"
-                        class="w-8 h-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                <span class="text-sm font-semibold text-right whitespace-nowrap ${paga ? 'text-gray-400' : 'text-gray-900'}">${formatarMoeda(c.valor)}</span>
+                <button type="button" data-pagar="${c.indice}"
+                        title="${paga ? 'Desmarcar pagamento de' : 'Marcar como paga:'} ${escapar(c.nome)}"
+                        aria-label="${paga ? 'Desmarcar pagamento de' : 'Marcar como paga:'} ${escapar(c.nome)}"
+                        class="w-8 h-8 shrink-0 rounded-lg transition-colors ${paga ? 'text-green-600 hover:text-gray-500 hover:bg-gray-100' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}">
+                  <i class="fa-solid ${paga ? 'fa-rotate-left' : 'fa-check'} text-xs"></i>
+                </button>
+                <button type="button" data-remover="${c.indice}" title="Remover ${escapar(c.nome)}" aria-label="Remover ${escapar(c.nome)}"
+                        class="w-8 h-8 shrink-0 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                   <i class="fa-solid fa-trash text-xs"></i>
                 </button>
               </li>`;
@@ -543,10 +671,32 @@ const FERRAMENTAS = {
           .join('');
       }
 
-      ul.querySelectorAll('[data-remover]').forEach((botao) => {
+      // "Paguei" vale só para o mês atual: no mês que vem a conta volta a
+      // vencer sozinha, sem a pessoa precisar desmarcar nada.
+      ul.querySelectorAll('[data-pagar]').forEach((botao) => {
         botao.addEventListener('click', () => {
           const atual = contas();
-          atual.splice(Number(botao.dataset.remover), 1);
+          const conta = atual[Number(botao.dataset.pagar)];
+          const esteMes = chaveDoMes(hoje);
+          conta.pagaEm = conta.pagaEm === esteMes ? null : esteMes;
+          Preferencias.salvar('contasFixas', atual);
+          desenhar();
+        });
+      });
+
+      // Remover pede confirmação: não tem "desfazer", e o botão fica ao lado
+      // do "paguei" — um toque errado no celular apagava a conta.
+      ul.querySelectorAll('[data-remover]').forEach((botao) => {
+        botao.addEventListener('click', async () => {
+          const atual = contas();
+          const indice = Number(botao.dataset.remover);
+          const confirmou = await confirmar({
+            titulo: `Remover "${atual[indice].nome}"?`,
+            mensagem: 'Ela sai da sua lista de contas fixas. Suas transações não mudam.',
+            textoConfirmar: 'Remover',
+          });
+          if (!confirmou) return;
+          atual.splice(indice, 1);
           Preferencias.salvar('contasFixas', atual);
           desenhar();
         });
@@ -566,7 +716,7 @@ const FERRAMENTAS = {
       }
 
       const prefs = Preferencias.ler();
-      const renda = prefs.rendaCasa || Math.round(d.receitasDoMes);
+      const renda = salvoOuSugerido(prefs.rendaCasa, Math.round(d.receitasDoMes));
       const custoDeAtrasarTudo = lista.reduce((soma, c) => soma + custoDoAtraso(c.valor, 10), 0);
 
       resumo.innerHTML = `
@@ -584,8 +734,11 @@ const FERRAMENTAS = {
         const valor = lerNumero(document.getElementById('domRenda'));
         Preferencias.salvar('rendaCasa', valor);
         const sobra = valor - total;
+        // Quando não sobra, a linha diz quanto FALTA, com o valor positivo.
+        // "Falta R$ 950" é mais claro do que "Sobra −R$ 950" — e o sinal de
+        // menos sozinho ainda quebrava para outra linha no celular.
         document.getElementById('domSobra').innerHTML = valor
-          ? linha('Sobra depois das contas fixas', formatarMoeda(sobra), {
+          ? linha(sobra < 0 ? 'Falta para pagar as contas fixas' : 'Sobra depois das contas fixas', formatarMoeda(Math.abs(sobra)), {
               cor: sobra < 0 ? 'text-red-500' : 'text-blue-600',
             }) +
             (sobra < 0
@@ -604,14 +757,24 @@ const FERRAMENTAS = {
       const valor = lerNumero(document.getElementById('domValor'));
       const dia = Math.floor(lerNumero(document.getElementById('domDia')));
 
-      if (!nome || !valor || dia < 1 || dia > 31) {
-        erro.textContent = 'Preencha o nome, um valor maior que zero e um dia de 1 a 31.';
+      // Diz exatamente o que falta, e leva o cursor até o primeiro campo
+      // com problema — antes a mensagem listava as três regras de uma vez.
+      const problemas = [];
+      if (!nome) problemas.push({ campo: 'domNome', texto: 'o nome da conta' });
+      if (!valor) problemas.push({ campo: 'domValor', texto: 'um valor maior que zero' });
+      if (dia < 1 || dia > 31) problemas.push({ campo: 'domDia', texto: 'o dia do vencimento, de 1 a 31' });
+
+      if (problemas.length > 0) {
+        const textos = problemas.map((p) => p.texto);
+        const lista = textos.length > 1 ? `${textos.slice(0, -1).join(', ')} e ${textos[textos.length - 1]}` : textos[0];
+        erro.textContent = `Falta informar ${lista}.`;
         erro.classList.remove('hidden');
+        document.getElementById(problemas[0].campo).focus();
         return;
       }
       erro.classList.add('hidden');
 
-      Preferencias.salvar('contasFixas', [...contas(), { nome, valor, dia }]);
+      Preferencias.salvar('contasFixas', [...contas(), { nome, valor, dia, criadaEm: hojeTexto() }]);
       evento.target.reset();
       document.getElementById('domNome').focus();
       desenhar();
@@ -652,7 +815,12 @@ const FERRAMENTAS = {
           'Com o que você tem, o que ainda vai entrar e o quanto gasta.',
           `
           <div class="grid sm:grid-cols-3 gap-4">
-            ${campo('durSaldo', 'Dinheiro que você tem', Math.max(0, d.saldoTotal), { dica: 'Começa com o saldo das suas contas.' })}
+            ${campo('durSaldo', 'Dinheiro que você tem', Math.max(0, d.saldoPrevistoTotal), {
+              // O saldo PREVISTO, e não o de hoje: uma conta a pagar já lançada
+              // vai sair desse dinheiro. Com o saldo de hoje, o dinheiro
+              // parecia durar mais do que vai durar.
+              dica: 'Começa com o saldo das suas contas, já descontadas as contas a pagar.',
+            })}
             ${campo('durGasto', 'Gasto por mês', Math.round(d.gastoMedioMensal), { dica: 'Começa com a sua média.' })}
             ${campo('durBicos', 'Bicos por mês (opcional)', prefs.bicos || 0)}
           </div>
@@ -681,6 +849,13 @@ const FERRAMENTAS = {
 
       if (!mediaSalarial || !meses) {
         saida.innerHTML = aviso('info', 'Preencha a média salarial e os meses trabalhados para ver o seu seguro.');
+      } else if (meses > 36) {
+        // A lei olha só os últimos 36 meses: "50 meses" é um erro de digitação
+        // ou o tempo total de carteira, que não serve para esta conta.
+        saida.innerHTML = aviso(
+          'atencao',
+          'Conte só os meses com carteira dentro dos últimos 36 meses (3 anos). O máximo é 36.'
+        );
       } else {
         const quantidade = parcelasSeguroDesemprego(meses, pedido);
         if (quantidade === 0) {
@@ -697,7 +872,7 @@ const FERRAMENTAS = {
             ${linha('Valor de cada parcela', formatarMoeda(valor))}
             ${linha('Número de parcelas', String(quantidade))}
             ${linha('Total a receber', formatarMoeda(valor * quantidade), { destaque: true, cor: 'text-blue-600' })}
-            <p class="text-[11px] text-gray-400 mt-2">
+            <p class="text-[0.6875rem] text-gray-400 mt-2">
               Estimativa pelas regras de 2026. O valor oficial aparece na Carteira de Trabalho Digital depois do pedido,
               que deve ser feito de 7 a 120 dias após a demissão.
             </p>`;
@@ -752,7 +927,7 @@ const FERRAMENTAS = {
   // ---------- APOSENTADO ----------
   aposentado(area, d) {
     const prefs = Preferencias.ler();
-    const beneficioInicial = prefs.beneficio || Math.round(d.receitaMediaMensal);
+    const beneficioInicial = salvoOuSugerido(prefs.beneficio, Math.round(d.receitaMediaMensal));
 
     const corpoSaude =
       d.gastoSaudeMedio > 0
@@ -870,15 +1045,34 @@ function desenharMeta() {
 
   // A meta do estudante usa a mesada digitada na ferramenta.
   const prefs = Preferencias.ler();
-  const dados = { ...dadosResumo, rendaMensalEstudante: prefs.mesada || dadosResumo.receitaMediaMensal };
+  const dados = {
+    ...dadosResumo,
+    rendaMensalEstudante: salvoOuSugerido(prefs.mesada, dadosResumo.receitaMediaMensal),
+  };
   const meta = regra(dados);
   const valor = arredondarMeta(meta.valor);
-  const jaExiste = metasExistentes.some((m) => m.titulo === meta.titulo && m.status !== 'cancelada');
+
+  // Títulos que contam como "esta meta": o dela e, se ela tiver grupo, os
+  // das metas dos outros perfis com o mesmo grupo (ver perfil-conteudo.js).
+  const titulosEquivalentes = meta.grupo
+    ? Object.values(CONTEUDO_PERFIS)
+        .filter((c) => c.meta)
+        .map((c) => c.meta(dados))
+        .filter((m) => m.grupo === meta.grupo)
+        .map((m) => m.titulo)
+    : [meta.titulo];
+  const existente = metasExistentes.find(
+    (m) => titulosEquivalentes.includes(m.titulo) && m.status !== 'cancelada'
+  );
 
   let rodape;
-  if (jaExiste) {
+  if (existente) {
+    const texto =
+      existente.titulo === meta.titulo
+        ? 'Você já tem esta meta.'
+        : `Você já tem a meta "${escapar(existente.titulo)}", que serve para a mesma coisa.`;
     rodape = `<a href="/metas" class="block text-center text-sm font-medium text-blue-600 hover:underline">
-                <i class="fa-solid fa-check mr-1"></i> Você já tem esta meta. Ver metas
+                <i class="fa-solid fa-check mr-1"></i> ${texto} Ver metas
               </a>`;
   } else if (valor <= 0) {
     rodape = `<p class="text-xs text-gray-500">Registre seus gastos por algumas semanas para receber uma sugestão de valor.</p>`;

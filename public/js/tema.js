@@ -36,8 +36,14 @@
     return preferencia('tema', 'claro');
   }
 
+  // Telas com visual próprio, que não têm versão escura no tema.css (a
+  // pesquisa de perfil, com as cores verdes do modelo do grupo), marcam
+  // <html data-sem-tema>. Nelas vale só o tamanho da letra.
+  const semTema = document.documentElement.hasAttribute('data-sem-tema');
+
   // tema: 'claro', 'escuro' ou 'sistema'. Sem parâmetro, usa o salvo.
   function aplicarTema(tema) {
+    if (semTema) return;
     tema = tema || temaSalvo();
     const escuro = tema === 'escuro' || (tema === 'sistema' && midiaEscura.matches);
     document.documentElement.classList.toggle('escuro', escuro);

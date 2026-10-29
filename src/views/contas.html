@@ -66,7 +66,8 @@
             <div class="bg-gradient-to-br from-white to-blue-50 border border-blue-100 p-4 rounded-2xl relative overflow-hidden">
                 <div class="relative z-10">
                     <p class="text-sm font-semibold text-gray-700">Total guardado</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-1" id="totalGeral">R$ 0,00</p>
+                    <!-- whitespace-nowrap: valor numa linha só; caberNaLargura (auth.js) diminui a letra se não couber -->
+                    <p class="text-2xl font-bold text-gray-900 mt-1 whitespace-nowrap overflow-hidden text-ellipsis" id="totalGeral">R$ 0,00</p>
                     <p class="text-xs text-gray-500 mt-1">Somando todas as contas</p>
                 </div>
                 <i class="fa-solid fa-leaf absolute -bottom-2 -right-2 text-6xl text-green-200/50 -rotate-12"></i>

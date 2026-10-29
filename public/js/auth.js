@@ -111,6 +111,31 @@ function formatarMoeda(valor) {
   });
 }
 
+// ---- VALORES GRANDES CABENDO NO CARD ----
+//
+// Um valor como "R$ 10.000.000.000,00" não cabe num card estreito, e não
+// pode quebrar linha no meio do número. Esta função diminui a letra, de
+// 1 em 1 pixel, até o texto caber na largura do elemento.
+//
+// Para funcionar, o elemento precisa de "whitespace-nowrap" (uma linha só)
+// e o card de "min-w-0" (senão o card cresce junto com o texto e nunca
+// "falta espaço"). Se nem no tamanho mínimo couber, o "text-ellipsis" do
+// elemento corta com "...", e o valor completo aparece ao passar o mouse.
+function caberNaLargura(elemento, minimoPx = 14) {
+  // Volta ao tamanho original da classe (text-2xl) antes de medir: o valor
+  // pode ter diminuído, ou a tela pode ter ficado mais larga.
+  elemento.style.fontSize = '';
+  elemento.title = elemento.textContent;
+
+  let tamanho = parseFloat(getComputedStyle(elemento).fontSize);
+
+  // scrollWidth = largura que o texto precisa; clientWidth = largura que tem.
+  while (elemento.scrollWidth > elemento.clientWidth && tamanho > minimoPx) {
+    tamanho -= 1;
+    elemento.style.fontSize = tamanho + 'px';
+  }
+}
+
 // "2026-09-06T00:00:00.000Z" -> "06/09/2026"
 // Fatiamos a string em vez de usar new Date() de propósito: o construtor
 // converteria para o fuso local e a data poderia "voltar" um dia.
@@ -161,6 +186,24 @@ function statusTransacao(t) {
 
   if (t.data_pagamento) return 'pago';
   return data < hoje ? 'atrasado' : 'pendente';
+}
+
+// Guardar dinheiro numa meta gera uma transação de despesa na categoria
+// "Metas" (ver metaController.js): o dinheiro sai da conta, então o saldo
+// precisa dessa transação. Mas ele NÃO foi gasto — continua da pessoa,
+// guardado. Por isso fica de fora de toda soma de GASTOS (despesas do mês,
+// gastos por categoria, médias das ferramentas de perfil). Sem isso, quanto
+// mais a pessoa guarda, mais "gastadora" o Verdanz acha que ela é.
+//
+// O nome basta para reconhecer: "Metas" é categoria do sistema e nenhum
+// usuário consegue criar outra com esse nome (categoriaController.js).
+function ehDinheiroGuardado(t) {
+  return t.categoria.nome_categoria === 'Metas' && !t.categoria.id_usuario;
+}
+
+// Gasto de verdade: despesa que não é dinheiro guardado numa meta.
+function ehGasto(t) {
+  return t.categoria.tipo === 'despesa' && !ehDinheiroGuardado(t);
 }
 
 // ---- CHAMADAS À API ----

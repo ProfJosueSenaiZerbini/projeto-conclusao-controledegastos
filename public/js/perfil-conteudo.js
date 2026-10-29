@@ -7,6 +7,12 @@
 // Todos os números citados foram conferidos em 2026. A fonte de cada um
 // está em Docs/Perfis/analise-funcionalidades-por-perfil.md — se for
 // atualizar um valor, atualize lá também.
+//
+// META SUGERIDA: metas com o mesmo "grupo" servem para a mesma coisa.
+// Quem tem mais de um perfil (CLT e Autônomo, por exemplo) recebia duas
+// reservas de emergência com nomes diferentes e quase o mesmo valor, e
+// podia criar as duas para o mesmo dinheiro. Com o grupo, a tela
+// reconhece que uma meta do grupo já existe (ver desenharMeta).
 
 const CONTEUDO_PERFIS = {
   clt: {
@@ -47,6 +53,7 @@ const CONTEUDO_PERFIS = {
     ],
     meta: (d) => ({
       titulo: 'Reserva de emergência',
+      grupo: 'reserva-emergencia',
       valor: d.gastoMedioMensal * 6,
       meses: 12,
       porque: 'Seis meses dos seus gastos: o tempo médio para atravessar uma demissão ou um imprevisto grande.',
@@ -90,6 +97,7 @@ const CONTEUDO_PERFIS = {
     ],
     meta: (d) => ({
       titulo: 'Reserva para os meses fracos',
+      grupo: 'reserva-emergencia',
       valor: d.gastoMedioMensal * 6,
       meses: 18,
       porque: 'Seis meses dos seus gastos, juntando nos meses bons para cobrir os fracos.',
@@ -175,6 +183,7 @@ const CONTEUDO_PERFIS = {
     ],
     meta: (d) => ({
       titulo: 'Fundo de imprevistos da casa',
+      grupo: 'reserva-emergencia',
       valor: (d.totalContasFixas || d.gastoMedioMensal) * 3,
       meses: 6,
       porque: 'Três meses das contas da casa, para um conserto ou uma conta mais alta não virar dívida.',

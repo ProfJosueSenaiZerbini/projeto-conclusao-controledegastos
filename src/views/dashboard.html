@@ -146,23 +146,27 @@
             </div>
         </header>
 
+        <!-- Valores grandes: "min-w-0" deixa o card ficar mais estreito que
+             o texto (sem ele, o card de um grid não encolhe), e o valor fica
+             numa linha só ("whitespace-nowrap"). Quem faz caber é a função
+             caberNaLargura (auth.js), que diminui a letra quando precisa. -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm min-w-0">
                 <p class="text-gray-500 text-sm mb-2">Saldo atual</p>
-                <h3 class="text-2xl font-bold text-gray-900" id="statSaldo">R$ 0,00</h3>
+                <h3 class="text-2xl font-bold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis" id="statSaldo">R$ 0,00</h3>
                 <p class="text-xs text-gray-400 mt-2">Nenhuma conta cadastrada ainda</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm min-w-0">
                 <p class="text-gray-500 text-sm mb-2">Receitas</p>
-                <h3 class="text-2xl font-bold text-gray-900" id="statReceitas">R$ 0,00</h3>
+                <h3 class="text-2xl font-bold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis" id="statReceitas">R$ 0,00</h3>
                 <p class="text-xs text-gray-400 mt-2">Este mês</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm min-w-0">
                 <p class="text-gray-500 text-sm mb-2">Despesas</p>
-                <h3 class="text-2xl font-bold text-gray-900" id="statDespesas">R$ 0,00</h3>
+                <h3 class="text-2xl font-bold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis" id="statDespesas">R$ 0,00</h3>
                 <p class="text-xs text-gray-400 mt-2">Este mês</p>
             </div>
-            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm min-w-0">
                 <p class="text-gray-500 text-sm mb-2">Metas ativas</p>
                 <h3 class="text-2xl font-bold text-gray-900" id="statMetas">0</h3>
                 <p class="text-xs text-gray-400 mt-2">Nenhuma meta criada</p>
@@ -207,7 +211,8 @@
                          o -mr-2 puxa de volta o espaço extra, para o visual
                          ficar igual ao de antes. Uma seta de 14px era pequena
                          demais para acertar com o dedo no celular. -->
-                    <button class="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"><i class="fa-solid fa-arrow-right"></i></button>
+                    <a href="/metas" title="Ver limites de gasto"
+                       class="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"><i class="fa-solid fa-arrow-right"></i></a>
                 </div>
                 
                 <div id="blocoCategorias" class="flex-1 flex flex-col items-center justify-center text-center gap-2 py-6">

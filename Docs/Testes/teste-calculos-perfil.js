@@ -94,6 +94,27 @@ testar('dia 31 em fevereiro cai no dia 28', () =>
   assert.strictEqual(c.diasAteVencimento(31, new Date(2026, 1, 10)), 18));
 testar('conta de R$ 180 com 10 dias de atraso: R$ 4,20 a mais', () => perto(c.custoDoAtraso(180, 10), 4.2));
 
+// situacaoContaFixa: hoje = 15/10/2026 em todos os casos abaixo.
+const dia15 = new Date(2026, 9, 15);
+const situacao = (conta) => c.situacaoContaFixa(conta, dia15);
+testar('venceu dia 10 e não foi paga: atrasada há 5 dias', () =>
+  assert.deepStrictEqual(situacao({ dia: 10, criadaEm: '2026-09-01' }), { situacao: 'atrasada', dias: 5 }));
+testar('venceu dia 10 e foi paga: próxima em 26 dias (10/11)', () =>
+  assert.deepStrictEqual(situacao({ dia: 10, pagaEm: '2026-10', criadaEm: '2026-09-01' }), { situacao: 'paga', dias: 26 }));
+testar('paga no mês passado não conta como paga neste', () =>
+  assert.strictEqual(situacao({ dia: 10, pagaEm: '2026-09', criadaEm: '2026-09-01' }).situacao, 'atrasada'));
+testar('vence dia 20: a vencer em 5 dias', () =>
+  assert.deepStrictEqual(situacao({ dia: 20, criadaEm: '2026-09-01' }), { situacao: 'a_vencer', dias: 5 }));
+testar('vence hoje: a vencer em 0 dias (ainda não atrasou)', () =>
+  assert.deepStrictEqual(situacao({ dia: 15, criadaEm: '2026-09-01' }), { situacao: 'a_vencer', dias: 0 }));
+testar('cadastrada depois do vencimento: só vale no mês que vem', () =>
+  assert.deepStrictEqual(situacao({ dia: 10, criadaEm: '2026-10-12' }), { situacao: 'a_vencer', dias: 26 }));
+testar('dia 31 em fevereiro vence no dia 28', () =>
+  assert.deepStrictEqual(c.situacaoContaFixa({ dia: 31, criadaEm: '2026-01-01' }, new Date(2026, 1, 10)), {
+    situacao: 'a_vencer',
+    dias: 18,
+  }));
+
 console.log('\nAposentado');
 testar('empréstimo de R$ 10.000 em 24x de R$ 528,71 = 2% ao mês', () => {
   const r = c.custoDoEmprestimo(10000, 528.71, 24);

@@ -1,8 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// As 13 categorias fixas do escopo atual: 9 de despesa e 4 de receita.
-// A lista é fechada — o usuário não cria categorias nesta fase.
+// As 13 categorias do SISTEMA: 9 de despesa e 4 de receita. Elas ficam
+// com id_usuario vazio e valem para todos. Além delas, cada usuário pode
+// criar as suas (categorias personalizadas, ver categoriaController.js),
+// que não passam pelo seed.
 //
 // O `tipo` aqui é o que define se uma transação é entrada ou saída.
 // A transação não guarda essa informação por conta própria: quem
@@ -40,8 +42,10 @@ async function main() {
     // Guarda de duplicidade: só cria se ainda não existir.
     // É isso que torna o seed idempotente — pode rodar quantas
     // vezes quiser sem duplicar nada.
+    // id_usuario: null = procura só entre as do sistema. Uma categoria
+    // personalizada com o mesmo nome não conta.
     const existente = await prisma.categoria.findFirst({
-      where: { nome_categoria: categoria.nome_categoria },
+      where: { nome_categoria: categoria.nome_categoria, id_usuario: null },
     });
 
     if (!existente) {

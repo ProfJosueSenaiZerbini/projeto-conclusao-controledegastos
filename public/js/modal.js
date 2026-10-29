@@ -153,29 +153,51 @@ document.addEventListener('keydown', function (evento) {
 //     textoConfirmar: 'Excluir conta',
 //   })
 
-function confirmar({ titulo, mensagem = '', aviso = '', textoConfirmar = 'Confirmar' }) {
+// O "tom" muda o visual da confirmação:
+//   perigo (padrão) → lixeira e botão vermelho, para excluir algo;
+//   alerta          → triângulo amarelo e botão azul, para "tem certeza?"
+//                     que não apaga nada (ex.: gasto acima do limite).
+const TOM_CONFIRMAR = {
+  perigo: {
+    icone: COR_MODAL.iconePerigo,
+    simbolo: 'fa-solid fa-trash',
+    aviso: 'bg-[#fef2f2] border-[#fee2e2] text-[#b91c1c]',
+    botao: COR_MODAL.perigo,
+  },
+  alerta: {
+    icone: COR_MODAL.iconeAlerta,
+    simbolo: 'fa-solid fa-triangle-exclamation',
+    aviso: 'bg-[#fffbeb] border-[#fef3c7] text-[#92400e]',
+    botao: COR_MODAL.principal,
+  },
+};
+
+function confirmar({ titulo, mensagem = '', aviso = '', textoConfirmar = 'Confirmar', tom = 'perigo' }) {
+  const estilo = TOM_CONFIRMAR[tom] || TOM_CONFIRMAR.perigo;
+
   tituloModal.textContent = titulo;
   mensagemModal.textContent = mensagem;
   mensagemModal.classList.toggle('hidden', !mensagem);
 
   iconeModal.className =
-    'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ' + COR_MODAL.iconePerigo;
-  iconeModal.innerHTML = '<i class="fa-solid fa-trash"></i>';
+    'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ' + estilo.icone;
+  iconeModal.innerHTML = `<i class="${estilo.simbolo}"></i>`;
 
   avisoModal.textContent = aviso;
-  avisoModal.classList.toggle('hidden', !aviso);
+  avisoModal.className = 'mt-4 px-4 py-3 rounded-xl border text-sm ' + estilo.aviso + (aviso ? '' : ' hidden');
 
   campoModal.classList.add('hidden');
   cancelarModal.classList.remove('hidden');
 
   confirmarModal.textContent = textoConfirmar;
   confirmarModal.className =
-    'flex-1 py-3 rounded-xl text-[#ffffff] font-bold transition ' + COR_MODAL.perigo;
+    'flex-1 py-3 rounded-xl text-[#ffffff] font-bold transition ' + estilo.botao;
 
   abrirModal();
 
   // O foco vai para Cancelar: numa ação destrutiva, o Enter distraído
-  // não deve apagar nada.
+  // não deve apagar nada. No alerta vale o mesmo: o pop-up existe para a
+  // pessoa pensar antes, e o Enter não deve passar direto por ele.
   cancelarModal.focus();
 
   return new Promise((resolver) => {
