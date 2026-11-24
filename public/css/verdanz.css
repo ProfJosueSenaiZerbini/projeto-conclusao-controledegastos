@@ -693,7 +693,6 @@ body.app {
     gap: .25rem;
 }
 .menu a,
-.menu .menu__em-breve,
 .menu button {
     display: flex;
     align-items: center;
@@ -713,8 +712,7 @@ body.app {
     transition: background-color .15s, color .15s;
 }
 .menu a > i,
-.menu button > i,
-.menu .menu__em-breve > i {
+.menu button > i {
     width: 1.25rem;
     text-align: center;
 }
@@ -733,20 +731,6 @@ body.app {
     color: var(--tinta);
     font-weight: 600;
     cursor: default;
-}
-.menu .menu__em-breve {
-    color: #9fb8a5;
-    cursor: default;
-}
-.menu .menu__em-breve small {
-    margin-left: auto;
-    flex-shrink: 0;
-    white-space: nowrap;
-    padding: .0625rem .5rem;
-    border: 1px solid #5d7a66;
-    border-radius: 999px;
-    font-family: var(--fonte-texto);
-    font-size: .8125rem;
 }
 
 .lateral .menu a:focus-visible,
@@ -1862,8 +1846,7 @@ fieldset {
 
 /* O mesmo menu, sobre fundo claro (folha "Mais" do celular). */
 .menu--claro a,
-.menu--claro button,
-.menu--claro .menu__em-breve {
+.menu--claro button {
     color: var(--tinta);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -1877,8 +1860,6 @@ fieldset {
     background: var(--mata);
     color: #fff;
 }
-.menu--claro .menu__em-breve { color: var(--tinta-3); }
-.menu--claro .menu__em-breve small { border-color: var(--linha-forte); }
 .folha .pessoa__texto strong { color: var(--tinta); }
 
 /* Título de cartão com link "ver tudo" à direita. */
@@ -1917,7 +1898,6 @@ fieldset {
 /* Sem isto, a coluna do menu cresce com o texto mais comprido e os itens
    passam da borda do menu lateral. */
 .menu { grid-template-columns: minmax(0, 1fr); }
-.menu .menu__em-breve { gap: .625rem; }
 
 .lateral .botao {
     padding-inline: 1rem;

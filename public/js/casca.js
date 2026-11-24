@@ -39,15 +39,9 @@ const ITENS_DO_MENU = [
   { pagina: 'metas', texto: 'Metas', icone: 'fa-solid fa-flag', celular: true },
   { pagina: 'meu-perfil', texto: 'Meu perfil', icone: 'fa-solid fa-user-gear' },
   { pagina: 'configuracoes', texto: 'Configurações', icone: 'fa-solid fa-gear' },
-  // Ainda não existe: aparece, mas não é um link.
-  { texto: 'Planejamento', icone: 'fa-regular fa-calendar', emBreve: true },
 ];
 
 function itemDoMenu(item) {
-  if (item.emBreve) {
-    return `<li><span class="menu__em-breve"><i class="${item.icone}" aria-hidden="true"></i> ${item.texto} <small>Em breve</small></span></li>`;
-  }
-
   // aria-current="page" pinta o item e faz o leitor de tela dizer "página
   // atual". A tela atual não é link (sem href): clicar nela não faria nada
   // além de carregar de novo a mesma tela.
