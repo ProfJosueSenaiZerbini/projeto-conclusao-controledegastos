@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Verdanz | Para onde foi o seu dinheiro este mês?</title>
+    <meta name="description" content="O Verdanz anota com você o que entra e o que sai, avisa das contas que vão vencer e mostra quanto falta para cada meta. Fácil de usar em qualquer idade.">
+    <link rel="icon" href="/img/VerdanzIcone.png">
+    <script src="/js/tema.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="/novo/css/verdanz.css" rel="stylesheet">
+    <link href="/novo/css/inicial.css" rel="stylesheet">
+</head>
+<body class="inicial">
+    <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+    <header class="inicial__topo">
+        <a class="marca marca--escura" href="/novo" aria-label="Verdanz, página inicial">
+            <img src="/img/VerdanzIcone.png" alt="">
+            <strong>Verdan<span>z</span></strong>
+        </a>
+        <nav aria-label="Seções da página">
+            <a href="#perguntas">O que ele faz</a>
+            <a href="#perfis">Para quem é</a>
+            <a href="#leitura">Fácil de ler</a>
+        </nav>
+        <div class="fila">
+            <a class="botao botao--quieto botao--p" href="/novo/entrar" data-link-entrar>Entrar</a>
+            <a class="botao botao--escuro botao--p" href="/novo/criar-conta" data-link-criar>Criar conta</a>
+        </div>
+    </header>
+
+    <main id="conteudo">
+
+        <!-- ABERTURA: uma pergunta que todo mundo já se fez. A grande área
+             verde sai pela borda esquerda da tela, como um canteiro num mapa. -->
+        <section class="abertura" aria-labelledby="tituloAbertura">
+            <div class="abertura__lobo">
+                <h1 id="tituloAbertura">Para onde foi o seu dinheiro este mês?</h1>
+                <p>O Verdanz anota com você o que entra e o que sai, avisa das contas que vão vencer e mostra quanto falta para cada meta. Fácil de usar em qualquer idade.</p>
+                <div class="fila">
+                    <a class="botao botao--escuro" href="/novo/criar-conta" data-link-criar>Criar conta grátis <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                    <a class="botao botao--linha" href="/novo/entrar" data-link-entrar>Já tenho conta</a>
+                </div>
+            </div>
+
+            <!-- O produto de verdade, com as mesmas peças das telas de dentro.
+                 Os números são de exemplo, e está escrito que são. -->
+            <figure class="previa">
+                <figcaption><span class="capsula">Exemplo da tela Início</span></figcaption>
+
+                <div class="previa__cartao">
+                    <p class="suave">Você tem hoje</p>
+                    <p class="numero previa__saldo">R$ 1.947,60</p>
+
+                    <div class="conta-mes">
+                        <div class="conta-mes__linha">
+                            <span class="conta-mes__sinal conta-mes__sinal--mais" aria-hidden="true">+</span>
+                            <span>Entrou</span>
+                            <span class="numero">R$ 3.200,00</span>
+                        </div>
+                        <div class="conta-mes__linha">
+                            <span class="conta-mes__sinal conta-mes__sinal--menos" aria-hidden="true">−</span>
+                            <span>Saiu</span>
+                            <span class="numero">R$ 882,40</span>
+                        </div>
+                        <div class="conta-mes__linha conta-mes__linha--total">
+                            <span class="conta-mes__sinal conta-mes__sinal--igual" aria-hidden="true">=</span>
+                            <strong>Sobrou</strong>
+                            <span class="numero">R$ 2.317,60</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- As "placas" do mapa: o que o Verdanz avisa sem ninguém pedir. -->
+                <span class="capsula capsula--sol previa__pino previa__pino--1"><i class="fa-regular fa-clock" aria-hidden="true"></i> Conta de luz vence em 3 dias</span>
+                <span class="capsula capsula--ceu previa__pino previa__pino--2"><i class="fa-solid fa-flag" aria-hidden="true"></i> Reserva: 12% do caminho</span>
+                <span class="capsula capsula--lilas previa__pino previa__pino--3"><i class="fa-regular fa-lightbulb" aria-hidden="true"></i> O 13º vem em duas parcelas</span>
+            </figure>
+        </section>
+
+        <!-- O QUE ELE FAZ: quatro perguntas, cada uma com a peça que responde. -->
+        <section class="trecho" id="perguntas" aria-labelledby="tituloPerguntas">
+            <h2 class="trecho__titulo" id="tituloPerguntas">Quatro perguntas. Quatro respostas na tela.</h2>
+
+            <div class="pergunta">
+                <div>
+                    <h3>Quanto eu tenho?</h3>
+                    <p>A soma de todas as suas contas, em letra grande, na primeira coisa que você vê. E, logo abaixo, quanto sobra depois de pagar o que ainda falta.</p>
+                </div>
+                <div class="lobo demo">
+                    <p class="saldo__rotulo">Você tem hoje</p>
+                    <p class="saldo__valor">R$ 1.947,60</p>
+                    <p>Depois de pagar o que falta, ficam R$ 1.717,60.</p>
+                </div>
+            </div>
+
+            <div class="pergunta">
+                <div>
+                    <h3>Como está o meu mês?</h3>
+                    <p>Uma conta de somar e subtrair, como no caderno: o que entrou, menos o que saiu, igual ao que sobrou. Sem gráfico para decifrar.</p>
+                </div>
+                <div class="cartao demo">
+                    <div class="conta-mes">
+                        <div class="conta-mes__linha"><span class="conta-mes__sinal conta-mes__sinal--mais" aria-hidden="true">+</span><span>Entrou</span><span class="numero">R$ 3.200,00</span></div>
+                        <div class="conta-mes__linha"><span class="conta-mes__sinal conta-mes__sinal--menos" aria-hidden="true">−</span><span>Saiu</span><span class="numero">R$ 882,40</span></div>
+                        <div class="conta-mes__linha conta-mes__linha--total"><span class="conta-mes__sinal conta-mes__sinal--igual" aria-hidden="true">=</span><strong>Sobrou</strong><span class="numero">R$ 2.317,60</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pergunta">
+                <div>
+                    <h3>O que vem pela frente?</h3>
+                    <p>O mês desenhado como um caminho. O ponto amarelo é hoje. As contas que ainda vão vencer aparecem como placas, cada uma no seu dia.</p>
+                </div>
+                <div class="cartao demo">
+                    <div class="caminho caminho--demo" aria-hidden="true">
+                        <div class="caminho__linha">
+                            <span class="caminho__placa" style="left:45%; --haste:.75rem"><span class="capsula capsula--sol">Luz · R$ 230,00</span></span>
+                            <span class="caminho__placa" style="left:78%; --haste:2.875rem"><span class="capsula capsula--sol">Aluguel · R$ 900,00</span></span>
+                            <div class="caminho__andado" style="width:35%"></div>
+                            <span class="caminho__hoje" style="left:35%"></span>
+                            <span class="caminho__hoje-rotulo" style="left:35%">Você está aqui</span>
+                        </div>
+                    </div>
+                    <p class="so-leitor">Exemplo: hoje é dia 11. A conta de luz vence dia 14 e o aluguel, dia 25.</p>
+                </div>
+            </div>
+
+            <div class="pergunta">
+                <div>
+                    <h3>Vou conseguir?</h3>
+                    <p>Cada meta mostra quanto já foi guardado e quanto guardar por mês para chegar na data. E um limite avisa antes de um gasto passar do combinado.</p>
+                </div>
+                <div class="cartao demo meta">
+                    <h4 style="font-size:1.125rem">Reserva de emergência</h4>
+                    <div class="meta__valores"><span class="numero">R$ 600,00</span><span class="suave">de R$ 5.000,00</span></div>
+                    <div class="trilha" role="img" aria-label="12% do caminho">
+                        <span class="trilha__feito" style="width:12%"></span>
+                        <span class="trilha__marco" style="left:25%"></span><span class="trilha__marco" style="left:50%"></span><span class="trilha__marco" style="left:75%"></span>
+                        <span class="trilha__bandeira"><i class="fa-solid fa-flag" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="recado recado--ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><div>Guarde <strong>R$ 628,58 por mês</strong>, durante 7 meses, e você chega lá.</div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PARA QUEM É: os seis perfis. Clicar num deles troca o texto ao lado. -->
+        <section class="trecho" id="perfis" aria-labelledby="tituloPerfis">
+            <div class="lobo lobo--lilas perfis">
+                <div>
+                    <h2 class="trecho__titulo" id="tituloPerfis">Quem tem carteira assinada não vive o dinheiro como quem é autônomo.</h2>
+                    <p>Por isso o Verdanz pergunta qual é a sua realidade e libera uma ferramenta feita para ela. Escolha um perfil para ver:</p>
+                    <div class="perfis__botoes" role="group" aria-label="Perfis" id="botoesPerfil"></div>
+                </div>
+                <div class="perfis__resposta" id="respostaPerfil" aria-live="polite"></div>
+            </div>
+        </section>
+
+        <!-- POR QUE EXISTE: o contexto, com os números da pesquisa do grupo. -->
+        <section class="trecho" aria-labelledby="tituloContexto">
+            <div class="contexto">
+                <h2 class="trecho__titulo" id="tituloContexto">Em 2026, cerca de 8 em cada 10 famílias brasileiras têm alguma dívida.</h2>
+                <div>
+                    <p>O cartão de crédito é a principal delas. E quase 4 em cada 10 pessoas que trabalham são informais: não têm 13º, FGTS nem renda garantida no mês que vem.</p>
+                    <p>Não falta aplicativo com gráfico de gastos. Falta um que responda à pergunta que cada pessoa faz quando o dinheiro aperta.</p>
+                    <p class="fraco pequeno">Fontes: Peic/CNC e IBGE (PNAD Contínua), 2026, citadas na documentação do projeto.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FÁCIL DE LER: a promessa é demonstrada na própria página. -->
+        <section class="trecho" id="leitura" aria-labelledby="tituloLeitura">
+            <div class="leitura">
+                <div>
+                    <h2 class="trecho__titulo" id="tituloLeitura">Feito para ser lido sem esforço, dos 16 aos 80.</h2>
+                    <p>Não acredite só na frase: mude o tamanho da letra e o tema agora mesmo. A página inteira muda junto, e dentro do Verdanz é igual.</p>
+
+                    <div class="leitura__controles">
+                        <fieldset>
+                            <legend class="rotulo">Tamanho da letra</legend>
+                            <div class="escolha">
+                                <label><input type="radio" name="demoFonte" value="normal" checked> Normal</label>
+                                <label><input type="radio" name="demoFonte" value="grande"> Grande</label>
+                                <label><input type="radio" name="demoFonte" value="maior"> Muito grande</label>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend class="rotulo">Tema</legend>
+                            <div class="escolha">
+                                <label><input type="radio" name="demoTema" value="claro" checked><i class="fa-regular fa-sun" aria-hidden="true"></i> Claro</label>
+                                <label><input type="radio" name="demoTema" value="escuro"><i class="fa-regular fa-moon" aria-hidden="true"></i> Escuro</label>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+
+                <ul class="leitura__lista">
+                    <li><span class="icone icone--folha" aria-hidden="true"><i class="fa-solid fa-font"></i></span><div><strong>Letra que você ajusta</strong><span>Três tamanhos. Textos, botões e espaços crescem juntos.</span></div></li>
+                    <li><span class="icone icone--folha" aria-hidden="true"><i class="fa-solid fa-location-dot"></i></span><div><strong>Você sempre sabe onde está</strong><span>O menu é o mesmo em todas as telas, e a tela atual fica marcada.</span></div></li>
+                    <li><span class="icone icone--folha" aria-hidden="true"><i class="fa-solid fa-tag"></i></span><div><strong>Todo ícone tem nome</strong><span>Nenhum botão é só um desenho para adivinhar.</span></div></li>
+                    <li><span class="icone icone--folha" aria-hidden="true"><i class="fa-solid fa-hand-pointer"></i></span><div><strong>Botões grandes</strong><span>Fáceis de acertar com o dedo, no celular ou no computador.</span></div></li>
+                    <li><span class="icone icone--folha" aria-hidden="true"><i class="fa-solid fa-comment"></i></span><div><strong>Palavras do dia a dia</strong><span>"Gasto" e "ganho", não "despesa" e "receita". "Início", não "dashboard".</span></div></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- COMO COMEÇAR: a numeração aqui é informação, é a ordem real. -->
+        <section class="trecho" aria-labelledby="tituloComecar">
+            <h2 class="trecho__titulo" id="tituloComecar">Três passos, menos de cinco minutos.</h2>
+            <ol class="passos">
+                <li><span class="passos__numero" aria-hidden="true">1</span><div><h3>Crie a sua conta</h3><p>Nome, CPF, e-mail e senha. Uma conta chamada Carteira já nasce pronta para você usar.</p></div></li>
+                <li><span class="passos__numero" aria-hidden="true">2</span><div><h3>Conte como é a sua rotina</h3><p>Sete perguntas rápidas. O Verdanz sugere os perfis que combinam com você.</p></div></li>
+                <li><span class="passos__numero" aria-hidden="true">3</span><div><h3>Anote o primeiro gasto</h3><p>Valor, categoria e pronto. Se preferir, conecte o seu banco e traga o extrato sem digitar.</p></div></li>
+            </ol>
+        </section>
+
+        <section class="trecho" aria-labelledby="tituloFim">
+            <div class="lobo lobo--mata fim">
+                <h2 id="tituloFim">Seu dinheiro, seu futuro.</h2>
+                <p>Comece hoje. É gratuito.</p>
+                <div class="fila">
+                    <a class="botao" href="/novo/criar-conta" data-link-criar>Criar minha conta <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                    <a class="botao botao--linha fim__entrar" href="/novo/entrar" data-link-entrar>Já tenho conta</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="rodape">
+        <a class="marca marca--escura" href="/novo">
+            <img src="/img/VerdanzIcone.png" alt="">
+            <strong>Verdan<span>z</span></strong>
+        </a>
+        <p>Trabalho de Conclusão do curso Técnico em Desenvolvimento de Sistemas, SENAI.</p>
+        <p class="fraco pequeno">Equipe: Nicolas Oliveira, Marcelo Bryan, Victor Hugo Ismerio, Guilherme Gonçalves e Cauã Pereira.</p>
+    </footer>
+
+    <script src="/js/auth.js"></script>
+    <script src="/novo/js/inicial.js"></script>
+</body>
+</html>

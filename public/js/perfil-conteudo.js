@@ -40,7 +40,7 @@ const CONTEUDO_PERFIS = {
         icone: 'fa-credit-card',
         titulo: 'Cuidado com o pagamento mínimo do cartão',
         texto:
-          'O cartão é a dívida de mais de 80% das famílias endividadas. Pagar só o mínimo joga o resto ' +
+          'O cartão é o principal tipo de dívida de mais de 80% das famílias endividadas. Pagar só o mínimo joga o resto ' +
           'para o rotativo, um dos juros mais caros do país.',
       },
       {

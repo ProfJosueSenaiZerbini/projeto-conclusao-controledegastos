@@ -1,5 +1,5 @@
 const prisma = require('../prisma');
-const { CATEGORIA_METAS, normalizarNome, visiveisPara, buscarCategoriaVisivel } = require('../categorias');
+const { CATEGORIA_METAS, ehTransferencia, normalizarNome, visiveisPara, buscarCategoriaVisivel } = require('../categorias');
 
 const TIPOS_VALIDOS = ['despesa', 'receita'];
 const TAMANHO_MAXIMO_NOME = 50;
@@ -256,6 +256,10 @@ async function deletarCategoria(req, res) {
 
       if (destino.nome_categoria === CATEGORIA_METAS) {
         return res.status(400).json({ erro: 'A categoria "Metas" é usada só pela tela de Metas' });
+      }
+
+      if (ehTransferencia(destino)) {
+        return res.status(400).json({ erro: 'As categorias de transferência são usadas só pela tela de Contas' });
       }
     }
 

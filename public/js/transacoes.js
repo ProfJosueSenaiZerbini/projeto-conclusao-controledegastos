@@ -96,7 +96,6 @@ function linhaTransacao(t) {
   const idDetalhe = 'detalhe-' + t.id_transacao;
 
   const corValor = ehReceita ? 'text-green-600' : 'text-gray-900';
-  const sinal = ehReceita ? '+' : '−';
 
   // O cabeçalho é um <button>: dá para abrir com o teclado (Tab + Enter),
   // e o aria-expanded avisa o leitor de tela se está aberto ou fechado.
@@ -115,7 +114,7 @@ function linhaTransacao(t) {
         </span>
         <span class="flex items-center gap-3 flex-shrink-0 ml-3">
           <span class="text-right">
-            <span class="block font-medium ${corValor} text-sm">${sinal} ${formatarMoeda(t.valor_transacao)}</span>
+            <span class="block font-medium ${corValor} text-sm">${formatarMoeda(ehReceita ? t.valor_transacao : -t.valor_transacao, { sinal: true })}</span>
             ${etiquetaStatus(status)}
           </span>
           <i class="fa-solid fa-chevron-down text-xs text-gray-400 transition-transform ${aberta ? 'rotate-180' : ''}"></i>
@@ -465,7 +464,7 @@ async function carregarCategorias() {
 // "Metas" também fica de fora: ela é lançada só pelo "Adicionar valor" da
 // tela de Metas, que soma o valor na meta junto (o servidor recusa à mão).
 function preencherCategorias() {
-  const doTipo = categorias.filter((c) => c.tipo === tipoSelecionado && c.nome_categoria !== 'Metas');
+  const doTipo = categorias.filter((c) => c.tipo === tipoSelecionado && !ehCategoriaSoDoSistema(c));
 
   selectCategoria.innerHTML = doTipo
     .map((c) => `<option value="${c.id_categoria}">${escapar(c.nome_categoria)}</option>`)
@@ -589,7 +588,8 @@ campoData.addEventListener('change', () => {
 
 // ---- ABRIR O PAINEL ----
 
-document.getElementById('novaTransacao').addEventListener('click', function () {
+// tipo: 'despesa' (gasto, o mais comum) ou 'receita' (ganho).
+function abrirNovaTransacao(tipo = 'despesa') {
   if (selectConta.options.length === 0) {
     mostrarMensagem('Crie uma conta antes de registrar transações.', 'erro');
     return;
@@ -597,11 +597,13 @@ document.getElementById('novaTransacao').addEventListener('click', function () {
 
   formTransacao.reset();
   campoData.value = hojeTexto();
-  selecionarTipo('despesa');
+  selecionarTipo(tipo);
   sugerirPago();
   atualizarResumo();
   painel.abrir();
-});
+}
+
+document.getElementById('novaTransacao').addEventListener('click', () => abrirNovaTransacao('despesa'));
 
 // ---- SALVAR ----
 //
@@ -714,6 +716,21 @@ async function confirmarLimite(corpo) {
   });
 }
 
-carregarContas();
-carregarCategorias();
-carregarTransacoes();
+// /transacoes?novo=despesa (ou =receita) abre o formulário já no tipo
+// certo. É por onde chegam os botões "Registrar gasto" e "Registrar
+// ganho" do Início: um clique e a pessoa já está digitando o valor.
+async function iniciar() {
+  carregarTransacoes();
+
+  // O formulário precisa das contas e das categorias antes de abrir.
+  await Promise.all([carregarContas(), carregarCategorias()]);
+
+  const pedido = new URLSearchParams(location.search).get('novo');
+  if (pedido !== 'despesa' && pedido !== 'receita') return;
+
+  // Limpa o endereço: recarregar a página não deve abrir o painel de novo.
+  history.replaceState(null, '', location.pathname);
+  abrirNovaTransacao(pedido);
+}
+
+iniciar();

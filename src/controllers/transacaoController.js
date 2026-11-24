@@ -1,6 +1,6 @@
 const prisma = require('../prisma');
 const { hojeSemHorario } = require('../saldo');
-const { CATEGORIA_METAS, buscarCategoriaVisivel } = require('../categorias');
+const { CATEGORIA_METAS, buscarCategoriaVisivel, ehTransferencia } = require('../categorias');
 
 // Transforma os Decimal do Prisma em números comuns para o JSON.
 function comValorNumerico(transacao) {
@@ -98,6 +98,12 @@ async function criarTransacao(req, res) {
         throw new Error('CATEGORIA_SO_DE_METAS');
       }
 
+      // As de transferência também: à mão, sairia dinheiro de uma conta
+      // sem entrar em outra (ver transferir em contaController.js).
+      if (ehTransferencia(categoria)) {
+        throw new Error('CATEGORIA_SO_DE_TRANSFERENCIA');
+      }
+
       // O sinal NÃO vem da transação — vem do tipo da categoria.
       // Uma transação em "Salário" é necessariamente receita.
       // Por isso `tipo_transacao` foi removido do modelo (3FN).
@@ -147,6 +153,12 @@ async function criarTransacao(req, res) {
     if (erro.message === 'CATEGORIA_SO_DE_METAS') {
       return res.status(400).json({
         erro: 'Para guardar dinheiro numa meta, use "Adicionar valor" na tela de Metas',
+      });
+    }
+
+    if (erro.message === 'CATEGORIA_SO_DE_TRANSFERENCIA') {
+      return res.status(400).json({
+        erro: 'Para passar dinheiro de uma conta para outra, use "Transferir" na tela de Contas',
       });
     }
 
@@ -201,6 +213,12 @@ async function marcarPagamento(req, res) {
     // o valor à conta sem tirar da meta.
     if (transacao.categoria.nome_categoria === CATEGORIA_METAS) {
       return res.status(400).json({ erro: 'Gastos de meta já saem pagos e não podem ser alterados' });
+    }
+
+    // A transferência já aconteceu nas duas contas. Desmarcar só a saída
+    // devolveria o dinheiro à origem sem tirar do destino.
+    if (ehTransferencia(transacao.categoria)) {
+      return res.status(400).json({ erro: 'Transferências já saem pagas e não podem ser alteradas' });
     }
 
     const valor = transacao.valor_transacao;

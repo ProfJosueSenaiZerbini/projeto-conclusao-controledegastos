@@ -27,8 +27,13 @@ function diasDepois(hoje, dias) {
   return new Date(hoje.getTime() + dias * UM_DIA);
 }
 
+// O sinal de menos vai junto do número, depois do "R$": "R$ -12,00", e
+// não "-R$ 12,00" (o padrão do toLocaleString). Igual a formatarMoeda, em
+// public/js/auth.js.
 function moeda(valor) {
-  return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const centavos = Math.round(Number(valor || 0) * 100);
+  const texto = (Math.abs(centavos) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return centavos < 0 ? texto.replace(/^R\$\s*/, 'R$\u00a0-') : texto;
 }
 
 // 'vence' + 0 -> "vence hoje"; 'vence' + 1 -> "vence amanhã"; 'vence' + 5 -> "vence em 5 dias".

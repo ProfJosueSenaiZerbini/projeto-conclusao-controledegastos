@@ -177,6 +177,23 @@ Por que vira transação: `Conta.saldo` é a soma das transações. Se o saldo b
 - A categoria entra pelo seed (bancos novos) e pela migration `categoria_metas` (bancos que já existiam). Nos dois casos fica com o id 13.
 - **Quanto guardar por mês não é gravado.** `calcularPlanoMeta` (`public/js/meta-calculos.js`) divide o que falta pelos meses **completos** até a data, arredondando para cima, e calcula de novo a cada abertura da tela. O valor por ano só aparece em metas de 12 meses ou mais. Ao mudar a conta, rode `node Docs/Testes/teste-calculos-meta.js`.
 
+## Regra: transferência entre contas
+
+`POST /api/conta/transferencia` com `{ id_origem, id_destino, valor }` (`transferir` em `contaController.js`), pelo botão de transferir no cartão de cada conta em `/novo/contas`.
+
+- Vira **duas transações** num `$transaction` só: "Transferência enviada" (despesa, já paga) na origem e "Transferência recebida" (receita) no destino, as duas com a data de hoje. Mesmo motivo das Metas: o histórico tem que explicar o saldo.
+- Só entre contas **manuais** e diferentes. Como guardar numa meta, **exige saldo de hoje** na origem (a condição vai no `WHERE` do `updateMany`).
+- As duas categorias são do sistema (seed e migration `categorias_transferencia`), ficam em `CATEGORIAS_SO_DO_SISTEMA` (`src/categorias.js`) e o servidor recusa lançá-las à mão, desmarcar o pagamento, usá-las como destino ao excluir categoria e criar limite nelas.
+- **Transferência não é ganho nem gasto.** Nas telas, use `ehGanho(t)` / `ehGasto(t)` de `auth.js` (que já as excluem) em vez de olhar `t.categoria.tipo`, e `ehCategoriaSoDoSistema(c)` para tirar Metas e transferências das listas de escolha.
+
+## Regra: resetar os dados e excluir a conta
+
+Seção "Zona de perigo" de `/novo/configuracoes`. Regras em `src/controllers/exclusaoController.js`. As duas ações pedem a **senha**, conferida no servidor.
+
+- **Resetar** (`POST /api/usuario/:id/resetar`): num `$transaction` só, apaga contas (com as transações), bancos conectados, limites, categorias personalizadas e metas, e cria uma Carteira zerada (ninguém fica sem conta). O login continua. A tela também limpa os perfis e as anotações de Meu perfil no navegador.
+- **Excluir** é em três passos, como a troca de e-mail: `POST /api/usuario/:id/excluir-conta` confere a senha e manda o link (token `excluir_conta`, 30 minutos) para o e-mail da conta → a página `/novo/excluir-conta?token=` mostra o que será apagado (`.../excluir-conta/verificar`) → só depois de marcar "Entendi" e confirmar, `POST /api/usuario/excluir-conta` apaga tudo e manda um e-mail de despedida.
+- **Não existe mais `DELETE /api/usuario/:id`.** Com ele, uma sessão aberta bastava para apagar a conta, sem senha nem e-mail.
+
 ## Regra: categorias personalizadas
 
 `Categoria.id_usuario` vazio = categoria do **sistema** (as 13 do seed, de todos). Preenchido = categoria **personalizada**, visível só para aquele usuário. As regras compartilhadas ficam em `src/categorias.js`.
@@ -186,7 +203,7 @@ Por que vira transação: `Conta.saldo` é a soma das transações. Se o saldo b
 - **Tipo:** só muda enquanto a categoria não tem transações — trocar depois inverteria o efeito delas no saldo. A condição `transacoes: { none: {} }` vai no `WHERE` do `updateMany`.
 - **Excluir:** sem transações, apaga direto. Com transações, `DELETE /api/categoria/:id?mover_para=ID` move-as antes para uma categoria do **mesmo tipo** (o saldo não muda), tudo num `$transaction`. A tela usa "Outras despesas" / "Outras receitas".
 - **Categorias do sistema** não são editadas nem excluídas por ninguém.
-- **Excluir usuário** apaga as contas antes do usuário (`deletarUsuario`): o MySQL não garante a ordem das cascatas, e a categoria personalizada não pode sair antes das transações dela.
+- **Excluir usuário** (e resetar os dados) apaga as contas primeiro (`apagarDadosFinanceiros` em `exclusaoController.js`): o MySQL não garante a ordem das cascatas, e a categoria personalizada não pode sair antes das transações dela.
 - Telas: seção "Categorias" em Configurações e o atalho "Nova categoria" no formulário de Transações.
 
 ## Regra: limite de gasto por categoria
@@ -381,12 +398,51 @@ As imagens da pasta são grandes (centenas de KB). Se em algum momento elas fore
 
 ---
 
+## Menu e visual comum das telas
+
+O diferencial do Verdanz é a navegação fácil para todas as idades (ver `PRODUCT.md`).
+
+- **O menu é montado por `public/js/menu.js`**, a partir da lista `ITENS_MENU`. Para mudar um item do menu, mude só essa lista; as telas têm apenas `<nav id="menuPrincipal">`. O mesmo script cria a barra fixa de baixo no celular (4 destinos + "Mais") e o botão "Sair". Ele é carregado antes do `layout.js`.
+- **`public/css/verdanz.css`** guarda o visual "App Acolhedor" escolhido pelo grupo: fundo creme (`bg-[#f7f1e8]`), cartões brancos com cantos de 24px e borda areia, azul `#1f5fd6` só no que é clicável, fonte Nunito Sans. Ele ajusta as classes do Tailwind que as telas já usam (como o `tema.css` faz no modo escuro), então um cartão novo com `bg-white rounded-2xl border border-gray-100` já sai no visual certo.
+- **Atalhos por endereço:** `/transacoes?novo=despesa` (ou `=receita`) abre o formulário de transação já no tipo; `/metas?nova=meta` abre o de meta nova. Os botões "Registrar gasto" e "Registrar ganho" do cartão de saldo do Início usam os dois primeiros.
+- "Planejamento" aparece no menu com o selo "Em breve" até a tela existir (troque `emBreve: true` por um `href` quando ela ficar pronta).
+
+---
+
+## Versão nova do site (teste), em `/novo`
+
+Um front-end refeito do zero, que roda ao lado do site atual para comparação. Usa a mesma API, o mesmo banco e o mesmo login (as duas versões compartilham a sessão do navegador). O site atual, em `/`, não depende de nada daqui.
+
+| Onde | O que tem |
+|---|---|
+| `src/routes/novoRoutes.js` | As rotas das telas (`/novo`, `/novo/entrar`, `/novo/inicio`...). Montado em `index.js` antes dos arquivos estáticos |
+| `src/views/novo/` | As 13 telas em HTML |
+| `public/novo/css/verdanz.css` | O sistema visual inteiro: cores (variáveis CSS), botões, cartões, menu, janelas. Sem Tailwind |
+| `public/novo/css/inicial.css` | Só a arrumação da página inicial |
+| `public/novo/js/base.js` | Ferramentas de tela usadas por todas as páginas (avisos, janelas de confirmação, leitura de valores em dinheiro) |
+| `public/novo/js/casca.js` | O que é igual em todas as telas de dentro: menu (lista `ITENS_DO_MENU`), barra do celular, sino e o formulário de registrar gasto/ganho, que abre de qualquer tela |
+| `public/novo/js/<tela>.js` | A parte de cada tela |
+
+- **As regras continuam num lugar só.** A versão nova carrega os mesmos `/js/auth.js`, `/js/tema.js`, `/js/meta-calculos.js`, `/js/perfil-calculos.js`, `/js/perfil-conteudo.js` e `/js/perfil-perguntas.js`. Não copie regra de cálculo para dentro de `public/novo/`.
+- **Visual "guia do jardim":** fundo verde bem claro, menu verde-escuro, grandes áreas verde-maçã (classe `.lobo`) e etiquetas em cápsula. Cor forte é sempre FUNDO de etiqueta com letra escura, nunca cor de texto. Fonte Lexend. Tudo em `rem`, para o tamanho da letra de Configurações valer na tela inteira.
+- **Janelas usam `<dialog>`** do navegador (`abrirJanela`, `confirmar` em `base.js`), não divs com `hidden`.
+- **Depois de gravar algo**, a tela chama `anunciarMudanca()`; quem escuta `verdanz:mudou` busca os dados de novo.
+- **Endereços com atalho:** `?novo=gasto` ou `?novo=ganho` em qualquer tela de dentro abre o formulário; `/novo/metas?nova=meta` e `?limite=ID`; os filtros de `/novo/transacoes` ficam na URL (`?situacao=pendente&mes=2026-11`).
+- **Mudança no servidor por causa dela:** `POST /api/conexao-bancaria` aceita `{ "retorno": "/novo/contas" }`, para o banco simulado devolver a pessoa à tela nova. Só os endereços das listas em `clienteBanco.js` e `bancoRoutes.js` são aceitos.
+- **Limitação conhecida:** os links enviados por e-mail (trocar senha, confirmar e-mail) ainda apontam para as telas antigas.
+
+---
+
 ## Rotas do escopo atual
 
 | Método | Rota | Função |
 |---|---|---|
 | POST | `/api/usuario` | Cadastrar (cria a Carteira junto, atômico) |
 | POST | `/api/usuario/login` | Autenticar |
+| POST | `/api/usuario/:id/resetar` | Apagar os dados financeiros e recomeçar com uma Carteira zerada (`senha`) |
+| POST | `/api/usuario/:id/excluir-conta` | Pedir a exclusão: confere a `senha` e manda o link por e-mail |
+| POST | `/api/usuario/excluir-conta/verificar` | Página do link: o que será apagado (`token`, pública) |
+| POST | `/api/usuario/excluir-conta` | Confirmar a exclusão (`token`, pública) |
 | GET | `/api/categoria` | Listar categorias (sistema + personalizadas do usuário) |
 | POST | `/api/categoria` | Criar categoria personalizada (`nome_categoria`, `tipo`) |
 | PUT | `/api/categoria/:id` | Renomear / trocar tipo (só sem transações) |
@@ -399,6 +455,7 @@ As imagens da pasta são grandes (centenas de KB). Se em algum momento elas fore
 | PATCH | `/api/transacao/:id/pagamento` | Marcar gasto como pago / não pago (`{ "pago": true \| false }`) |
 | GET | `/api/usuario/:id/transacao` | Listar transações (via join com conta) |
 | GET | `/api/usuario/:id/conta` | Consultar saldo (`saldo` de hoje e `saldo_previsto`) |
+| POST | `/api/conta/transferencia` | Transferir entre duas contas manuais (`id_origem`, `id_destino`, `valor`; atômico) |
 | POST | `/api/meta` | Criar meta (`valor_inicial` + `id_conta` opcionais) |
 | GET | `/api/usuario/:id/meta` | Listar metas |
 | PUT | `/api/meta/:id` | Atualizar meta; `{ adicionar, id_conta }` guarda dinheiro tirado da conta |

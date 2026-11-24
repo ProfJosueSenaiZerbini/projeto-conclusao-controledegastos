@@ -9,7 +9,7 @@
    daqui começam com "html.escuro", o que as deixa mais específicas que
    as do Tailwind. Em CSS, a regra mais específica vence.
 
-   Classes com colchetes, como bg-[#f8faff], precisam de "\" antes dos
+   Classes com colchetes, como bg-[#f7f1e8], precisam de "\" antes dos
    símbolos [ ] # : para o CSS entender que fazem parte do nome. */
 
 html.escuro {
@@ -18,7 +18,8 @@ html.escuro {
 
 /* ---------- FUNDOS ---------- */
 
-html.escuro .bg-\[\#f8faff\] { background-color: #0b1220; }             /* fundo da página e menu */
+html.escuro .bg-\[\#f7f1e8\] { background-color: #0b1220; }             /* fundo da página e menu */
+html.escuro .bg-\[\#f1ebe2\] { background-color: #1e293b; }             /* trilho das barras de progresso */
 html.escuro .bg-white        { background-color: #111a2e; }             /* cards */
 html.escuro .bg-gray-50      { background-color: #0d1526; }             /* campos de texto */
 html.escuro .bg-gray-100,
@@ -139,6 +140,6 @@ html.escuro .shadow-green-200 {
 /* Transição suave ao trocar de tema */
 html.escuro body,
 html.escuro .bg-white,
-html.escuro .bg-\[\#f8faff\] {
+html.escuro .bg-\[\#f7f1e8\] {
     transition: background-color .2s, color .2s;
 }

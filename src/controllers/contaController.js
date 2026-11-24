@@ -1,5 +1,6 @@
 const prisma = require('../prisma');
-const { calcularAjustes, comSaldos, emCentavos } = require('../saldo');
+const { calcularAjustes, comSaldos, emCentavos, hojeSemHorario } = require('../saldo');
+const { CATEGORIA_TRANSFERENCIA_SAIDA, CATEGORIA_TRANSFERENCIA_ENTRADA } = require('../categorias');
 
 // Devolve a conta com `saldo` (o de hoje) e `saldo_previsto`, em números
 // comuns. O Prisma devolve Decimal (um objeto) para não perder precisão em
@@ -183,10 +184,160 @@ async function deletarConta(req, res) {
   }
 }
 
+// POST /api/conta/transferencia   corpo: { id_origem, id_destino, valor }
+//
+// Passa dinheiro de uma conta da pessoa para outra (da Carteira para a
+// poupança, por exemplo). Vira DUAS transações, uma em cada conta, porque
+// Conta.saldo é a soma das transações: se os saldos mudassem sem elas, o
+// histórico deixaria de explicar o saldo.
+//
+//   origem:  "Transferência enviada"  (despesa, já paga)
+//   destino: "Transferência recebida" (receita)
+//
+// Transferência não é ganho nem gasto: o dinheiro continua sendo da pessoa.
+// Por isso essas duas categorias ficam fora das somas de ganhos e gastos
+// das telas (ehTransferencia, em public/js/auth.js).
+async function transferir(req, res) {
+  try {
+    const id_usuario = req.usuario.id_usuario;
+    const idOrigem = Number(req.body.id_origem);
+    const idDestino = Number(req.body.id_destino);
+    const valor = Number(req.body.valor);
+
+    // ---- VALIDAÇÕES (antes de encostar no banco) ----
+
+    if (!Number.isInteger(idOrigem) || !Number.isInteger(idDestino)) {
+      return res.status(400).json({ erro: 'Escolha a conta de onde o dinheiro sai e a conta para onde ele vai' });
+    }
+
+    if (idOrigem === idDestino) {
+      return res.status(400).json({ erro: 'Escolha duas contas diferentes' });
+    }
+
+    if (!Number.isFinite(valor) || valor <= 0) {
+      return res.status(400).json({ erro: 'O valor deve ser um número maior que zero' });
+    }
+
+    // Em centavos, para não guardar 10.005 numa coluna de 2 casas.
+    const valorCentavos = Math.round(valor * 100);
+    if (valorCentavos <= 0) {
+      return res.status(400).json({ erro: 'O valor deve ser um número maior que zero' });
+    }
+
+    // As duas contas são de quem está pedindo? E nenhuma é importada?
+    const contas = {};
+    for (const [papel, id] of [['origem', idOrigem], ['destino', idDestino]]) {
+      const resultado = await buscarContaDoUsuario(id, id_usuario);
+      if (resultado.erro) {
+        return res.status(resultado.status).json({ erro: resultado.erro });
+      }
+
+      // Conta importada só muda pelo banco: o Verdanz não consegue mover
+      // dinheiro de verdade entre bancos.
+      if (resultado.conta.id_conexao) {
+        return res.status(400).json({
+          erro: `A conta "${resultado.conta.nome}" é importada do banco e só muda pela sincronização. Escolha outra conta.`,
+        });
+      }
+
+      contas[papel] = resultado.conta;
+    }
+
+    // ---- A OPERAÇÃO ATÔMICA ----
+    //
+    // Tirar da origem, pôr no destino e registrar as duas transações: ou
+    // tudo é gravado, ou nada é. Se só a saída fosse gravada, o dinheiro
+    // sumiria.
+    const hoje = hojeSemHorario();
+
+    await prisma.$transaction(async (tx) => {
+      // id_usuario: null = só as categorias do SISTEMA.
+      const categorias = await tx.categoria.findMany({
+        where: { nome_categoria: { in: [CATEGORIA_TRANSFERENCIA_SAIDA, CATEGORIA_TRANSFERENCIA_ENTRADA] }, id_usuario: null },
+      });
+      const saida = categorias.find((c) => c.nome_categoria === CATEGORIA_TRANSFERENCIA_SAIDA);
+      const entrada = categorias.find((c) => c.nome_categoria === CATEGORIA_TRANSFERENCIA_ENTRADA);
+
+      if (!saida || !entrada) {
+        throw new ErroTransferencia(500, 'As categorias de transferência não estão cadastradas. Rode: npx prisma migrate dev');
+      }
+
+      // Como em guardar dinheiro numa meta, transferir EXIGE saldo: é mover
+      // dinheiro que existe. O saldo que vale é o de HOJE, por isso os
+      // ganhos com data futura (que ainda não chegaram) entram na conta.
+      //
+      // A condição vai no WHERE: o banco confere e desconta na mesma
+      // instrução, então dois cliques juntos não tiram o dinheiro duas vezes.
+      const ajustes = await calcularAjustes(tx, [idOrigem]);
+      const minimoCentavos = valorCentavos + ajustes.get(idOrigem).ganhosFuturos;
+
+      const { count } = await tx.conta.updateMany({
+        where: { id_conta: idOrigem, saldo: { gte: minimoCentavos / 100 } },
+        data: { saldo: { decrement: valorCentavos / 100 } },
+      });
+
+      if (count === 0) {
+        throw new ErroTransferencia(400, `Saldo insuficiente: a conta "${contas.origem.nome}" não tem esse valor disponível hoje`);
+      }
+
+      await tx.conta.update({
+        where: { id_conta: idDestino },
+        data: { saldo: { increment: valorCentavos / 100 } },
+      });
+
+      await tx.transacao.create({
+        data: {
+          valor_transacao: valorCentavos / 100,
+          data_transacao: hoje,
+          descricao: `Transferência para ${contas.destino.nome}`,
+          id_categoria: saida.id_categoria,
+          id_conta: idOrigem,
+          // O dinheiro saiu agora: é uma saída já paga.
+          data_pagamento: hoje,
+        },
+      });
+
+      await tx.transacao.create({
+        data: {
+          valor_transacao: valorCentavos / 100,
+          data_transacao: hoje,
+          descricao: `Transferência de ${contas.origem.nome}`,
+          id_categoria: entrada.id_categoria,
+          id_conta: idDestino,
+        },
+      });
+    });
+
+    // Devolve as duas contas com os saldos novos, prontas para a tela.
+    const atualizadas = await prisma.conta.findMany({ where: { id_conta: { in: [idOrigem, idDestino] } } });
+    const ajustes = await calcularAjustes(prisma, [idOrigem, idDestino]);
+    const comSaldo = (id) => comSaldos(atualizadas.find((c) => c.id_conta === id), ajustes);
+
+    res.status(201).json({ valor: valorCentavos / 100, origem: comSaldo(idOrigem), destino: comSaldo(idDestino) });
+  } catch (erro) {
+    if (erro instanceof ErroTransferencia) {
+      return res.status(erro.status).json({ erro: erro.message });
+    }
+
+    console.error(erro);
+    res.status(500).json({ erro: 'Erro ao transferir entre contas' });
+  }
+}
+
+// Erro com status HTTP, para ser lançado de dentro do $transaction.
+// Lançar um erro lá dentro desfaz TUDO o que já tinha sido feito nele.
+class ErroTransferencia extends Error {
+  constructor(status, mensagem) {
+    super(mensagem);
+    this.status = status;
+  }
+}
+
 module.exports = {
   criarConta,
   listarContas,
   atualizarConta,
   deletarConta,
+  transferir,
   buscarContaDoUsuario,
 };

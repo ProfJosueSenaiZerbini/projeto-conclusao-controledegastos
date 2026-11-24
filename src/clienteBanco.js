@@ -15,6 +15,11 @@ const NOME_BANCO = 'Banco Simulado';
 // na lista de endereços que o banco aceita (ver bancoSimulado/bancoRoutes.js).
 const ENDERECO_DE_RETORNO = '/contas';
 
+// A versão nova do site (em /novo) tem a própria tela de Contas, e quem
+// conectou o banco por ela precisa voltar para ela. Só estes endereços são
+// aceitos: qualquer outro valor cai no padrão acima.
+const ENDERECOS_DE_RETORNO = [ENDERECO_DE_RETORNO, '/novo/contas'];
+
 function urlDoBanco() {
   return process.env.BANCO_SIMULADO_URL || `http://localhost:${process.env.PORT || 3000}/banco-simulado`;
 }
@@ -81,10 +86,12 @@ async function chamarComAcesso(caminho, token) {
 
 // Pede ao banco acesso aos dados de um CPF. Devolve o endereço da tela
 // do banco, para onde o navegador da pessoa vai ser levado.
-async function pedirConsentimento(cpf, state) {
+async function pedirConsentimento(cpf, state, retorno) {
+  const enderecoDeRetorno = ENDERECOS_DE_RETORNO.includes(retorno) ? retorno : ENDERECO_DE_RETORNO;
+
   try {
     const { data } = await chamar('/consents', {
-      corpo: { cpf, redirect_uri: ENDERECO_DE_RETORNO, state },
+      corpo: { cpf, redirect_uri: enderecoDeRetorno, state },
     });
     return `${urlDoBanco()}/autorizar?consentId=${encodeURIComponent(data.consentId)}`;
   } catch (erro) {

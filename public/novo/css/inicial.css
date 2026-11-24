@@ -1,0 +1,437 @@
+/* Página inicial da versão nova (só ela usa este arquivo).
+
+   As cores, os botões, as cápsulas e os cartões vêm do verdanz.css: aqui
+   fica só a arrumação desta página. As peças de exemplo (saldo, conta do
+   mês, caminho, meta) são AS MESMAS das telas de dentro, com as mesmas
+   classes. A página mostra o produto de verdade, não um desenho dele. */
+
+body.inicial {
+    overflow-x: hidden;
+}
+
+/* ---------- Topo ----------
+   Fixo: acompanha a rolagem, com os atalhos das seções e os botões de
+   entrar sempre à mão. No alto da página ele é transparente, em cima do
+   verde; quando a pessoa rola, o inicial.js põe a classe --fundo e ele
+   ganha o fundo do papel, para o texto da página não passar por trás das
+   letras. A altura dele (--altura-topo) também vem do inicial.js. */
+.inicial__topo {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.25rem 2.5rem;
+    transition: background-color .2s ease-out, box-shadow .2s ease-out, padding .2s ease-out;
+}
+.inicial__topo--fundo {
+    padding-block: .75rem;
+    background: var(--papel);
+    box-shadow: 0 1px 0 var(--linha), 0 12px 24px -20px rgb(18 60 43 / .45);
+}
+
+/* Os atalhos levam à seção sem esconder o título dela atrás do topo. */
+.inicial main section[id] {
+    scroll-margin-top: calc(var(--altura-topo, 5rem) + 1rem);
+}
+@media (prefers-reduced-motion: no-preference) {
+    html:has(body.inicial) { scroll-behavior: smooth; }
+}
+.inicial__topo nav {
+    display: flex;
+    gap: .125rem;
+    padding: .25rem;
+    border-radius: 999px;
+    background: var(--cartao);
+    box-shadow: 0 0 0 1px var(--linha), 0 8px 20px -14px rgb(18 60 43 / .5);
+}
+.inicial__topo nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    color: var(--tinta);
+    font-weight: 500;
+    text-decoration: none;
+}
+.inicial__topo nav a:hover { background: var(--papel-fundo); }
+.inicial__topo nav a:focus-visible { outline-color: var(--foco); }
+/* A marca e os links do topo ficam em cima do verde: letra sempre escura. */
+.inicial__topo .marca,
+.inicial__topo .marca strong span { color: var(--sobre-cor); }
+.inicial__topo :focus-visible { outline-color: var(--sobre-cor); }
+
+.inicial__topo--fundo .marca { color: var(--tinta); }
+.inicial__topo--fundo .marca strong span { color: var(--verde-texto); }
+.inicial__topo--fundo :focus-visible { outline-color: var(--foco); }
+/* A seção que está na tela fica marcada no topo. */
+.inicial__topo nav a[aria-current="true"] { background: var(--folha-clara); color: var(--verde-texto); font-weight: 600; }
+
+/* ---------- Abertura ---------- */
+.abertura {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: center;
+    min-height: min(100dvh, 50rem);
+}
+
+/* O grande canteiro verde: sai da tela por cima e pela esquerda, e a
+   "costa" de baixo à direita é uma curva larga. */
+.abertura__lobo {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 8rem 5rem 6rem 2.5rem;
+    background: var(--folha);
+    color: var(--sobre-cor);
+    border-radius: 0 0 16rem 0 / 0 0 13rem 0;
+}
+.abertura__lobo h1 {
+    font-size: clamp(2.5rem, 1.1rem + 5vw, 4.75rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -.04em;
+    max-width: 11em;
+}
+.abertura__lobo p {
+    max-width: 34rem;
+    font-size: 1.1875rem;
+}
+.abertura__lobo .botao--linha {
+    border-color: var(--sobre-cor);
+    color: var(--sobre-cor);
+}
+.abertura__lobo .botao--linha:hover { background: rgb(22 36 28 / .1); }
+.abertura__lobo .botao--escuro,
+.abertura__lobo .botao--escuro:hover { color: #fff; }
+/* No tema escuro o botão escuro vira verde-maçã (verdanz.css), que sumiria
+   em cima do verde: aqui ele fica escuro, com a letra clara. */
+html.escuro .abertura__lobo .botao--escuro { background: var(--sobre-cor); color: #fff; }
+.abertura__lobo :focus-visible { outline-color: var(--sobre-cor); }
+
+/* A prévia fica metade em cima do verde, metade no papel. */
+.previa {
+    position: relative;
+    z-index: 2;
+    margin: 4rem 2.5rem 0 -5rem;
+    max-width: 25rem;
+    display: grid;
+    gap: .75rem;
+}
+.previa figcaption .capsula {
+    background: var(--tinta);
+    color: var(--papel);
+}
+.previa__cartao {
+    padding: 1.5rem 1.75rem;
+    background: var(--cartao);
+    border: 1px solid var(--linha);
+    border-radius: var(--raio-g);
+    box-shadow: var(--sombra);
+}
+.previa__saldo {
+    font-size: 2.5rem;
+    line-height: 1.1;
+    margin-bottom: .75rem;
+}
+.previa__pino {
+    position: absolute;
+    box-shadow: 0 8px 18px -8px rgb(18 60 43 / .45);
+    font-size: .9375rem;
+    padding: .375rem .875rem;
+}
+/* Cada placa encosta só na borda do cartão: nenhuma cobre um número. */
+.previa__pino--1 { top: 1.25rem; left: calc(100% - 3.5rem); }
+.previa__pino--2 { bottom: -1.25rem; left: -1.5rem; }
+.previa__pino--3 { bottom: 6.5rem; left: calc(100% - 1.5rem); }
+
+/* O único movimento da página: as placas "pousam" uma depois da outra,
+   desacelerando até parar. Quem pediu menos animação no sistema
+   operacional não vê nada disso. */
+@media (prefers-reduced-motion: no-preference) {
+    .previa__pino {
+        animation: pousar .5s cubic-bezier(.16, 1, .3, 1) both;
+    }
+    .previa__pino--1 { animation-delay: .35s; }
+    .previa__pino--2 { animation-delay: .55s; }
+    .previa__pino--3 { animation-delay: .75s; }
+    @keyframes pousar {
+        from { opacity: 0; transform: translateY(-.75rem) scale(.85); }
+    }
+}
+
+/* ---------- Trechos ---------- */
+.trecho {
+    max-width: 74rem;
+    margin-inline: auto;
+    padding: 5rem 2.5rem 0;
+}
+.trecho__titulo {
+    font-size: clamp(1.75rem, 1rem + 2.4vw, 2.75rem);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -.03em;
+    max-width: 19em;
+    margin-bottom: 2rem;
+}
+
+/* Pergunta de um lado, a peça que responde do outro. */
+.pergunta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 2rem 4rem;
+    padding: 2.5rem 0;
+    border-top: 1px solid var(--linha);
+}
+.pergunta h3 {
+    font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.125rem);
+    letter-spacing: -.025em;
+    margin-bottom: .75rem;
+}
+.pergunta p {
+    max-width: 30rem;
+    color: var(--tinta-2);
+    font-size: 1.0625rem;
+}
+.pergunta .lobo p { color: var(--sobre-cor); }
+.demo {
+    width: 100%;
+    max-width: 29rem;
+    justify-self: end;
+}
+.demo .saldo__valor { font-size: clamp(2rem, 1.4rem + 2.2vw, 3rem); }
+.demo .recado p { color: var(--tinta); }
+
+/* Na página inicial o caminho aparece também no celular (é só um exemplo curto). */
+.caminho.caminho--demo {
+    display: block;
+    padding: 5.5rem 0 2.25rem;
+    margin: 0 .5rem;
+}
+.caminho--demo .caminho__placa .capsula { font-size: .75rem; }
+
+/* ---------- Perfis ---------- */
+.perfis {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 2.5rem;
+    padding: 3.5rem 3.5rem 4.5rem;
+    border-radius: var(--raio-g) var(--raio-g) 12rem var(--raio-g) / var(--raio-g) var(--raio-g) 8rem var(--raio-g);
+}
+.perfis .trecho__titulo { margin-bottom: 1rem; }
+.perfis__botoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: 1.5rem;
+}
+.perfis__botoes button {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 3rem;
+    padding: .375rem 1.125rem;
+    border: 2px solid var(--sobre-cor);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--sobre-cor);
+    font-family: var(--fonte-titulo);
+    font-weight: 600;
+}
+.perfis__botoes button:hover { background: rgb(22 36 28 / .1); }
+.perfis__botoes button[aria-pressed="true"] {
+    background: var(--sobre-cor);
+    color: var(--lilas);
+}
+.perfis__botoes :focus-visible { outline-color: var(--sobre-cor); }
+.perfis__resposta {
+    display: grid;
+    gap: 1rem;
+    padding: 1.75rem;
+    background: var(--cartao);
+    color: var(--tinta);
+    border-radius: var(--raio-g);
+    min-height: 17rem;
+    align-content: start;
+}
+.perfis__resposta .capsula { justify-self: start; }
+.perfis__resposta blockquote {
+    margin: 0;
+    font-family: var(--fonte-titulo);
+    font-size: clamp(1.375rem, 1.1rem + 1vw, 1.75rem);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -.02em;
+}
+.perfis__resposta p { color: var(--tinta-2); }
+
+/* ---------- Contexto ---------- */
+.contexto {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2rem 4rem;
+    align-items: start;
+}
+.contexto .trecho__titulo { margin-bottom: 0; }
+.contexto > div {
+    display: grid;
+    gap: 1rem;
+    font-size: 1.125rem;
+    color: var(--tinta-2);
+}
+
+/* ---------- Fácil de ler ---------- */
+.leitura {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2.5rem 4rem;
+    align-items: start;
+    padding: 3rem;
+    background: var(--cartao);
+    border: 1px solid var(--linha);
+    border-radius: var(--raio-g);
+}
+.leitura p { color: var(--tinta-2); font-size: 1.0625rem; max-width: 32rem; }
+.leitura__controles {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: 1.75rem;
+    max-width: 26rem;
+}
+.leitura__controles fieldset { display: grid; gap: .5rem; }
+.leitura__lista { display: grid; gap: 1.25rem; }
+.leitura__lista li {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+.leitura__lista li div { display: grid; gap: .125rem; }
+.leitura__lista li span:last-child { color: var(--tinta-2); }
+
+/* ---------- Passos ---------- */
+.passos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2.5rem;
+}
+.passos li { display: grid; gap: 1rem; align-content: start; }
+.passos__numero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    background: var(--folha);
+    color: var(--sobre-cor);
+    font-family: var(--fonte-titulo);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.passos h3 { font-size: 1.375rem; margin-bottom: .5rem; }
+.passos p { color: var(--tinta-2); }
+
+/* ---------- Fecho e rodapé ---------- */
+.fim {
+    display: grid;
+    gap: 1rem;
+    padding: 4rem 3.5rem 5rem;
+    border-radius: var(--raio-g) var(--raio-g) 14rem var(--raio-g) / var(--raio-g) var(--raio-g) 9rem var(--raio-g);
+}
+.fim h2 {
+    font-size: clamp(2.25rem, 1.2rem + 4vw, 4rem);
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1;
+    color: #fff;
+}
+.fim p { font-size: 1.25rem; color: #d7e6d8; }
+.fim .fila { margin-top: .75rem; }
+.fim .fim__entrar { border-color: #9fb8a5; color: #fff; }
+.fim .fim__entrar:hover { background: rgb(255 255 255 / .1); }
+.fim :focus-visible { outline-color: var(--sol); }
+
+.rodape {
+    max-width: 74rem;
+    margin: 5rem auto 0;
+    padding: 2rem 2.5rem 3rem;
+    border-top: 1px solid var(--linha);
+    display: grid;
+    gap: .75rem;
+    color: var(--tinta-2);
+}
+
+/* ---------- Telas menores ---------- */
+@media (max-width: 61.99rem) {
+    /* Duas linhas: a marca e os botões em cima, os 3 atalhos embaixo. */
+    .inicial__topo {
+        flex-wrap: wrap;
+        gap: .5rem .75rem;
+        padding: .75rem 1rem .5rem;
+    }
+    .inicial__topo--fundo { padding-block: .5rem; }
+    .inicial__topo .fila { flex-wrap: nowrap; gap: .5rem; }
+    .inicial__topo nav {
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .inicial__topo nav a {
+        flex: 1 0 auto;
+        justify-content: center;
+        min-height: 2.25rem;
+        padding: 0 .625rem;
+        font-size: .9375rem;
+        white-space: nowrap;
+    }
+    .inicial__topo .botao--p { padding-inline: .875rem; }
+    .inicial__topo [data-link-entrar] { border: 2px solid var(--sobre-cor); color: var(--sobre-cor); }
+    .inicial__topo--fundo [data-link-entrar] { border-color: var(--linha-forte); color: var(--tinta); }
+
+    .abertura {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+    }
+    .abertura__lobo {
+        padding: calc(var(--altura-topo, 6.5rem) + 1.5rem) 1.25rem 4.5rem;
+        border-radius: 0 0 7rem 0 / 0 0 5rem 0;
+    }
+    .previa {
+        margin: -2.5rem 1rem 0;
+        max-width: none;
+        justify-self: stretch;
+    }
+    /* As placas deixam de flutuar e viram uma lista embaixo do cartão. */
+    .previa__pino { position: static; justify-self: start; white-space: normal; }
+
+    .trecho { padding: 3.5rem 1rem 0; }
+    .pergunta,
+    .perfis,
+    .contexto,
+    .leitura,
+    .passos { grid-template-columns: minmax(0, 1fr); }
+    .pergunta { gap: 1.25rem; padding: 2rem 0; }
+    .demo { justify-self: stretch; max-width: none; }
+    .perfis { padding: 2rem 1.25rem 3.5rem; border-radius: var(--raio-g) var(--raio-g) 6rem var(--raio-g) / var(--raio-g) var(--raio-g) 4rem var(--raio-g); }
+    .perfis__resposta { min-height: 0; padding: 1.25rem; }
+    .leitura { padding: 1.5rem 1.25rem; }
+    .fim { padding: 2.5rem 1.5rem 4rem; border-radius: var(--raio-g) var(--raio-g) 6rem var(--raio-g) / var(--raio-g) var(--raio-g) 4rem var(--raio-g); }
+    .rodape { padding-inline: 1rem; }
+}
+
+@media (max-width: 25.99rem) {
+    .inicial__topo .marca strong { display: none; }
+    .inicial__topo nav a { padding: 0 .375rem; font-size: .875rem; }
+}
+@media (max-width: 21.99rem) {
+    .inicial__topo nav a { padding: 0 .25rem; font-size: .8125rem; }
+}

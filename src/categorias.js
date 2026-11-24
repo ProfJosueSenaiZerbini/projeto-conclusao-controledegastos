@@ -14,6 +14,25 @@
 // nesta categoria (ver guardarNaMeta em metaController.js).
 const CATEGORIA_METAS = 'Metas';
 
+// Usadas só pelo sistema: transferir dinheiro de uma conta para outra gera
+// uma saída na conta de origem e uma entrada na de destino, nestas duas
+// categorias (ver transferir em contaController.js). Transferência não é
+// ganho nem gasto: o dinheiro continua sendo da pessoa.
+const CATEGORIA_TRANSFERENCIA_SAIDA = 'Transferência enviada';
+const CATEGORIA_TRANSFERENCIA_ENTRADA = 'Transferência recebida';
+
+// Categorias que a pessoa não escolhe à mão: quem lança nelas é o sistema.
+const CATEGORIAS_SO_DO_SISTEMA = [CATEGORIA_METAS, CATEGORIA_TRANSFERENCIA_SAIDA, CATEGORIA_TRANSFERENCIA_ENTRADA];
+
+// A categoria é de transferência? Só vale para as do sistema: ninguém
+// consegue criar uma personalizada com esses nomes (conferirNome).
+function ehTransferencia(categoria) {
+  return (
+    categoria.id_usuario === null &&
+    [CATEGORIA_TRANSFERENCIA_SAIDA, CATEGORIA_TRANSFERENCIA_ENTRADA].includes(categoria.nome_categoria)
+  );
+}
+
 // "Lazer", "lazer" e "LÁZER" precisam ser o mesmo nome na comparação.
 function normalizarNome(texto) {
   return String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
@@ -34,4 +53,13 @@ function buscarCategoriaVisivel(cliente, id_categoria, id_usuario) {
   });
 }
 
-module.exports = { CATEGORIA_METAS, normalizarNome, visiveisPara, buscarCategoriaVisivel };
+module.exports = {
+  CATEGORIA_METAS,
+  CATEGORIA_TRANSFERENCIA_SAIDA,
+  CATEGORIA_TRANSFERENCIA_ENTRADA,
+  CATEGORIAS_SO_DO_SISTEMA,
+  ehTransferencia,
+  normalizarNome,
+  visiveisPara,
+  buscarCategoriaVisivel,
+};

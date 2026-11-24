@@ -581,7 +581,7 @@ async function carregarCategoriasDeGasto() {
   const { ok, dados } = await chamarApi('/api/categoria');
   if (!ok) return;
 
-  categoriasDeGasto = dados.filter((c) => c.tipo === 'despesa' && !(c.nome_categoria === 'Metas' && !c.personalizada));
+  categoriasDeGasto = dados.filter((c) => c.tipo === 'despesa' && !ehCategoriaSoDoSistema(c));
 }
 
 // O quanto já foi gasto este mês em cada categoria, para ajudar a escolher
@@ -729,17 +729,24 @@ async function excluirLimite(limite) {
 
 // /metas?limite=ID abre o painel já no limite daquela categoria. É por onde
 // chega o botão "Definir limite" do dashboard.
+// /metas?nova=meta abre o painel de meta nova: é o botão "Criar meta" do Início.
 async function iniciar() {
   carregarMetas();
-  carregarContas();
 
-  await Promise.all([carregarLimites(), carregarCategoriasDeGasto(), carregarGastosDoMes()]);
+  await Promise.all([carregarContas(), carregarLimites(), carregarCategoriasDeGasto(), carregarGastosDoMes()]);
 
-  const pedido = Number(new URLSearchParams(location.search).get('limite'));
-  if (!pedido) return;
+  const parametros = new URLSearchParams(location.search);
+  const pedido = Number(parametros.get('limite'));
+  const novaMeta = parametros.get('nova') === 'meta';
+  if (!pedido && !novaMeta) return;
 
   // Limpa o endereço: recarregar a página não deve abrir o painel de novo.
   history.replaceState(null, '', location.pathname);
+
+  if (novaMeta) {
+    abrirNova('meta');
+    return;
+  }
 
   const existente = limites.find((l) => l.id_categoria === pedido);
   if (existente) {

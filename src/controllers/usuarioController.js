@@ -307,43 +307,12 @@ async function atualizarUsuario(req, res) {
   }
 }
 
-// DELETE /api/usuario/:id
-async function deletarUsuario(req, res) {
-  try {
-    const id = Number(req.params.id);
-
-    if (!Number.isInteger(id)) {
-      return res.status(400).json({ erro: 'ID inválido' });
-    }
-
-    // O schema usa onDelete: Cascade — apagar o usuário apaga junto
-    // suas contas, transações, metas, categorias e limites.
-    //
-    // As contas saem PRIMEIRO, levando as transações junto. Motivo: uma
-    // categoria personalizada não pode ser apagada enquanto houver
-    // transação nela, e o MySQL não garante a ordem das cascatas. Sem este
-    // passo, ele poderia tentar apagar a categoria antes das transações e
-    // recusar a exclusão inteira.
-    await prisma.$transaction([
-      prisma.conta.deleteMany({ where: { id_usuario: id } }),
-      prisma.usuario.delete({ where: { id_usuario: id } }),
-    ]);
-
-    res.json({ mensagem: 'Usuário removido com sucesso' });
-  } catch (erro) {
-    if (erro.code === 'P2025') {
-      return res.status(404).json({ erro: 'Usuário não encontrado' });
-    }
-
-    console.error(erro);
-    res.status(500).json({ erro: 'Erro ao remover usuário' });
-  }
-}
+// Excluir o usuário fica em exclusaoController.js: ela só acontece pelo
+// link enviado ao e-mail, e não mais por uma rota DELETE direta.
 
 module.exports = {
   criarUsuario,
   login,
   buscarUsuario,
   atualizarUsuario,
-  deletarUsuario,
 };

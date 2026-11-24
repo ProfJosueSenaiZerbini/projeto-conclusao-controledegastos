@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// As 13 categorias do SISTEMA: 9 de despesa e 4 de receita. Elas ficam
+// As 15 categorias do SISTEMA: 10 de despesa e 5 de receita. Elas ficam
 // com id_usuario vazio e valem para todos. Além delas, cada usuário pode
 // criar as suas (categorias personalizadas, ver categoriaController.js),
 // que não passam pelo seed.
@@ -33,6 +33,12 @@ const categorias = [
   // Fica por último para ter o mesmo id (13) num banco novo e num banco
   // que recebeu a categoria pela migration "categoria_metas".
   { nome_categoria: 'Metas', tipo: 'despesa' },
+
+  // ---- TRANSFERÊNCIA ENTRE CONTAS ----
+  // Também só do sistema: passar dinheiro de uma conta para outra gera uma
+  // saída na origem e uma entrada no destino (ver contaController).
+  { nome_categoria: 'Transferência enviada', tipo: 'despesa' },
+  { nome_categoria: 'Transferência recebida', tipo: 'receita' },
 ];
 
 async function main() {

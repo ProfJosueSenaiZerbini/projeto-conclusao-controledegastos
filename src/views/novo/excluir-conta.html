@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Excluir conta | Verdanz</title>
+    <link rel="icon" href="/img/VerdanzIcone.png">
+    <script src="/js/tema.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="/novo/css/verdanz.css" rel="stylesheet">
+</head>
+<!-- Chega pelo link do e-mail. Página isolada, sem o menu: funciona mesmo
+     em outro aparelho, sem estar logado. Quem prova que é o dono é o link. -->
+<body class="acesso" data-pagina="excluir-conta">
+
+    <!-- Lado verde: some no celular, onde só o conteúdo importa. -->
+    <section class="acesso__lado" aria-label="Sobre o Verdanz">
+        <a class="marca marca--escura" href="/novo" title="Página inicial do Verdanz">
+            <img src="/img/VerdanzIcone.png" alt="">
+            <strong>Verdan<span>z</span></strong>
+        </a>
+        <div id="ladoTexto">
+            <h2>Antes de ir, confira com calma.</h2>
+            <ul>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> Nada foi apagado ainda</li>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> Você vê tudo o que some antes de decidir</li>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> Fechar esta página cancela o pedido</li>
+            </ul>
+        </div>
+        <p class="pequeno">Seu dinheiro, seu futuro.</p>
+    </section>
+
+    <main class="acesso__form">
+        <div class="acesso__caixa">
+            <a class="marca marca--escura acesso__marca-celular" href="/novo" title="Página inicial do Verdanz">
+                <img src="/img/VerdanzIcone.png" alt="">
+                <strong>Verdan<span>z</span></strong>
+            </a>
+
+            <!-- Enquanto o link é conferido, e se ele não valer mais. -->
+            <div id="etapaConferindo">
+                <h1>Excluir a sua conta</h1>
+                <p class="suave" id="subtitulo">Conferindo o link...</p>
+            </div>
+            <div id="recado" aria-live="polite"></div>
+
+            <!-- O que acontece: aparece quando o link vale. -->
+            <div class="pilha" id="etapaDecidir" hidden>
+                <section class="exclusao__bloco exclusao__bloco--some" aria-labelledby="tituloSome">
+                    <h2 id="tituloSome"><i class="fa-solid fa-trash" aria-hidden="true"></i> O que será apagado para sempre</h2>
+                    <ul class="exclusao__lista" id="listaSome"></ul>
+                </section>
+
+                <section class="exclusao__bloco" aria-labelledby="tituloFica">
+                    <h2 id="tituloFica"><i class="fa-solid fa-shield-heart" aria-hidden="true"></i> O que continua igual</h2>
+                    <ul class="exclusao__lista">
+                        <li>Seu dinheiro de verdade e os dados no seu banco. O Verdanz nunca mexe neles.</li>
+                        <li>Você pode criar uma conta nova quando quiser, com o mesmo e-mail e o mesmo CPF.</li>
+                    </ul>
+                </section>
+
+                <p class="suave pequeno">Só quer começar do zero? Em <strong>Configurações</strong>, a opção <strong>Resetar dados</strong> apaga os registros e mantém a sua conta.</p>
+
+                <label class="marcar">
+                    <input type="checkbox" id="entendi">
+                    <span>Entendi que a exclusão <strong>não tem volta</strong>.</span>
+                </label>
+
+                <div class="pilha--p">
+                    <button type="button" class="botao botao--perigo botao--largo" id="botaoExcluir" disabled>Excluir minha conta para sempre</button>
+                    <a class="botao botao--linha botao--largo" href="/novo/inicio">Desistir e manter minha conta</a>
+                </div>
+            </div>
+
+            <!-- Depois de excluir. -->
+            <div class="exclusao__fim" id="etapaFim" hidden>
+                <span class="exclusao__selo" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                <h1 id="tituloFim" tabindex="-1">Conta excluída com sucesso</h1>
+                <p id="textoFim"></p>
+                <p class="exclusao__volte"><i class="fa-solid fa-seedling" aria-hidden="true"></i> Volte sempre! As portas do Verdanz continuam abertas.</p>
+                <a class="botao botao--linha" href="/novo">Ir para a página inicial</a>
+            </div>
+
+            <a class="botao botao--linha" id="linkVoltar" href="/novo/entrar" hidden>Entrar no Verdanz</a>
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/novo/js/base.js"></script>
+    <script src="/novo/js/acesso.js"></script>
+</body>
+</html>

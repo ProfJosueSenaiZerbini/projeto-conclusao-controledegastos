@@ -81,55 +81,6 @@ function aoTerminarAnimacao(elemento, aoFinal, prazoMaximo = 400) {
   elemento.addEventListener('animationend', finalizar);
 }
 
-// ---- ÍCONES DO PERFIL ----
-
-const CLASSES_ANEL = ['ring-2', 'ring-blue-400', 'ring-offset-2'];
-const semAnimacao = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-const perfilToggle = document.getElementById('perfilToggle');
-const acoesPerfil = document.getElementById('acoesPerfil');
-
-function esconderAcoes() {
-  acoesPerfil.classList.remove('flex', 'recolhendo');
-  acoesPerfil.classList.add('hidden');
-}
-
-function abrirAcoesPerfil() {
-  acoesPerfil.classList.remove('hidden', 'recolhendo');
-  acoesPerfil.classList.add('flex');
-  perfilToggle.classList.add(...CLASSES_ANEL);
-  perfilToggle.setAttribute('aria-expanded', 'true');
-}
-
-function fecharAcoesPerfil() {
-  perfilToggle.classList.remove(...CLASSES_ANEL);
-  perfilToggle.setAttribute('aria-expanded', 'false');
-
-  // Sem animação, 'animationend' nunca dispara — esconde direto.
-  if (semAnimacao.matches) {
-    esconderAcoes();
-    return;
-  }
-
-  acoesPerfil.classList.add('recolhendo');
-
-  aoTerminarAnimacao(acoesPerfil, function () {
-    // Se reabriu no meio da animação, 'recolhendo' já saiu: não esconder.
-    if (acoesPerfil.classList.contains('recolhendo')) esconderAcoes();
-  });
-}
-
-if (perfilToggle && acoesPerfil) {
-  perfilToggle.addEventListener('click', function () {
-    const fechado =
-      acoesPerfil.classList.contains('hidden') ||
-      acoesPerfil.classList.contains('recolhendo');
-
-    if (fechado) abrirAcoesPerfil();
-    else fecharAcoesPerfil();
-  });
-}
-
 // ---- MENU DO CELULAR ----
 //
 // No computador a barra lateral fica sempre visível. No celular não cabe,

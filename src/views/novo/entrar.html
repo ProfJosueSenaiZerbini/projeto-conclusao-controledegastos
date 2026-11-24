@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Entrar | Verdanz</title>
+    <link rel="icon" href="/img/VerdanzIcone.png">
+    <script src="/js/tema.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="/novo/css/verdanz.css" rel="stylesheet">
+</head>
+<body class="acesso" data-pagina="entrar">
+
+    <!-- Lado verde: some no celular, onde só o formulário importa. -->
+    <section class="acesso__lado" aria-label="Sobre o Verdanz">
+        <a class="marca marca--escura " href="/novo" title="Página inicial do Verdanz">
+                <img src="/img/VerdanzIcone.png" alt="">
+                <strong>Verdan<span>z</span></strong>
+            </a>
+        <div>
+            <h2>Bom te ver de novo.</h2>
+            <ul>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> O seu saldo de hoje, sem conta de cabeça</li>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> As contas que vencem nos próximos dias</li>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> Quanto falta para cada meta</li>
+            </ul>
+        </div>
+        <p class="pequeno">Seu dinheiro, seu futuro.</p>
+    </section>
+
+    <main class="acesso__form">
+        <div class="acesso__caixa">
+            <a class="voltar" href="/novo"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Página inicial</a>
+            <a class="marca marca--escura acesso__marca-celular" href="/novo" title="Página inicial do Verdanz">
+                <img src="/img/VerdanzIcone.png" alt="">
+                <strong>Verdan<span>z</span></strong>
+            </a>
+            <div>
+                <h1>Entrar</h1>
+                <p class="suave">Use o e-mail e a senha da sua conta.</p>
+            </div>
+
+            <div id="recado" aria-live="polite"></div>
+
+            <form id="formEntrar" class="pilha" novalidate>
+                <div class="campo">
+                    <label for="email">E-mail</label>
+                    <input class="entrada" type="email" id="email" autocomplete="email" inputmode="email" aria-describedby="emailErro">
+                    <p class="erro" id="emailErro" hidden></p>
+                </div>
+
+                <div class="campo">
+                    <label for="senha">Senha</label>
+                    <div class="senha">
+                        <input class="entrada" type="password" id="senha" autocomplete="current-password" aria-describedby="senhaErro">
+                        <button type="button" class="botao-icone" data-olho="senha" aria-label="Mostrar a senha" aria-pressed="false"><i class="fa-regular fa-eye" aria-hidden="true"></i></button>
+                    </div>
+                    <p class="erro" id="senhaErro" hidden></p>
+                </div>
+                <button type="submit" class="botao botao--largo" id="botaoEntrar">Entrar</button>
+            </form>
+
+            <div class="pilha--p">
+                <a href="/novo/esqueci-senha">Esqueci minha senha</a>
+                <p>Ainda não tem conta? <a href="/novo/criar-conta"><strong>Criar conta grátis</strong></a></p>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script src="/novo/js/base.js"></script>
+    <script src="/novo/js/acesso.js"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 const prisma = require('../prisma');
 const { emCentavos } = require('../saldo');
-const { CATEGORIA_METAS, buscarCategoriaVisivel } = require('../categorias');
+const { CATEGORIA_METAS, buscarCategoriaVisivel, ehTransferencia } = require('../categorias');
 
 // ---- LIMITE DE GASTO POR CATEGORIA ----
 //
@@ -160,6 +160,11 @@ async function criarLimite(req, res) {
     // "Metas" seria pedir para a pessoa guardar menos.
     if (categoria.nome_categoria === CATEGORIA_METAS) {
       return res.status(400).json({ erro: 'Dinheiro guardado em metas não é gasto e não tem limite' });
+    }
+
+    // Transferência também não é gasto: o dinheiro só muda de conta.
+    if (ehTransferencia(categoria)) {
+      return res.status(400).json({ erro: 'Transferência entre contas não é gasto e não tem limite' });
     }
 
     const limite = await prisma.limiteCategoria.create({

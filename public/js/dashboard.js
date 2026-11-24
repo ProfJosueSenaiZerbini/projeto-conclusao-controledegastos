@@ -107,7 +107,7 @@ async function carregarResumo() {
     // fora (ehGasto, em auth.js), porque ele continua sendo da pessoa.
     const somar = (lista) => lista.reduce((total, t) => total + Number(t.valor_transacao), 0);
 
-    statReceitas.textContent = formatarMoeda(somar(doMes.filter((t) => t.categoria.tipo === 'receita')));
+    statReceitas.textContent = formatarMoeda(somar(doMes.filter(ehGanho)));
     statDespesas.textContent = formatarMoeda(somar(doMes.filter(ehGasto)));
 
     // As despesas do mês incluem as que ainda não foram pagas.
@@ -141,8 +141,8 @@ async function carregarResumo() {
 
   ajustarValoresDosCards();
 
-  // A fonte Inter vem da internet e pode chegar depois: com ela, o texto
-  // muda de largura, então a medida é refeita quando ela termina de carregar.
+  // A fonte (Nunito Sans) vem da internet e pode chegar depois: com ela, o
+  // texto muda de largura, então a medida é refeita quando ela termina de carregar.
   document.fonts.ready.then(ajustarValoresDosCards);
 }
 
@@ -158,9 +158,13 @@ function preencherPendentes(transacoes) {
     .filter(aPagar)
     .sort((a, b) => String(a.data_transacao).localeCompare(String(b.data_transacao)));
 
-  // Sem nada a pagar, o bloco continua escondido.
+  // Sem nada a pagar, o cartão continua à vista e diz isso com todas as
+  // letras: um cartão que some deixa a pessoa sem saber se está tudo em dia
+  // ou se a informação não carregou.
   if (pendentes.length === 0) {
-    bloco.classList.add('hidden');
+    document.getElementById('pendentesTotal').textContent = formatarMoeda(0);
+    document.getElementById('pendentesResumo').textContent = 'Tudo em dia';
+    lista.innerHTML = '<p class="pt-3 text-gray-500">Nenhuma conta esperando pagamento.</p>';
     return;
   }
 
@@ -192,7 +196,7 @@ function preencherPendentes(transacoes) {
             <p class="text-xs text-gray-400 truncate">${escapar(t.categoria.nome_categoria)} · ${escapar(t.conta.nome)}</p>
           </div>
           <div class="text-right flex-shrink-0 ml-3">
-            <p class="font-medium text-gray-900 text-sm">− ${formatarMoeda(t.valor_transacao)}</p>
+            <p class="font-medium text-gray-900 text-sm">${formatarMoeda(-t.valor_transacao)}</p>
             <p class="text-xs ${corPrazo}">${formatarData(t.data_transacao)} · ${textoVencimento(t.data_transacao)}</p>
           </div>
         </div>`;
@@ -257,35 +261,35 @@ function preencherGastosPorCategoria(transacoesDoMes, limites) {
         const pct = Math.round(limite.percentual);
         return `
           <div class="mb-3">
-            <div class="flex justify-between text-xs mb-1">
+            <div class="flex justify-between text-sm mb-1.5">
               <span class="text-gray-600">${escapar(c.nome)}</span>
               <span class="text-gray-900 font-medium">${formatarMoeda(limite.gasto_mes)}
                 <span class="text-gray-400 font-normal">/ ${formatarMoeda(limite.valor_limite)}</span>
               </span>
             </div>
-            <div class="w-full bg-gray-100 rounded-full h-1.5">
-              <div class="${COR_LIMITE[limite.situacao]} h-1.5 rounded-full" style="width: ${Math.min(100, pct)}%"></div>
+            <div class="w-full bg-[#f1ebe2] rounded-full h-2.5">
+              <div class="${COR_LIMITE[limite.situacao]} h-2.5 rounded-full" style="width: ${Math.min(100, pct)}%"></div>
             </div>
-            <p class="text-[0.6875rem] mt-1 ${TEXTO_LIMITE[limite.situacao]}">${pct}% do limite do mês</p>
+            <p class="text-xs mt-1 ${TEXTO_LIMITE[limite.situacao]}">${pct}% do limite do mês</p>
           </div>`;
       }
 
       const pct = Math.round((c.valor / total) * 100);
       const botaoLimite =
         c === sugerida
-          ? `<a href="/metas?limite=${c.id}" class="text-[0.6875rem] text-blue-600 font-medium hover:underline">
+          ? `<a href="/metas?limite=${c.id}" class="inline-block mt-1 text-sm text-blue-600 font-semibold hover:underline">
                <i class="fa-solid fa-gauge-high mr-0.5"></i> Definir limite
              </a>`
           : '';
 
       return `
         <div class="mb-3">
-          <div class="flex justify-between text-xs mb-1">
+          <div class="flex justify-between text-sm mb-1.5">
             <span class="text-gray-600">${escapar(c.nome)}</span>
             <span class="text-gray-900 font-medium">${formatarMoeda(c.valor)}</span>
           </div>
-          <div class="w-full bg-gray-100 rounded-full h-1.5">
-            <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${pct}%"></div>
+          <div class="w-full bg-[#f1ebe2] rounded-full h-2.5">
+            <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${pct}%"></div>
           </div>
           ${botaoLimite}
         </div>`;
@@ -315,8 +319,8 @@ function preencherMetas(metas) {
             </div>
             <span class="text-sm font-bold text-blue-600 flex-shrink-0 ml-3">${pct}%</span>
           </div>
-          <div class="w-full bg-gray-100 rounded-full h-1.5">
-            <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${Math.min(100, pct)}%"></div>
+          <div class="w-full bg-[#f1ebe2] rounded-full h-2.5">
+            <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${Math.min(100, pct)}%"></div>
           </div>
         </div>`;
     })
@@ -365,7 +369,7 @@ function preencherUltimasTransacoes(transacoes) {
           </div>
           <div class="text-right flex-shrink-0 ml-3">
             <p class="font-medium ${ehReceita ? 'text-green-600' : 'text-gray-900'} text-sm">
-              ${ehReceita ? '+' : '−'} ${formatarMoeda(t.valor_transacao)}
+              ${formatarMoeda(ehReceita ? t.valor_transacao : -t.valor_transacao, { sinal: true })}
             </p>
             <p class="text-xs text-gray-400">${etiqueta}${formatarData(t.data_transacao)}</p>
           </div>

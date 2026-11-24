@@ -9,10 +9,12 @@
     <!-- Tema claro/escuro: precisa vir no <head> para a tela já abrir na cor certa -->
     <link href="/css/tema.css" rel="stylesheet">
     <script src="/js/tema.js"></script>
+    <!-- Visual comum a todas as telas: menu, barra do celular, legibilidade -->
+    <link href="/css/verdanz.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Nunito Sans', sans-serif; }
 
         /* Mesma animação dos ícones do perfil das outras telas internas. */
         @keyframes surgirAcoes {
@@ -49,50 +51,30 @@
       - perfil-calculos.js  → as contas (INSS, seguro-desemprego, etc.)
 -->
 
-<body class="bg-[#f8faff] h-screen flex overflow-hidden text-gray-800">
+<body class="bg-[#f7f1e8] h-screen flex overflow-hidden text-gray-800">
 
     <!-- No computador a barra fica fixa à esquerda. No celular ela sai de
          cena (-translate-x-full) e desliza para dentro quando o usuário toca
          no botão de menu. Antes ela era simplesmente escondida com
          "hidden md:flex", e no celular não sobrava NENHUMA navegação. -->
     <aside id="barraLateral"
-           class="w-64 bg-[#f8faff] flex flex-col justify-between h-full border-r border-gray-100
+           class="w-64 bg-[#f7f1e8] flex flex-col justify-between h-full overflow-y-auto border-r border-gray-100
                   fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-200
                   md:static md:translate-x-0 md:transition-none">
         <div>
-            <div class="p-6 flex items-center gap-3 cursor-pointer">
+            <a href="/dashboard" title="Ir para o Início" class="p-6 flex items-center gap-3 rounded-2xl">
                 <img src="/img/VerdanzIcone.png" alt="" class="w-14 h-14 object-contain">
                 <div>
-                   <h1 class="text-4xl font-bold text-[#071b3a]">
+                    <h1 class="text-4xl font-bold text-[#071b3a]">
                         Verdan<span class="text-green-500">z</span>
                     </h1>
-                    <p class="text-[10px] text-gray-500">Seu dinheiro, seu futuro</p>
+                    <p class="text-xs text-gray-500 whitespace-nowrap">Seu dinheiro, seu futuro</p>
                 </div>
-            </div>
+            </a>
 
-            <nav class="px-4 space-y-1 mt-2">
-                <a href="/dashboard" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
-                    <i class="fa-solid fa-house-chimney w-5 text-center"></i> Dashboard
-                </a>
-                <a href="/contas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
-                    <i class="fa-regular fa-credit-card w-5 text-center"></i> Contas
-                </a>
-                <a href="/transacoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
-                    <i class="fa-solid fa-right-left w-5 text-center"></i> Transações
-                </a>
-                <a href="#" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
-                    <i class="fa-regular fa-calendar w-5 text-center"></i> Planejamento
-                </a>
-                <a href="/metas" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
-                    <i class="fa-solid fa-bullseye w-5 text-center"></i> Metas
-                </a>
-                <a href="/meu-perfil" aria-current="page" class="flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl font-medium shadow-sm shadow-blue-200">
-                    <i class="fa-solid fa-user-gear w-5 text-center"></i> Meu perfil
-                </a>
-                <a href="/configuracoes" class="flex items-center gap-3 text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-4 py-3 rounded-xl transition-colors font-medium">
-                    <i class="fa-solid fa-gear w-5 text-center"></i> Configurações
-                </a>
-            </nav>
+            <!-- Os itens são montados pelo /js/menu.js, a partir de uma lista só.
+                 Assim o menu é igual em todas as telas. -->
+            <nav id="menuPrincipal" aria-label="Menu principal" class="px-4 mt-2 space-y-1"></nav>
         </div>
     </aside>
 
@@ -100,30 +82,24 @@
     <div id="fundoMenu" class="hidden fixed inset-0 bg-black/40 z-40 md:hidden"></div>
 
 
-    <main class="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f8faff]">
+    <main class="flex-1 overflow-y-auto p-5 pb-28 md:p-8 bg-[#f7f1e8]">
 
         <header class="flex justify-between items-start mb-6">
             <div class="flex items-start gap-3 min-w-0">
-                <button id="abrirMenu" type="button" title="Abrir menu" aria-label="Abrir menu"
-                        class="md:hidden w-10 h-10 -ml-1 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0">
-                    <i class="fa-solid fa-bars text-xl"></i>
-                </button>
                 <div class="min-w-0">
-                    <h2 class="text-2xl font-bold text-gray-900">Meu perfil</h2>
-                <p class="text-gray-500 text-sm mt-1">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Meu perfil</h2>
+                <p class="text-gray-600 text-base mt-1">
                     Ferramentas pensadas para a sua realidade, <span id="nomeUsuario">...</span>.
                 </p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <div id="acoesPerfil" class="hidden items-center gap-4">
-                    <button id="botaoSair" title="Sair" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-right-from-bracket text-xl"></i></button>
-                </div>
-                <button id="perfilToggle" type="button" aria-expanded="false" aria-controls="acoesPerfil"
-                        title="Opções do perfil"
-                        class="rounded-full transition-shadow duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2">
-                    <img id="avatarUsuario" src="https://ui-avatars.com/api/?name=%20&background=0D8ABC&color=fff" alt="Perfil" class="w-10 h-10 rounded-full border-2 border-white shadow-sm cursor-pointer block">
-                </button>
+            <!-- O sininho (notificacoes.js) entra à esquerda da foto. A foto leva
+                 para Configurações; o "Sair" fica sempre à vista no menu. -->
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <a href="/configuracoes" id="linkPerfil" title="Seus dados e configurações"
+                   class="block rounded-full p-1 hover:bg-gray-100 transition-colors">
+                    <img id="avatarUsuario" src="https://ui-avatars.com/api/?name=%20&background=0D8ABC&color=fff" alt="Perfil" class="w-10 h-10 rounded-full border-2 border-white shadow-sm block">
+                </a>
             </div>
         </header>
 
@@ -158,6 +134,7 @@
     </main>
 
     <script src="/js/auth.js"></script>
+    <script src="/js/menu.js"></script>
     <script src="/js/layout.js"></script>
     <script src="/js/notificacoes.js"></script>
     <!-- modal.js: confirmação antes de remover uma conta fixa (Doméstico) -->

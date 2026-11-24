@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Meu perfil | Verdanz</title>
+    <link rel="icon" href="/img/VerdanzIcone.png">
+    <script src="/js/tema.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="/novo/css/verdanz.css" rel="stylesheet">
+</head>
+<body class="app" data-pagina="meu-perfil">
+    <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+    <aside class="lateral" id="lateral" aria-label="Menu"></aside>
+
+    <div class="palco">
+        <header class="topo" id="topo">
+            <div class="topo__titulo">
+                <h1>Meu perfil</h1>
+                <p>Ferramentas pensadas para a sua realidade.</p>
+            </div>
+            <div class="topo__acoes" id="topoAcoes"></div>
+        </header>
+
+        <main class="conteudo" id="conteudo">
+
+            <!-- Quem ainda não fez a pesquisa -->
+            <section class="cartao vazio" id="semPerfil" hidden>
+                <span class="icone icone--lilas" aria-hidden="true"><i class="fa-solid fa-user-gear"></i></span>
+                <h2>Você ainda não escolheu o seu perfil</h2>
+                <p>Responda a algumas perguntas rápidas. No fim, o Verdanz libera as ferramentas que combinam com a sua vida: quem tem carteira assinada vê o planejador do 13º, quem é autônomo vê o salário seguro, e assim por diante.</p>
+                <a class="botao" href="/novo/perfil">Descobrir meu perfil</a>
+            </section>
+
+            <div class="pilha" id="comPerfil" hidden style="gap:1.5rem">
+                <div class="fila fila--entre">
+                    <div class="abas" id="abas" role="tablist" aria-label="Seus perfis"></div>
+                    <a class="ver" href="/novo/perfil"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Trocar meus perfis</a>
+                </div>
+
+                <div id="painelPerfil" role="tabpanel" class="pilha" style="gap:1.5rem">
+                    <section class="lobo lobo--mata" aria-labelledby="tituloPerfil">
+                        <h2 id="tituloPerfil" style="font-size:1.5rem"></h2>
+                        <p id="contextoPerfil" style="max-width: 62ch; margin-top:.5rem; color:#d7e6d8"></p>
+                    </section>
+
+                    <div class="grade">
+                        <!-- As ferramentas, desenhadas pelo meu-perfil.js -->
+                        <div class="col-8 pilha" id="ferramentas" style="gap:1.5rem"></div>
+
+                        <div class="col-4 pilha" style="gap:1.5rem; align-content:start">
+                            <div id="metaSugerida"></div>
+                            <section class="cartao" aria-labelledby="tituloDicas">
+                                <h3 id="tituloDicas">Bom saber</h3>
+                                <ul id="dicas"></ul>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/perfil-perguntas.js"></script>
+    <script src="/js/perfil-conteudo.js"></script>
+    <script src="/js/perfil-calculos.js"></script>
+    <script src="/novo/js/base.js"></script>
+    <script src="/novo/js/casca.js"></script>
+    <script src="/novo/js/meu-perfil.js"></script>
+</body>
+</html>

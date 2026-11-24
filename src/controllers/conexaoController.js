@@ -98,7 +98,10 @@ async function iniciarConexao(req, res) {
     );
 
     // O CPF vai do servidor do Verdanz para o banco, nunca pela URL.
-    const url = await banco.pedirConsentimento(usuario.cpf_cnpj, state);
+    // "retorno" é opcional: a tela diz para onde quer voltar depois do banco
+    // (a versão nova manda '/novo/contas'). O clienteBanco só aceita os
+    // endereços da lista dele.
+    const url = await banco.pedirConsentimento(usuario.cpf_cnpj, state, req.body?.retorno);
 
     res.json({ url });
   } catch (erro) {

@@ -12,9 +12,9 @@
 // do script de cada tela.
 
 (function () {
-  const perfilToggle = document.getElementById('perfilToggle');
+  const linkPerfil = document.getElementById('linkPerfil');
   const idUsuario = Sessao.idUsuario();
-  if (!perfilToggle || !Sessao.token() || !idUsuario) return;
+  if (!linkPerfil || !Sessao.token() || !idUsuario) return;
 
   const chaveVistas = 'notificacoes_vistas_' + idUsuario;
 
@@ -56,10 +56,10 @@
   caixa.innerHTML = `
     <button type="button" id="botaoNotificacoes" title="Notificações" aria-label="Notificações"
             aria-expanded="false" aria-controls="painelNotificacoes"
-            class="relative block text-gray-400 hover:text-gray-600 transition-colors">
+            class="relative flex items-center justify-center w-11 h-11 rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors">
       <i class="fa-regular fa-bell text-xl"></i>
       <span id="contagemNotificacoes"
-            class="hidden absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold leading-[18px] text-center"></span>
+            class="hidden absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold leading-[18px] text-center"></span>
     </button>
 
     <!-- No celular o painel ocupa a largura da tela; no computador fica preso ao sininho. -->
@@ -72,7 +72,7 @@
       </a>
     </div>`;
 
-  perfilToggle.parentElement.insertBefore(caixa, perfilToggle);
+  linkPerfil.parentElement.insertBefore(caixa, linkPerfil);
 
   const botao = document.getElementById('botaoNotificacoes');
   const contagem = document.getElementById('contagemNotificacoes');

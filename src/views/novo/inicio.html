@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Início | Verdanz</title>
+    <link rel="icon" href="/img/VerdanzIcone.png">
+    <!-- Tema e tamanho da letra: no <head>, para a tela já abrir do jeito certo. -->
+    <script src="/js/tema.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="/novo/css/verdanz.css" rel="stylesheet">
+</head>
+<body class="app" data-pagina="inicio">
+    <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+    <!-- O menu é montado pelo /novo/js/casca.js -->
+    <aside class="lateral" id="lateral" aria-label="Menu"></aside>
+
+    <div class="palco">
+        <header class="topo" id="topo">
+            <div class="topo__titulo">
+                <h1>Olá, <span data-primeiro-nome>...</span></h1>
+                <p id="dataDeHoje"></p>
+            </div>
+            <div class="topo__acoes" id="topoAcoes"></div>
+        </header>
+
+        <main class="conteudo" id="conteudo">
+
+            <div class="grade">
+                <!-- O que mais importa abre a tela, sozinho e grande. -->
+                <section class="lobo lobo--saldo col-7" aria-labelledby="tituloSaldo">
+                    <h2 class="saldo__rotulo" id="tituloSaldo">Você tem hoje</h2>
+                    <p class="saldo__valor" id="saldoHoje">R$ 0,00</p>
+                    <p id="saldoLegenda">&nbsp;</p>
+                    <div class="saldo__contas" id="saldoContas"></div>
+                </section>
+
+                <!-- O mês como uma conta de somar e subtrair, lida de cima para baixo. -->
+                <section class="cartao col-5" aria-labelledby="tituloMes">
+                    <div class="cartao__topo">
+                        <h2 id="tituloMes">Seu mês</h2>
+                        <span class="capsula" id="nomeMes"></span>
+                    </div>
+                    <div class="conta-mes">
+                        <div class="conta-mes__linha">
+                            <span class="conta-mes__sinal conta-mes__sinal--mais" aria-hidden="true">+</span>
+                            <span>Entrou</span>
+                            <span class="numero" id="mesEntrou">R$ 0,00</span>
+                        </div>
+                        <div class="conta-mes__linha">
+                            <span class="conta-mes__sinal conta-mes__sinal--menos" aria-hidden="true">−</span>
+                            <span>Saiu <small id="mesAPagar"></small></span>
+                            <span class="numero" id="mesSaiu">R$ 0,00</span>
+                        </div>
+                        <div class="conta-mes__linha conta-mes__linha--total">
+                            <span class="conta-mes__sinal conta-mes__sinal--igual" aria-hidden="true">=</span>
+                            <strong id="mesRotuloSobra">Sobrou</strong>
+                            <span class="numero" id="mesSobrou">R$ 0,00</span>
+                        </div>
+                    </div>
+                    <p class="conta-mes__nota" id="mesGuardado" hidden></p>
+                </section>
+            </div>
+
+            <!-- O caminho do mês: o que já passou e o que ainda vem. -->
+            <section class="cartao" aria-labelledby="tituloCaminho">
+                <div class="cartao__topo">
+                    <div>
+                        <h2 id="tituloCaminho">O caminho do mês</h2>
+                        <p class="suave" id="caminhoResumo">&nbsp;</p>
+                    </div>
+                </div>
+                <!-- Um quadradinho por dia; clicar num dia colorido abre os registros dele. -->
+                <div class="caminho" id="caminho"></div>
+                <ul class="caminho__lista" id="caminhoLista"></ul>
+            </section>
+
+            <div class="grade">
+                <section class="cartao col-6" aria-labelledby="tituloAPagar">
+                    <div class="cartao__topo">
+                        <div class="cartao__titulo">
+                            <span class="icone icone--sol" aria-hidden="true"><i class="fa-regular fa-clock"></i></span>
+                            <div>
+                                <h2 id="tituloAPagar">Contas a pagar</h2>
+                                <p class="suave pequeno" id="aPagarResumo">&nbsp;</p>
+                            </div>
+                        </div>
+                        <a class="ver" href="/novo/transacoes?situacao=pendente">Ver todas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                    </div>
+                    <ul id="aPagarLista"></ul>
+                </section>
+
+                <section class="cartao col-6" aria-labelledby="tituloCategorias">
+                    <div class="cartao__topo">
+                        <div class="cartao__titulo">
+                            <span class="icone icone--folha" aria-hidden="true"><i class="fa-solid fa-chart-pie"></i></span>
+                            <div>
+                                <h2 id="tituloCategorias">Para onde foi</h2>
+                                <p class="suave pequeno">Gastos do mês, por categoria</p>
+                            </div>
+                        </div>
+                        <a class="ver" href="/novo/metas#limites">Limites <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                    </div>
+                    <div id="categorias"></div>
+                </section>
+            </div>
+
+            <div class="grade">
+                <section class="cartao col-6" aria-labelledby="tituloMetas">
+                    <div class="cartao__topo">
+                        <div class="cartao__titulo">
+                            <span class="icone icone--ceu" aria-hidden="true"><i class="fa-solid fa-flag"></i></span>
+                            <h2 id="tituloMetas">Suas metas</h2>
+                        </div>
+                        <a class="ver" href="/novo/metas">Ver metas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                    </div>
+                    <div id="metas"></div>
+                </section>
+
+                <section class="cartao col-6" aria-labelledby="tituloUltimas">
+                    <div class="cartao__topo">
+                        <div class="cartao__titulo">
+                            <span class="icone" aria-hidden="true"><i class="fa-solid fa-right-left"></i></span>
+                            <h2 id="tituloUltimas">Últimas transações</h2>
+                        </div>
+                        <a class="ver" href="/novo/transacoes">Ver todas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                    </div>
+                    <ul id="ultimas"></ul>
+                </section>
+            </div>
+
+            <section class="lobo lobo--lilas dica-dia" aria-labelledby="dicaTitulo">
+                <span class="icone" aria-hidden="true"><i class="fa-regular fa-lightbulb"></i></span>
+                <div>
+                    <h2 id="dicaTitulo" style="font-size: 1.25rem">Descubra o seu perfil</h2>
+                    <p id="dicaTexto">Responda a algumas perguntas rápidas e receba ferramentas feitas para a sua realidade: CLT, autônomo, estudante, aposentado e mais.</p>
+                </div>
+                <a class="botao botao--escuro" id="dicaLink" href="/novo/perfil">Descobrir meu perfil</a>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Regras compartilhadas com a versão antiga (sessão, API, datas, perfis) -->
+    <script src="/js/auth.js"></script>
+    <script src="/js/perfil-perguntas.js"></script>
+    <script src="/js/perfil-conteudo.js"></script>
+    <!-- Versão nova -->
+    <script src="/novo/js/base.js"></script>
+    <script src="/novo/js/casca.js"></script>
+    <script src="/novo/js/inicio.js"></script>
+</body>
+</html>

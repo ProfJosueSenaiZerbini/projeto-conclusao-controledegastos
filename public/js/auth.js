@@ -104,11 +104,23 @@ function esconderMensagem() {
 // O Intl cuida do padrão brasileiro sozinho: R$, ponto de milhar,
 // vírgula decimal e as duas casas obrigatórias.
 
-function formatarMoeda(valor) {
-  return Number(valor || 0).toLocaleString('pt-BR', {
+//
+// O sinal fica junto do NÚMERO, depois do "R$": "R$ -12,00", e não
+// "-R$ 12,00" (que é o que o toLocaleString faz sozinho).
+//
+// { sinal: true } mostra também o "+" dos positivos: "R$ +50,00". Serve
+// para as listas de transações, onde ganho e gasto aparecem lado a lado.
+function formatarMoeda(valor, { sinal = false } = {}) {
+  // Em centavos: -0,004 arredondaria para "R$ -0,00".
+  const centavos = Math.round(Number(valor || 0) * 100);
+  const texto = (Math.abs(centavos) / 100).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   });
+
+  const marca = centavos < 0 ? '-' : sinal && centavos > 0 ? '+' : '';
+  // \u00a0 é o espaço que não quebra linha: o "R$" nunca fica sozinho.
+  return marca ? texto.replace(/^R\$\s*/, 'R$\u00a0' + marca) : texto;
 }
 
 // ---- VALORES GRANDES CABENDO NO CARD ----
@@ -201,9 +213,35 @@ function ehDinheiroGuardado(t) {
   return t.categoria.nome_categoria === 'Metas' && !t.categoria.id_usuario;
 }
 
-// Gasto de verdade: despesa que não é dinheiro guardado numa meta.
+// Passar dinheiro de uma conta para outra gera uma saída ("Transferência
+// enviada") e uma entrada ("Transferência recebida"), ver contaController.js.
+// O dinheiro continua sendo da pessoa: não é gasto nem ganho, e fica de fora
+// das duas somas. Os nomes são do sistema e ninguém cria outra igual.
+const CATEGORIAS_DE_TRANSFERENCIA = ['Transferência enviada', 'Transferência recebida'];
+
+function ehCategoriaDeTransferencia(categoria) {
+  return CATEGORIAS_DE_TRANSFERENCIA.includes(categoria.nome_categoria) && !categoria.id_usuario;
+}
+
+function ehTransferencia(t) {
+  return ehCategoriaDeTransferencia(t.categoria);
+}
+
+// Categorias que só o sistema usa: não aparecem para a pessoa escolher
+// ao registrar um gasto ou ganho, nem ao criar um limite.
+function ehCategoriaSoDoSistema(categoria) {
+  return (categoria.nome_categoria === 'Metas' && !categoria.id_usuario) || ehCategoriaDeTransferencia(categoria);
+}
+
+// Gasto de verdade: despesa que não é dinheiro guardado numa meta nem
+// dinheiro que só mudou de conta.
 function ehGasto(t) {
-  return t.categoria.tipo === 'despesa' && !ehDinheiroGuardado(t);
+  return t.categoria.tipo === 'despesa' && !ehDinheiroGuardado(t) && !ehTransferencia(t);
+}
+
+// Ganho de verdade: receita que não veio de outra conta da própria pessoa.
+function ehGanho(t) {
+  return t.categoria.tipo === 'receita' && !ehTransferencia(t);
 }
 
 // ---- CHAMADAS À API ----

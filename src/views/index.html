@@ -10,20 +10,30 @@
     <link rel="icon" href="/img/VerdanzIcone.png">
 </head>
 
+<!-- Mesmo visual de antes: fundo com a planta, logo grande e o botão verde.
+
+     O que mudou é só a forma de posicionar. Antes a logo e o botão eram
+     empurrados com distâncias fixas (translate de 160px, 390px...), que só
+     davam certo numa tela do tamanho da do computador em que foram feitas.
+     No celular, a logo saía da tela. Agora uma coluna centralizada (flex)
+     mantém os dois no meio em qualquer tamanho de tela. -->
 <body class="m-0 min-h-screen bg-[url('/img/image.png')] bg-no-repeat bg-cover bg-center">
 
-    <div>
-        <div class="w-[100dvh] translate-y-[160px] -translate-x-[-390px]">
-            <img src="/img/Verdanz.png" alt="Verdanz">
-        </div>
+    <main class="min-h-screen flex flex-col items-center justify-center gap-10 px-6 py-10">
 
-        <a href="/login">
-            <div class="flex justify-center translate-y-[190px]">
-                <button
-                    class="bg-[rgb(84,252,104)] rounded-[110px] p-5 w-[20dvh] cursor-pointer border-0"> Começar </button>
-            </div>
+        <!-- A largura acompanha a tela (90%), mas para em 640px no computador. -->
+        <img src="/img/Verdanz.png" alt="Verdanz — seu dinheiro, seu futuro"
+             class="w-[90%] max-w-[640px] h-auto object-contain">
+
+        <!-- Antes era um <button> dentro de um <a>, o que o HTML não permite
+             (um elemento clicável dentro de outro). Agora é só o link, com a
+             mesma aparência de botão. -->
+        <a href="/login"
+           class="bg-[rgb(84,252,104)] hover:bg-[rgb(60,230,82)] rounded-[110px] px-10 py-5 text-lg font-semibold text-[#071b3a] transition-colors">
+            Entrar ou criar conta
         </a>
-    </div>
+
+    </main>
 
 </body>
 

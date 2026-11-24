@@ -137,7 +137,7 @@ function resumir(contas, transacoes) {
   let receitasFechadasDoAno = 0;  // do ano, só dos meses que já terminaram
 
   for (const t of transacoes) {
-    if (ehDinheiroGuardado(t)) continue;
+    if (ehDinheiroGuardado(t) || ehTransferencia(t)) continue;
 
     const mes = chaveMes(t.data_transacao);
     const dia = String(t.data_transacao).slice(0, 10);
@@ -369,7 +369,7 @@ const FERRAMENTAS = {
       saida.innerHTML = `
         ${linha('13º bruto', formatarMoeda(r.bruto))}
         ${linha('1ª parcela — até 30 de novembro (sem descontos)', formatarMoeda(r.primeiraParcela), { cor: 'text-green-600' })}
-        ${linha('INSS do 13º (sai da 2ª parcela)', '− ' + formatarMoeda(r.inss), { cor: 'text-red-500' })}
+        ${linha('INSS do 13º (sai da 2ª parcela)', formatarMoeda(-r.inss), { cor: 'text-red-500' })}
         ${linha('2ª parcela — até 20 de dezembro', formatarMoeda(r.segundaParcela), { destaque: true })}
         <p class="text-[0.6875rem] text-gray-400 mt-1 mb-4">
           A 2ª parcela também pode ter desconto de Imposto de Renda, que depende de dependentes e outras

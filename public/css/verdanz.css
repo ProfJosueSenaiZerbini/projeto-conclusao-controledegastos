@@ -1,0 +1,324 @@
+/* Visual comum do Verdanz: o tema "App Acolhedor".
+
+   O grupo escolheu este visual entre algumas opções: fundo creme suave em
+   vez de branco puro, cartões brancos com cantos bem arredondados e uma
+   única cor forte, o azul da marca, usada só no que se pode clicar.
+
+   Este arquivo vale para TODAS as telas. Ele faz três coisas:
+
+     1. define as cores do sistema num lugar só (variáveis CSS);
+     2. ajusta as classes do Tailwind que as telas já usam (bg-white,
+        text-gray-500...) para as cores novas, sem reescrever cada tela.
+        É a mesma técnica do tema.css, que faz o modo escuro;
+     3. desenha as partes comuns: menu lateral e barra de baixo do celular.
+
+   Quase todas as regras do item 2 começam com "html:not(.escuro)": valem
+   só no tema claro. No escuro, quem manda continua sendo o tema.css.
+
+   Carregado DEPOIS do tema.css, no <head> de cada tela. */
+
+/* ---------- 1. CORES DO SISTEMA ---------- */
+:root {
+    --fundo: #f7f1e8;          /* creme do fundo da página */
+    --cartao: #ffffff;
+    --borda: #ece3d6;          /* areia: contorno dos cartões */
+    --borda-campo: #e3d8c8;    /* contorno dos campos de digitar */
+    --campo: #fcfaf6;          /* fundo dos campos de digitar */
+    --hover: #f3ece2;
+    --texto: #1f2430;          /* quase preto, para leitura */
+    --texto-suave: #57514b;    /* cinza quente, para legendas */
+    --azul: #1f5fd6;           /* a cor de AÇÃO: só no que é clicável */
+    --azul-cheio: #1f5fd6;     /* fundo azul com letra branca por cima */
+    --azul-claro: #e8effc;
+    --verde: #2f8f57;          /* dinheiro que entrou */
+    --sombra-cartao: 0 14px 30px -24px rgb(74 52 22 / .45), 0 1px 2px rgb(74 52 22 / .05);
+}
+
+html.escuro {
+    --fundo: #0b1220;
+    --cartao: #111a2e;
+    --borda: #2a3650;
+    --borda-campo: #2a3650;
+    --campo: #0d1526;
+    --hover: #1e293b;
+    --texto: #f1f5f9;
+    --texto-suave: #cbd5e1;
+    --azul: #6b9cf5;
+    --azul-cheio: #1f5fd6;
+    --azul-claro: rgb(59 130 246 / .16);
+    --verde: #4ade80;
+    --sombra-cartao: none;
+}
+
+/* ---------- FONTE ----------
+   Nunito Sans: arredondada e fácil de ler, combina com o visual acolhedor.
+   Os números ficam todos com a mesma largura (tabular-nums), então valores
+   em dinheiro alinham um embaixo do outro. */
+body {
+    font-family: 'Nunito Sans', ui-sans-serif, system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 2. CLASSES DO TAILWIND NO TEMA CLARO ---------- */
+
+/* Cartões: as telas montam todos com "bg-white rounded-2xl border
+   border-gray-100". A regra pega exatamente essa combinação. */
+.bg-white.rounded-2xl.border-gray-100 {
+    border-radius: 1.5rem;
+}
+html:not(.escuro) .bg-white.rounded-2xl.border-gray-100 {
+    border-color: var(--borda);
+    box-shadow: var(--sombra-cartao);
+}
+
+/* Textos: os cinzas frios do Tailwind viram cinzas quentes, da mesma
+   família do fundo creme. Todos passam do contraste mínimo de leitura
+   (4,5:1, WCAG) sobre o branco e sobre o creme. */
+html:not(.escuro) .text-gray-900,
+html:not(.escuro) .text-gray-800 { color: var(--texto); }
+html:not(.escuro) .text-gray-700 { color: #3a3530; }
+html:not(.escuro) .text-gray-600 { color: #4d4741; }
+html:not(.escuro) .text-gray-500 { color: var(--texto-suave); }
+html:not(.escuro) .text-gray-400 { color: #6b645d; }
+
+/* Campos, divisórias e fundos claros */
+html:not(.escuro) .bg-gray-50 { background-color: var(--campo); }
+html:not(.escuro) .bg-gray-100 { background-color: var(--hover); }
+html:not(.escuro) .border-gray-100 { border-color: var(--borda); }
+html:not(.escuro) .border-gray-200 { border-color: var(--borda-campo); }
+html:not(.escuro) .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--borda); }
+html:not(.escuro) .hover\:bg-gray-50:hover { background-color: #faf6f0; }
+html:not(.escuro) .hover\:bg-gray-100:hover { background-color: var(--hover); }
+
+/* Azul de ação: o azul da marca, um pouco mais profundo. */
+html .bg-blue-600 { background-color: var(--azul-cheio); }
+html .hover\:bg-blue-700:hover { background-color: #194fb4; }
+html:not(.escuro) .text-blue-600 { color: var(--azul); }
+html:not(.escuro) .bg-blue-50,
+html:not(.escuro) .hover\:bg-blue-50:hover { background-color: var(--azul-claro); }
+html:not(.escuro) .text-green-600 { color: var(--verde); }
+html:not(.escuro) .hover\:bg-blue-100:hover { background-color: #dbe6fb; }
+
+/* Laranja de "vence em 3 dias" e "Pendente": o amber-600 do Tailwind tem
+   contraste 3,2:1 sobre o branco, abaixo do mínimo. O amber-700 passa. */
+html:not(.escuro) .text-amber-600 { color: #b45309; }
+
+/* Cartão de resumo no pé do menu (Saldo total, Metas ativas...): o degradê
+   azulado vira um degradê creme, da mesma família do fundo. */
+html:not(.escuro) .from-white.to-blue-50 {
+    background-image: linear-gradient(to bottom right, #ffffff, #f3ece2);
+    border-color: var(--borda);
+    border-radius: 1.5rem;
+}
+html.escuro .hover\:bg-blue-100:hover { background-color: rgb(59 130 246 / .26); }
+
+/* Botões principais em formato de pílula, como no visual escolhido.
+   Só botões e links: as barras de progresso (div azul) não mudam. */
+button.bg-blue-600,
+a.bg-blue-600 {
+    border-radius: 999px;
+}
+
+/* A sombra azulada dos botões vira uma sombra discreta. */
+html .shadow-blue-200,
+html .shadow-green-200 {
+    --tw-shadow-color: rgb(31 95 214 / .22);
+    --tw-shadow: var(--tw-shadow-colored);
+}
+
+/* ---------- LEITURA ----------
+   O Tailwind usa 12px na classe text-xs. É pouco para quem tem mais idade
+   ou enxerga menos, e a classe aparece em dezenas de lugares (inclusive
+   em textos montados pelos scripts). A regra sobe o mínimo para 13px. */
+html .text-xs {
+    font-size: .8125rem;
+    line-height: 1.25rem;
+}
+html .text-\[10px\],
+html .text-\[11px\] {
+    font-size: .75rem;
+}
+
+/* Quem navega pelo teclado (Tab) precisa ver onde está. Este contorno
+   aparece só no teclado, não no clique do mouse (:focus-visible). */
+:focus-visible {
+    outline: 3px solid var(--azul);
+    outline-offset: 2px;
+}
+
+::selection {
+    background: #cddcf8;
+    color: #0b1220;
+}
+
+/* ---------- 3. MENU LATERAL ----------
+   Montado pelo /js/menu.js a partir de uma lista só. */
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: .875rem;
+    width: 100%;
+    padding: .8rem 1.1rem;
+    border-radius: 1.125rem;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-align: left;
+    transition: background-color .15s, color .15s;
+}
+
+.menu-item i {
+    width: 1.25rem;
+    text-align: center;
+    font-size: 1.05rem;
+}
+
+.menu-item:hover {
+    background: var(--hover);
+    color: var(--texto);
+}
+
+/* A tela atual: pílula azul cheia, impossível de não ver. */
+.menu-item[aria-current="page"] {
+    background: var(--azul-cheio);
+    color: #fff;
+    box-shadow: 0 8px 18px -10px rgb(31 95 214 / .7);
+}
+
+/* Item que ainda não existe: visível, mas sem parecer clicável. */
+.menu-item.em-breve,
+.menu-item.em-breve:hover {
+    background: none;
+    color: #6b645d;
+    cursor: default;
+}
+
+/* O selo fica embaixo do nome, e não ao lado: ao lado ele apertava o
+   texto, principalmente com a letra "Grande" ou "Muito grande". */
+.selo-em-breve {
+    display: block;
+    width: max-content;
+    margin-top: .25rem;
+    padding: .125rem .5rem;
+    border-radius: 999px;
+    background: #efe6d8;
+    color: #57514b;
+    font-size: .75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+html.escuro .selo-em-breve {
+    background: #1e293b;
+    color: #cbd5e1;
+}
+
+html.escuro .menu-item.em-breve { color: #94a3b8; }
+
+.menu-divisoria {
+    height: 1px;
+    margin: .75rem 1rem;
+    background: var(--borda);
+}
+
+.menu-item.sair:hover {
+    background: #fdecea;
+    color: #c62828;
+}
+
+html.escuro .menu-item.sair:hover {
+    background: rgb(239 68 68 / .15);
+    color: #f87171;
+}
+
+/* ---------- BARRA DE BAIXO (CELULAR) ----------
+   No celular, os 4 destinos principais ficam sempre à vista, com ícone e
+   nome, como nos aplicativos de banco que as pessoas já conhecem. O
+   quinto botão, "Mais", abre o menu completo. */
+.barra-celular {
+    position: fixed;
+    left: .5rem;
+    right: .5rem;
+    bottom: calc(.5rem + env(safe-area-inset-bottom));
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: .125rem;
+    padding: .375rem;
+    background: var(--cartao);
+    border: 1px solid var(--borda);
+    border-radius: 1.5rem;
+    box-shadow: 0 12px 30px -12px rgb(74 52 22 / .35);
+}
+
+.barra-celular a,
+.barra-celular button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .3rem;
+    min-height: 3.5rem;
+    padding: .375rem .125rem;
+    border-radius: 1.125rem;
+    color: var(--texto-suave);
+    /* O nome do botão não pode passar da largura de 1/5 da tela, mesmo
+       com a letra "Muito grande": por isso o limite em vw. */
+    font-size: min(.75rem, 3.1vw);
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.barra-celular i {
+    font-size: 1.25rem;
+}
+
+.barra-celular [aria-current="page"] {
+    color: var(--azul);
+    background: var(--azul-claro);
+}
+
+@media (min-width: 768px) {
+    .barra-celular { display: none; }
+}
+
+/* ---------- PEÇAS DO INÍCIO ---------- */
+
+/* Ícone dentro de um círculo de fundo claro, ao lado do título de cada
+   cartão. Ajuda a reconhecer o assunto antes de ler. */
+.icone-cartao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+/* Link de texto "Ver tudo" no canto dos cartões do Início. */
+.link-ver {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .5rem .75rem;
+    margin: -.5rem -.75rem -.5rem 0;
+    border-radius: 999px;
+    color: var(--azul);
+    font-size: .9375rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.link-ver:hover {
+    background: var(--azul-claro);
+}
+
+/* Quem pediu menos animação no sistema operacional não vê transições. */
+@media (prefers-reduced-motion: reduce) {
+    .menu-item {
+        transition: none;
+    }
+}
