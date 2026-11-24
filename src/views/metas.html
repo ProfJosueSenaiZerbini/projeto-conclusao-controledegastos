@@ -2,202 +2,170 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Metas | Verdanz</title>
     <link rel="icon" href="/img/VerdanzIcone.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tema claro/escuro: precisa vir no <head> para a tela já abrir na cor certa -->
-    <link href="/css/tema.css" rel="stylesheet">
     <script src="/js/tema.js"></script>
-    <!-- Visual comum a todas as telas: menu, barra do celular, legibilidade -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="/css/verdanz.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="/css/painel.css" rel="stylesheet">
-    <style>
-        body { font-family: 'Nunito Sans', sans-serif; }
-    </style>
 </head>
-<body class="bg-[#f7f1e8] h-screen flex overflow-hidden text-gray-800">
+<body class="app" data-pagina="metas">
+    <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+    <aside class="lateral" id="lateral" aria-label="Menu"></aside>
 
-    <!-- No computador a barra fica fixa à esquerda. No celular ela sai de
-         cena (-translate-x-full) e desliza para dentro quando o usuário toca
-         no botão de menu. Antes ela era simplesmente escondida com
-         "hidden md:flex", e no celular não sobrava NENHUMA navegação. -->
-    <aside id="barraLateral"
-           class="w-64 bg-[#f7f1e8] flex flex-col justify-between h-full overflow-y-auto border-r border-gray-100
-                  fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-200
-                  md:static md:translate-x-0 md:transition-none">
-        <div>
-            <a href="/dashboard" title="Ir para o Início" class="p-6 flex items-center gap-3 rounded-2xl">
-                <img src="/img/VerdanzIcone.png" alt="" class="w-14 h-14 object-contain">
-                <div>
-                    <h1 class="text-4xl font-bold text-[#071b3a]">
-                        Verdan<span class="text-green-500">z</span>
-                    </h1>
-                    <p class="text-xs text-gray-500 whitespace-nowrap">Seu dinheiro, seu futuro</p>
-                </div>
-            </a>
-
-            <!-- Os itens são montados pelo /js/menu.js, a partir de uma lista só.
-                 Assim o menu é igual em todas as telas. -->
-            <nav id="menuPrincipal" aria-label="Menu principal" class="px-4 mt-2 space-y-1"></nav>
-        </div>
-
-        <div class="p-4 mb-4">
-            <div class="bg-gradient-to-br from-white to-blue-50 border border-blue-100 p-4 rounded-2xl relative overflow-hidden">
-                <div class="relative z-10">
-                    <p class="text-sm font-semibold text-gray-700">Metas ativas</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-1" id="metasAtivas">0</p>
-                    <p class="text-xs text-gray-500 mt-1">Em andamento</p>
-                </div>
-                <i class="fa-solid fa-leaf absolute -bottom-2 -right-2 text-6xl text-green-200/50 -rotate-12"></i>
+    <div class="palco">
+        <header class="topo" id="topo">
+            <div class="topo__titulo">
+                <h1>Metas</h1>
+                <p>Onde você quer chegar, e como chegar lá.</p>
             </div>
-        </div>
-    </aside>
-
-    <!-- Escurece o conteúdo enquanto o menu está aberto no celular. -->
-    <div id="fundoMenu" class="hidden fixed inset-0 bg-black/40 z-40 md:hidden"></div>
-
-
-    <main class="flex-1 overflow-y-auto p-5 pb-28 md:p-8 bg-[#f7f1e8]">
-
-        <header class="flex justify-between items-start mb-8">
-            <div class="flex items-start gap-3 min-w-0">
-                <div class="min-w-0">
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Suas metas</h2>
-                <p class="text-gray-600 text-base mt-1">Onde você quer chegar.</p>
-                </div>
-            </div>
-            <!-- O sininho (notificacoes.js) entra à esquerda da foto. A foto leva
-                 para Configurações; o "Sair" fica sempre à vista no menu. -->
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <a href="/configuracoes" id="linkPerfil" title="Seus dados e configurações"
-                   class="block rounded-full p-1 hover:bg-gray-100 transition-colors">
-                    <img id="avatarUsuario" src="https://ui-avatars.com/api/?name=%20&background=0D8ABC&color=fff" alt="Perfil" class="w-10 h-10 rounded-full border-2 border-white shadow-sm block">
-                </a>
-            </div>
+            <div class="topo__acoes" id="topoAcoes"></div>
         </header>
 
-        <div id="mensagem" class="hidden mb-5 px-4 py-3 rounded-xl text-sm max-w-2xl"></div>
+        <main class="conteudo" id="conteudo">
 
-        <!-- As metas entram aqui pelo JavaScript -->
-        <div id="listaMetas" class="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-5xl"></div>
+            <!-- Dois jeitos de cuidar do dinheiro, cada um na sua seção:
+                 JUNTAR (meta) e GASTAR MENOS (limite). -->
+            <section class="pilha" aria-labelledby="tituloJuntar">
+                <div class="secao__titulo">
+                    <div>
+                        <h2 id="tituloJuntar">Juntar dinheiro</h2>
+                        <p>Guarde aos poucos para uma viagem, uma reserva, um sonho.</p>
+                    </div>
+                </div>
+                <div class="grade-cartoes" id="listaMetas"></div>
+            </section>
 
-        <!-- Limites de gasto: a meta "ao contrário". Em vez de juntar até um
-             valor, a pessoa quer gastar ATÉ um valor por mês numa categoria. -->
-        <section class="max-w-5xl mt-10">
-            <h3 class="text-lg font-bold text-gray-900">Limites de gasto</h3>
-            <p class="text-gray-500 text-sm mt-1">Quanto você quer gastar, no máximo, por mês em cada categoria. Renova todo dia 1.</p>
-            <div id="listaLimites" class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4"></div>
-        </section>
+            <section class="pilha" id="limites" aria-labelledby="tituloLimites" style="scroll-margin-top: 5rem">
+                <div class="secao__titulo">
+                    <div>
+                        <h2 id="tituloLimites">Gastar menos</h2>
+                        <p>Um teto por mês para uma categoria. Ele recomeça sozinho todo dia 1.</p>
+                    </div>
+                </div>
+                <div class="grade-cartoes" id="listaLimites"></div>
+            </section>
 
-    </main>
+        </main>
+    </div>
 
-    <!-- PAINEL LATERAL: nova meta -->
-    <div id="fundoPainel" class="hidden fixed inset-0 bg-black/30 z-40"></div>
-
-    <aside id="painelMeta"
-           class="hidden fixed top-0 right-0 h-full w-full sm:w-96 bg-white z-50 shadow-2xl flex-col">
-        <div class="flex justify-between items-center p-6 border-b border-gray-100">
-            <h3 class="font-bold text-gray-900" id="tituloPainel">Nova meta</h3>
-            <button id="fecharPainel" title="Fechar" class="text-gray-400 hover:text-gray-700 transition-colors">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-        </div>
-
-        <form id="formMeta" class="p-6 space-y-5 flex-1 overflow-y-auto">
-            <input type="hidden" id="idMeta">
-
-            <!-- Os dois tipos de meta. Cada botão mostra os campos do seu
-                 tipo e esconde os do outro (ver escolherModo em metas.js). -->
-            <div class="grid grid-cols-2 gap-2">
-                <button type="button" data-modo="meta" id="botaoModoMeta"
-                        class="py-3 rounded-xl border-2 text-sm font-semibold transition">
-                    <i class="fa-solid fa-piggy-bank mr-1"></i> Juntar dinheiro
-                </button>
-                <button type="button" data-modo="limite" id="botaoModoLimite"
-                        class="py-3 rounded-xl border-2 text-sm font-semibold transition">
-                    <i class="fa-solid fa-gauge-high mr-1"></i> Gastar menos
-                </button>
+    <!-- Folha: nova meta -->
+    <dialog class="folha" id="folhaMeta" aria-labelledby="tituloFolhaMeta">
+        <form id="formMeta" novalidate>
+            <div class="folha__topo">
+                <h2 id="tituloFolhaMeta">Nova meta</h2>
+                <button type="button" class="botao-icone" data-fechar aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             </div>
-
-            <!-- ===== CAMPOS DO LIMITE ===== -->
-            <div id="camposLimite" class="hidden space-y-5">
-                <div>
-                    <label for="categoriaLimite" class="block text-sm font-semibold text-gray-700 mb-2">Em qual categoria?</label>
-                    <select id="categoriaLimite"
-                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></select>
-                    <p id="gastoCategoriaLimite" class="text-xs text-gray-400 mt-2"></p>
+            <div class="folha__corpo">
+                <div class="campo">
+                    <label for="tituloMeta">O que você quer?</label>
+                    <input class="entrada" id="tituloMeta" maxlength="100" placeholder="Viagem, reserva de emergência..." aria-describedby="tituloMetaErro">
+                    <p class="erro" id="tituloMetaErro" hidden></p>
                 </div>
 
-                <div>
-                    <label for="valorLimite" class="block text-sm font-semibold text-gray-700 mb-2">Quanto, no máximo, por mês?</label>
-                    <input type="number" id="valorLimite" step="0.01" min="0" placeholder="0,00" inputmode="decimal"
-                           class="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 outline-none transition text-2xl font-bold text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                    <p class="text-xs text-gray-400 mt-2">Você recebe um aviso ao chegar em 70% do limite.</p>
+                <div class="campo">
+                    <label for="valorMeta">Quanto custa?</label>
+                    <div class="dinheiro dinheiro--grande">
+                        <span aria-hidden="true">R$</span>
+                        <input class="entrada" id="valorMeta" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-describedby="valorMetaErro">
+                    </div>
+                    <p class="erro" id="valorMetaErro" hidden></p>
                 </div>
-            </div>
 
-            <!-- ===== CAMPOS DA META (juntar dinheiro) ===== -->
-            <div id="camposMeta" class="space-y-5">
-
-            <div>
-                <label for="tituloMeta" class="block text-sm font-semibold text-gray-700 mb-2">O que você quer?</label>
-                <input type="text" id="tituloMeta" maxlength="100" placeholder="Viagem, reserva de emergência..."
-                       class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-            </div>
-
-            <div>
-                <label for="valorMeta" class="block text-sm font-semibold text-gray-700 mb-2">Quanto custa?</label>
-                <input type="number" id="valorMeta" step="0.01" placeholder="0,00" inputmode="decimal"
-                       class="w-full px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 outline-none transition text-2xl font-bold text-center focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-            </div>
-
-            <div>
-                <label for="prazoMeta" class="block text-sm font-semibold text-gray-700 mb-2">Para quando?</label>
-                <input type="date" id="prazoMeta"
-                       class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                <!-- Quanto guardar por mês até a data: preenchido pelo JavaScript -->
-                <div id="planoMeta" aria-live="polite" class="mt-2 empty:hidden"></div>
-            </div>
-
-            <!-- Opcional: já começar a meta com dinheiro tirado de uma conta.
-                 Vazio, a meta nasce zerada (como antes). -->
-            <div class="border-t border-gray-100 pt-5 space-y-3">
-                <div>
-                    <label for="valorInicialMeta" class="block text-sm font-semibold text-gray-700">
-                        Já quer guardar algum valor? <span class="font-normal text-gray-400">(opcional)</span>
-                    </label>
-                    <p class="text-xs text-gray-400 mt-1">O valor sai da conta escolhida e entra na meta.</p>
+                <div class="campo">
+                    <label for="prazoMeta">Para quando?</label>
+                    <input class="entrada" type="date" id="prazoMeta" aria-describedby="prazoMetaErro">
+                    <p class="erro" id="prazoMetaErro" hidden></p>
                 </div>
-                <input type="number" id="valorInicialMeta" step="0.01" min="0" placeholder="0,00" inputmode="decimal"
-                       class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                <div>
-                    <label for="contaMeta" class="block text-sm font-semibold text-gray-700 mb-2">De qual conta?</label>
-                    <select id="contaMeta"
-                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></select>
-                </div>
-            </div>
 
-            </div>
-            <!-- ===== FIM DOS CAMPOS DA META ===== -->
+                <!-- Quanto guardar por mês: calculado enquanto a pessoa digita. -->
+                <div id="planoMeta" aria-live="polite"></div>
 
-            <button type="submit" id="salvarMeta"
-                    class="w-full py-3.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
-                Criar meta
-            </button>
+                <fieldset class="pilha--p">
+                    <legend class="rotulo">Já quer guardar algum valor? <span class="fraco" style="font-weight:400">(opcional)</span></legend>
+                    <p class="ajuda fraco pequeno">O valor sai da conta escolhida e entra na meta.</p>
+                    <div class="dinheiro">
+                        <span aria-hidden="true">R$</span>
+                        <input class="entrada" id="valorInicialMeta" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-label="Valor para guardar agora" aria-describedby="valorInicialMetaErro">
+                    </div>
+                    <p class="erro" id="valorInicialMetaErro" hidden></p>
+                    <label for="contaMeta" class="pequeno">De qual conta?</label>
+                    <select class="entrada" id="contaMeta"></select>
+                </fieldset>
+
+                <button type="submit" class="botao botao--largo" id="salvarMeta">Criar meta</button>
+            </div>
         </form>
-    </aside>
+    </dialog>
+
+    <!-- Folha: guardar dinheiro numa meta -->
+    <dialog class="folha" id="folhaGuardar" aria-labelledby="tituloFolhaGuardar">
+        <form id="formGuardar" novalidate>
+            <div class="folha__topo">
+                <h2 id="tituloFolhaGuardar">Guardar dinheiro</h2>
+                <button type="button" class="botao-icone" data-fechar aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <div class="folha__corpo">
+                <p class="suave" id="textoGuardar"></p>
+
+                <div class="campo">
+                    <label for="valorGuardar">Quanto você quer guardar?</label>
+                    <div class="dinheiro dinheiro--grande">
+                        <span aria-hidden="true">R$</span>
+                        <input class="entrada" id="valorGuardar" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-describedby="valorGuardarErro">
+                    </div>
+                    <p class="erro" id="valorGuardarErro" hidden></p>
+                </div>
+
+                <div class="campo">
+                    <label for="contaGuardar">De qual conta sai o dinheiro?</label>
+                    <select class="entrada" id="contaGuardar"></select>
+                    <p class="ajuda">O valor aparece em Transações como dinheiro guardado, e não como gasto.</p>
+                </div>
+
+                <button type="submit" class="botao botao--largo" id="salvarGuardar">Guardar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Folha: criar ou alterar um limite de gasto -->
+    <dialog class="folha" id="folhaLimite" aria-labelledby="tituloFolhaLimite">
+        <form id="formLimite" novalidate>
+            <div class="folha__topo">
+                <h2 id="tituloFolhaLimite">Novo limite de gasto</h2>
+                <button type="button" class="botao-icone" data-fechar aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <div class="folha__corpo">
+                <input type="hidden" id="idLimite">
+
+                <div class="campo" id="campoCategoriaLimite">
+                    <label for="categoriaLimite">Em qual categoria?</label>
+                    <select class="entrada" id="categoriaLimite"></select>
+                </div>
+
+                <p id="gastoCategoriaLimite" class="suave" aria-live="polite"></p>
+
+                <div class="campo">
+                    <label for="valorLimite">No máximo, quanto por mês?</label>
+                    <div class="dinheiro dinheiro--grande">
+                        <span aria-hidden="true">R$</span>
+                        <input class="entrada" id="valorLimite" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-describedby="valorLimiteErro">
+                    </div>
+                    <p class="erro" id="valorLimiteErro" hidden></p>
+                </div>
+
+                <button type="submit" class="botao botao--largo" id="salvarLimite">Criar limite</button>
+            </div>
+        </form>
+    </dialog>
 
     <script src="/js/auth.js"></script>
-    <script src="/js/menu.js"></script>
-    <script src="/js/layout.js"></script>
-    <script src="/js/notificacoes.js"></script>
-    <script src="/js/painel.js"></script>
-    <script src="/js/modal.js"></script>
     <script src="/js/meta-calculos.js"></script>
+    <script src="/js/base.js"></script>
+    <script src="/js/casca.js"></script>
     <script src="/js/metas.js"></script>
-
 </body>
 </html>

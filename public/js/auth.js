@@ -1,4 +1,5 @@
-// Funções compartilhadas pelas telas de cadastro, login e dashboard.
+// Funções compartilhadas por todas as telas: sessão, chamadas à API,
+// formatação e as regras de data e de situação de uma transação.
 // Carregado ANTES dos outros scripts em cada tela.
 
 // ---- SESSÃO ----
@@ -77,30 +78,8 @@ const PerfisSalvos = {
   },
 };
 
-// ---- MENSAGENS NA TELA ----
-// Mostra o aviso no <div id="mensagem"> em vez de usar alert(),
-// que trava a página e tem aparência de site antigo.
-
-function mostrarMensagem(texto, tipo) {
-  const caixa = document.getElementById('mensagem');
-  if (!caixa) return;
-
-  const cores = {
-    erro: 'bg-red-50 text-red-700 border border-red-200',
-    sucesso: 'bg-green-50 text-green-700 border border-green-200',
-  };
-
-  caixa.className = 'mb-5 px-4 py-3 rounded-xl text-sm ' + (cores[tipo] || cores.erro);
-  caixa.textContent = texto;
-}
-
-function esconderMensagem() {
-  const caixa = document.getElementById('mensagem');
-  if (caixa) caixa.className = 'hidden';
-}
-
 // ---- FORMATAÇÃO ----
-// Usado pelas telas de contas, transações, metas e pelo dashboard.
+// Usado pelas telas de dentro (Início, Transações, Contas, Metas...).
 // O Intl cuida do padrão brasileiro sozinho: R$, ponto de milhar,
 // vírgula decimal e as duas casas obrigatórias.
 
@@ -129,12 +108,12 @@ function formatarMoeda(valor, { sinal = false } = {}) {
 // pode quebrar linha no meio do número. Esta função diminui a letra, de
 // 1 em 1 pixel, até o texto caber na largura do elemento.
 //
-// Para funcionar, o elemento precisa de "whitespace-nowrap" (uma linha só)
-// e o card de "min-w-0" (senão o card cresce junto com o texto e nunca
-// "falta espaço"). Se nem no tamanho mínimo couber, o "text-ellipsis" do
-// elemento corta com "...", e o valor completo aparece ao passar o mouse.
+// Para funcionar, o elemento precisa ficar numa linha só e cortar o que
+// sobrar (white-space: nowrap e overflow: hidden, como a classe
+// .saldo__valor do verdanz.css). Se nem no tamanho mínimo couber, o texto
+// termina em "...", e o valor completo aparece ao passar o mouse.
 function caberNaLargura(elemento, minimoPx = 14) {
-  // Volta ao tamanho original da classe (text-2xl) antes de medir: o valor
+  // Volta ao tamanho original do CSS antes de medir: o valor
   // pode ter diminuído, ou a tela pode ter ficado mais larga.
   elemento.style.fontSize = '';
   elemento.title = elemento.textContent;
@@ -157,7 +136,7 @@ function formatarData(iso) {
 }
 
 // ---- DATAS E STATUS DE PAGAMENTO ----
-// Usado pelas telas de transações e pelo dashboard.
+// Usado pelas telas de Transações e Início e pelo sino.
 
 // A data de hoje no formato "2026-10-22", no fuso do navegador.
 // Não usamos toISOString() de propósito: ele converte para UTC, e

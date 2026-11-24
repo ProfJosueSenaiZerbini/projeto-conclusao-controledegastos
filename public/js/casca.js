@@ -16,7 +16,7 @@
 // ---- 1. SESSÃO ----
 
 if (!Sessao.token() || !Sessao.idUsuario()) {
-  window.location.replace(RAIZ + '/entrar');
+  window.location.replace('/entrar');
 }
 
 const ID_USUARIO = Sessao.idUsuario();
@@ -24,7 +24,7 @@ const PAGINA = document.body.dataset.pagina;
 
 function sair() {
   Sessao.limpar();
-  window.location.href = RAIZ + '/entrar';
+  window.location.href = '/entrar';
 }
 
 // ---- 2. MENU ----
@@ -63,7 +63,7 @@ function itemDoMenu(item) {
 // o <a> fica sem href: deixa de ser clicável e de receber o Tab, mas
 // continua no mesmo lugar, com a mesma cara.
 function linkDaPagina(pagina) {
-  return pagina === PAGINA ? 'aria-current="page"' : `href="${RAIZ}/${pagina}"`;
+  return pagina === PAGINA ? 'aria-current="page"' : `href="/${pagina}"`;
 }
 
 const MARCA = `
@@ -75,7 +75,7 @@ function montarLateral() {
   if (!lateral) return;
 
   lateral.innerHTML = `
-    ${PAGINA === 'inicio' ? `<span class="marca">${MARCA}</span>` : `<a class="marca" href="${RAIZ}/inicio" title="Ir para o Início">${MARCA}</a>`}
+    ${PAGINA === 'inicio' ? `<span class="marca">${MARCA}</span>` : `<a class="marca" href="/inicio" title="Ir para o Início">${MARCA}</a>`}
 
     <button type="button" class="botao botao--largo" data-registrar>
       <i class="fa-solid fa-plus" aria-hidden="true"></i> Novo gasto ou ganho
@@ -108,7 +108,7 @@ function montarTopo() {
     'afterbegin',
     PAGINA === 'inicio'
       ? '<span class="topo__marca"><img src="/img/VerdanzIcone.png" alt=""></span>'
-      : `<a class="topo__marca" href="${RAIZ}/inicio" aria-label="Ir para o Início"><img src="/img/VerdanzIcone.png" alt=""></a>`
+      : `<a class="topo__marca" href="/inicio" aria-label="Ir para o Início"><img src="/img/VerdanzIcone.png" alt=""></a>`
   );
 }
 
@@ -226,7 +226,7 @@ function montarSino() {
        <div class="avisos" id="painelAvisos" hidden>
          <h2>Avisos</h2>
          <div id="listaAvisos"></div>
-         <a class="avisos__pe" href="${RAIZ}/configuracoes#avisos">Escolher quais avisos receber</a>
+         <a class="avisos__pe" href="/configuracoes#avisos">Escolher quais avisos receber</a>
        </div>
      </div>`
   );
@@ -235,10 +235,6 @@ function montarSino() {
   const painel = document.getElementById('painelAvisos');
   const lista = document.getElementById('listaAvisos');
   const conta = document.getElementById('contaSino');
-
-  // Os avisos do servidor apontam para os endereços da versão antiga
-  // ("/transacoes"). Aqui eles ganham o /novo na frente.
-  const enderecoNovo = (link) => RAIZ + (link === '/dashboard' ? '/inicio' : link);
 
   async function buscar() {
     const { ok, dados } = await chamarApi(`/api/usuario/${ID_USUARIO}/notificacao`);
@@ -261,7 +257,7 @@ function montarSino() {
       ? avisos
           .map(
             (a) => `
-            <a class="aviso-item" href="${enderecoNovo(a.link)}">
+            <a class="aviso-item" href="${a.link}">
               <span class="icone icone--p ${a.gravidade === 'alerta' ? 'icone--coral' : 'icone--sol'}" aria-hidden="true"><i class="${ICONE_DO_AVISO[a.tipo] || 'fa-regular fa-bell'}"></i></span>
               <span><strong>${esc(a.titulo)}</strong><small>${esc(a.mensagem)}</small></span>
             </a>`
@@ -461,7 +457,7 @@ const Lancamento = {
         textoConfirmar: 'Ir para Contas',
         perigo: false,
       });
-      if (ir) window.location.href = RAIZ + '/contas';
+      if (ir) window.location.href = '/contas';
       return;
     }
 
@@ -662,7 +658,7 @@ document.addEventListener('click', (evento) => {
   if (evento.target.closest('[data-abrir-mais]')) abrirJanela(document.getElementById('folhaMais'));
 });
 
-// /novo/inicio?novo=gasto (ou =ganho) abre o formulário direto. Serve para
+// /inicio?novo=gasto (ou =ganho) abre o formulário direto. Serve para
 // atalhos e para os links da página inicial.
 (function () {
   const pedido = new URLSearchParams(location.search).get('novo');

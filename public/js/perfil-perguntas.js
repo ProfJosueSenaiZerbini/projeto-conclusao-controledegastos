@@ -7,7 +7,7 @@
 
 // ---- OS 6 PERFIS ----
 // A chave (clt, autonomo...) é o que o sistema guarda. O resto é texto
-// para a tela. Ícones do Font Awesome, os mesmos usados no dashboard.
+// para a tela. Ícones do Font Awesome, os mesmos usados no Início.
 
 const PERFIS = {
   clt: {

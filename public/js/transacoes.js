@@ -1,736 +1,343 @@
-// Tela de Transações: lista o que entrou e saiu, filtra a lista, marca
-// gastos como pagos e registra novos lançamentos pelo painel lateral.
-
-const listaTransacoes = document.getElementById('listaTransacoes');
-const saldoTotal = document.getElementById('saldoTotal');
-const saldoPrevisto = document.getElementById('saldoPrevisto');
-const formTransacao = document.getElementById('formTransacao');
-const salvarTransacao = document.getElementById('salvarTransacao');
-const selectCategoria = document.getElementById('categoriaTransacao');
-const selectConta = document.getElementById('contaTransacao');
-const campoData = document.getElementById('dataTransacao');
-const campoPago = document.getElementById('campoPago');
-const caixaPago = document.getElementById('pagoTransacao');
-const resumoConta = document.getElementById('resumoConta');
-const resumoData = document.getElementById('resumoData');
-const botaoDespesa = document.getElementById('botaoDespesa');
-const botaoReceita = document.getElementById('botaoReceita');
-
-const painel = criarPainel('painelTransacao', 'fundoPainel');
-document.getElementById('fecharPainel').addEventListener('click', painel.fechar);
-
-// Guardadas em memória para não pedir à API a cada filtro ou abertura.
-let categorias = [];
-let contas = [];
-let transacoes = [];
-let tipoSelecionado = 'despesa';
-
-// Ids das transações abertas (expandidas). Ficam abertas mesmo quando a
-// lista é desenhada de novo — ao filtrar ou depois de marcar como pago.
-const abertas = new Set();
-
-function escapar(texto) {
-  const div = document.createElement('div');
-  div.textContent = texto;
-  return div.innerHTML;
-}
-
-function dataDe(t) {
-  return String(t.data_transacao).slice(0, 10);
-}
-
-// A descrição é opcional: sem ela, o nome da categoria vira o título.
-function tituloDe(t) {
-  return t.descricao || t.categoria.nome_categoria;
-}
-
-// ---- AGRUPAMENTO POR DIA ----
+// Transações: a lista de tudo o que entrou e saiu, com filtros.
 //
-// Em vez de uma tabela com coluna de data repetida em toda linha, as
-// transações são agrupadas sob um título por dia. Menos repetição na
-// tela e mais fácil de bater o olho.
+// O formulário de registrar não mora aqui: ele fica na casca (casca.js) e
+// abre de qualquer tela. Esta tela só lista, filtra e marca pagamento.
+//
+// Os filtros ficam também no ENDEREÇO da página (?tipo=despesa&mes=2026-11).
+// Assim o botão "voltar" do navegador funciona, e outras telas conseguem
+// mandar a pessoa para cá com um filtro já escolhido, como o
+// "Ver todas" das contas a pagar do Início (?situacao=pendente).
+
+const el = (id) => document.getElementById(id);
+
+let transacoes = [];
+const abertas = new Set(); // ids das linhas com o detalhe aberto
+const POR_VEZ = 60;
+let quantasMostrar = POR_VEZ;
+
+const dataDe = (t) => String(t.data_transacao).slice(0, 10);
+const tituloDe = (t) => t.descricao || t.categoria.nome_categoria;
+
+// ---- FILTROS ----
+
+const filtros = {
+  tipo: () => document.querySelector('[name="fTipo"]:checked').value,
+  busca: () => el('fBusca').value.trim().toLowerCase(),
+  situacao: () => el('fSituacao').value,
+  mes: () => el('fMes').value,
+  conta: () => el('fConta').value,
+  categoria: () => el('fCategoria').value,
+};
+
+// Tira acentos e maiúsculas: procurar "agua" acha "Água".
+const simples = (texto) => String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+function filtradas() {
+  const f = Object.fromEntries(Object.entries(filtros).map(([nome, ler]) => [nome, ler()]));
+  const busca = simples(f.busca);
+
+  return transacoes.filter((t) => {
+    if (f.tipo !== 'todos' && t.categoria.tipo !== f.tipo) return false;
+    // "Pago / pendente / atrasado" só existe para gasto.
+    if (f.situacao !== 'todos' && (t.categoria.tipo !== 'despesa' || statusTransacao(t) !== f.situacao)) return false;
+    if (f.mes !== 'todos' && dataDe(t).slice(0, 7) !== f.mes) return false;
+    if (f.conta !== 'todas' && t.conta.id_conta !== Number(f.conta)) return false;
+    if (f.categoria !== 'todas' && t.categoria.id_categoria !== Number(f.categoria)) return false;
+    if (busca && !simples(tituloDe(t) + ' ' + t.categoria.nome_categoria).includes(busca)) return false;
+    return true;
+  });
+}
+
+function haFiltro() {
+  return (
+    filtros.tipo() !== 'todos' || filtros.busca() || filtros.situacao() !== 'todos' ||
+    filtros.mes() !== 'todos' || filtros.conta() !== 'todas' || filtros.categoria() !== 'todas'
+  );
+}
+
+// Guarda os filtros no endereço, sem recarregar a página.
+function filtrosNoEndereco() {
+  const p = new URLSearchParams();
+  if (filtros.tipo() !== 'todos') p.set('tipo', filtros.tipo());
+  if (filtros.busca()) p.set('busca', el('fBusca').value.trim());
+  if (filtros.situacao() !== 'todos') p.set('situacao', filtros.situacao());
+  if (filtros.mes() !== 'todos') p.set('mes', filtros.mes());
+  if (filtros.conta() !== 'todas') p.set('conta', filtros.conta());
+  if (filtros.categoria() !== 'todas') p.set('categoria', filtros.categoria());
+  const busca = p.toString();
+  history.replaceState(null, '', location.pathname + (busca ? '?' + busca : ''));
+}
+
+// Lê os filtros do endereço ao abrir a tela. Um valor que não existe na
+// lista é ignorado (o <select> simplesmente não muda).
+function filtrosDoEndereco() {
+  const p = new URLSearchParams(location.search);
+  const tipo = document.querySelector(`[name="fTipo"][value="${p.get('tipo')}"]`);
+  if (tipo) tipo.checked = true;
+  if (p.get('busca')) el('fBusca').value = p.get('busca');
+  ['situacao', 'mes', 'conta', 'categoria'].forEach((nome) => {
+    const campo = el('f' + nome[0].toUpperCase() + nome.slice(1));
+    const valor = p.get(nome);
+    if (valor && [...campo.options].some((o) => o.value === valor)) campo.value = valor;
+  });
+}
+
+function preencherOpcoes() {
+  // Mantém o que estava escolhido quando a lista é refeita.
+  const manter = (campo, opcoes, vazio) => {
+    const atual = campo.value;
+    campo.innerHTML = vazio + opcoes.join('');
+    if ([...campo.options].some((o) => o.value === atual)) campo.value = atual;
+  };
+
+  const meses = [...new Set(transacoes.map((t) => dataDe(t).slice(0, 7)))].sort().reverse();
+  manter(el('fMes'), meses.map((m) => `<option value="${m}">${nomeDoMes(m)}</option>`), '<option value="todos">Todos os meses</option>');
+
+  const contas = new Map(transacoes.map((t) => [t.conta.id_conta, t.conta.nome]));
+  manter(el('fConta'), [...contas].map(([id, nome]) => `<option value="${id}">${esc(nome)}</option>`), '<option value="todas">Todas</option>');
+
+  // Só as categorias do tipo escolhido: quem filtra "Gastos" não vê "Salário".
+  const categorias = new Map(
+    transacoes
+      .filter((t) => filtros.tipo() === 'todos' || t.categoria.tipo === filtros.tipo())
+      .map((t) => [t.categoria.id_categoria, t.categoria.nome_categoria])
+  );
+  manter(
+    el('fCategoria'),
+    [...categorias].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR')).map(([id, nome]) => `<option value="${id}">${esc(nome)}</option>`),
+    '<option value="todas">Todas</option>'
+  );
+
+  // Ganho não tem "pago / pendente": o filtro de situação fica travado.
+  el('fSituacao').disabled = filtros.tipo() === 'receita';
+  if (el('fSituacao').disabled) el('fSituacao').value = 'todos';
+}
+
+// ---- DESENHO ----
 
 function rotuloDoDia(iso) {
   const dias = diasAte(iso);
-
-  if (dias === 0) return 'Hoje';
-  if (dias === -1) return 'Ontem';
-  if (dias === 1) return 'Amanhã';
-  return formatarData(iso);
+  const extenso = diaPorExtenso(iso) + (iso.slice(0, 4) !== hojeTexto().slice(0, 4) ? ' de ' + iso.slice(0, 4) : '');
+  if (dias === 0) return `Hoje <small>${extenso}</small>`;
+  if (dias === -1) return `Ontem <small>${extenso}</small>`;
+  if (dias === 1) return `Amanhã <small>${extenso}</small>`;
+  return extenso.replace(/^./, (l) => l.toUpperCase());
 }
 
-// ---- APARÊNCIA DE CADA STATUS ----
-// Etiqueta, cores e ícone de cada situação (ver statusTransacao, em auth.js).
-
-const ESTILO_STATUS = {
-  pago: { etiqueta: '', fundo: 'bg-blue-50 text-blue-500', icone: 'fa-solid fa-arrow-down' },
-  pendente: { etiqueta: 'Pendente', cor: 'bg-amber-50 text-amber-600', fundo: 'bg-amber-50 text-amber-500', icone: 'fa-regular fa-clock' },
-  atrasado: { etiqueta: 'Atrasado', cor: 'bg-red-50 text-red-600', fundo: 'bg-red-50 text-red-500', icone: 'fa-solid fa-triangle-exclamation' },
-  recebido: { etiqueta: '', fundo: 'bg-green-50 text-green-500', icone: 'fa-solid fa-arrow-up' },
-  previsto: { etiqueta: 'Previsto', cor: 'bg-gray-100 text-gray-500', fundo: 'bg-gray-100 text-gray-400', icone: 'fa-regular fa-calendar' },
-};
-
-function etiquetaStatus(status) {
-  const estilo = ESTILO_STATUS[status];
-  if (!estilo.etiqueta) return '';
-  return `<span class="inline-block px-2 py-0.5 rounded-full text-[0.6875rem] font-medium ${estilo.cor}">${estilo.etiqueta}</span>`;
+function fato(rotulo, valor) {
+  return `<div><dt>${rotulo}</dt><dd>${valor}</dd></div>`;
 }
 
-// "vence em 5 dias", "venceu há 3 dias"...
-function textoPrazo(t) {
-  const dias = diasAte(t.data_transacao);
-  if (dias === 0) return 'vence hoje';
-  if (dias === 1) return 'vence amanhã';
-  if (dias > 1) return `vence em ${dias} dias`;
-  if (dias === -1) return 'venceu ontem';
-  return `venceu há ${-dias} dias`;
-}
-
-// ---- LINHA DA TRANSAÇÃO (com a parte que expande) ----
-
-function linhaTransacao(t) {
-  const status = statusTransacao(t);
-  const estilo = ESTILO_STATUS[status];
-  const ehReceita = t.categoria.tipo === 'receita';
-  const aberta = abertas.has(t.id_transacao);
-  const idDetalhe = 'detalhe-' + t.id_transacao;
-
-  const corValor = ehReceita ? 'text-green-600' : 'text-gray-900';
-
-  // O cabeçalho é um <button>: dá para abrir com o teclado (Tab + Enter),
-  // e o aria-expanded avisa o leitor de tela se está aberto ou fechado.
-  return `
-    <div class="rounded-xl ${aberta ? 'bg-gray-50' : ''}">
-      <button type="button" data-abrir="${t.id_transacao}" aria-expanded="${aberta}" aria-controls="${idDetalhe}"
-              class="w-full flex justify-between items-center p-3 text-left hover:bg-gray-50 rounded-xl transition-colors">
-        <span class="flex items-center gap-4 min-w-0">
-          <span class="w-10 h-10 rounded-full ${estilo.fundo} flex items-center justify-center flex-shrink-0">
-            <i class="${estilo.icone}"></i>
-          </span>
-          <span class="min-w-0">
-            <span class="block font-medium text-gray-800 text-sm truncate">${escapar(tituloDe(t))}</span>
-            <span class="block text-xs text-gray-400 truncate">${escapar(t.categoria.nome_categoria)} · ${escapar(t.conta.nome)}</span>
-          </span>
-        </span>
-        <span class="flex items-center gap-3 flex-shrink-0 ml-3">
-          <span class="text-right">
-            <span class="block font-medium ${corValor} text-sm">${formatarMoeda(ehReceita ? t.valor_transacao : -t.valor_transacao, { sinal: true })}</span>
-            ${etiquetaStatus(status)}
-          </span>
-          <i class="fa-solid fa-chevron-down text-xs text-gray-400 transition-transform ${aberta ? 'rotate-180' : ''}"></i>
-        </span>
-      </button>
-      <div id="${idDetalhe}" class="${aberta ? '' : 'hidden'} px-4 pb-4 pt-1">
-        ${detalheTransacao(t, status)}
-      </div>
-    </div>`;
-}
-
-function itemDetalhe(rotulo, valor) {
-  return `
-    <div>
-      <dt class="text-xs text-gray-400">${rotulo}</dt>
-      <dd class="text-sm text-gray-800 font-medium">${valor}</dd>
-    </div>`;
-}
-
-function detalheTransacao(t, status) {
-  const ehReceita = t.categoria.tipo === 'receita';
+function detalhe(t, situacao) {
+  const ganho = t.categoria.tipo === 'receita';
   const importada = Boolean(t.conta.id_conexao);
-  const deMeta = t.categoria.nome_categoria === 'Metas';
-  const itens = [];
+  const deMeta = ehDinheiroGuardado(t);
+  const fatos = [];
 
-  if (ehReceita) {
-    itens.push(itemDetalhe('Data', formatarData(t.data_transacao)));
-    itens.push(
-      itemDetalhe(
-        'Status',
-        status === 'previsto' ? `Previsto · entra no saldo em ${formatarData(t.data_transacao)}` : 'Recebido'
-      )
-    );
+  if (ganho) {
+    fatos.push(fato('Data', formatarData(t.data_transacao)));
+    fatos.push(fato('Situação', situacao === 'previsto' ? `Previsto: entra no saldo em ${formatarData(t.data_transacao)}` : 'Recebido'));
   } else {
-    itens.push(itemDetalhe('Vencimento', formatarData(t.data_transacao)));
-    itens.push(
-      itemDetalhe(
-        'Status',
-        status === 'pago'
-          ? `Pago em ${formatarData(t.data_pagamento)}`
-          : `${status === 'atrasado' ? 'Atrasado' : 'Pendente'} · ${textoPrazo(t)}`
-      )
-    );
+    fatos.push(fato('Vencimento', formatarData(t.data_transacao)));
+    fatos.push(fato('Situação', situacao === 'pago' ? `Pago em ${formatarData(t.data_pagamento)}` : `${situacao === 'atrasado' ? 'Atrasado' : 'Pendente'}: ${textoPrazo(t.data_transacao)}`));
   }
+  fatos.push(fato('Conta', esc(t.conta.nome)));
+  fatos.push(fato('Categoria', esc(t.categoria.nome_categoria)));
 
-  itens.push(itemDetalhe('Conta', escapar(t.conta.nome)));
-  itens.push(itemDetalhe('Categoria', escapar(t.categoria.nome_categoria)));
-
-  // O botão só existe para gastos lançados à mão. Numa conta importada,
-  // quem diz o que foi pago é o banco; um gasto de meta já sai pago.
+  // O que dá para fazer com este gasto depende de onde ele veio.
   let acao = '';
-
-  if (!ehReceita && importada) {
-    acao = '<p class="text-xs text-gray-400"><i class="fa-solid fa-building-columns mr-1"></i> Conta importada do banco: o pagamento vem do banco.</p>';
-  } else if (!ehReceita && deMeta) {
-    acao = '<p class="text-xs text-gray-400"><i class="fa-solid fa-bullseye mr-1"></i> Dinheiro guardado numa meta: já saiu da conta.</p>';
-  } else if (!ehReceita && status === 'pago') {
-    acao = `
-      <button type="button" data-pagar="${t.id_transacao}" data-pago="false"
-              class="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 font-medium transition hover:bg-gray-100">
-        <i class="fa-solid fa-rotate-left mr-1"></i> Desmarcar pagamento
-      </button>`;
-  } else if (!ehReceita) {
-    acao = `
-      <button type="button" data-pagar="${t.id_transacao}" data-pago="true"
-              class="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold transition hover:bg-green-700">
-        <i class="fa-solid fa-check mr-1"></i> Marcar como pago
-      </button>`;
+  if (ganho) {
+    acao = '';
+  } else if (importada) {
+    acao = '<p class="fraco pequeno"><i class="fa-solid fa-building-columns" aria-hidden="true"></i> Conta importada do banco: quem informa o pagamento é o banco.</p>';
+  } else if (deMeta) {
+    acao = '<p class="fraco pequeno"><i class="fa-solid fa-flag" aria-hidden="true"></i> Dinheiro guardado numa meta: já saiu da conta.</p>';
+  } else if (ehTransferencia(t)) {
+    acao = '<p class="fraco pequeno"><i class="fa-solid fa-right-left" aria-hidden="true"></i> Transferência entre as suas contas: o dinheiro já mudou de conta.</p>';
+  } else if (situacao === 'pago') {
+    acao = `<div><button type="button" class="botao botao--linha botao--p" data-pagar="${t.id_transacao}" data-pago="false"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Desmarcar pagamento</button></div>`;
+  } else {
+    acao = `<div><button type="button" class="botao botao--p" data-pagar="${t.id_transacao}" data-pago="true"><i class="fa-solid fa-check" aria-hidden="true"></i> Marcar como pago</button></div>`;
   }
+
+  return `<dl class="mov__fatos">${fatos.join('')}</dl>${acao}`;
+}
+
+function linha(t) {
+  const situacao = statusTransacao(t);
+  const ganho = t.categoria.tipo === 'receita';
+  const aberta = abertas.has(t.id_transacao);
 
   return `
-    <dl class="grid grid-cols-2 gap-3 mb-3">${itens.join('')}</dl>
-    ${acao}`;
+    <li class="mov">
+      <button type="button" class="mov__linha" data-abrir="${t.id_transacao}" aria-expanded="${aberta}" aria-controls="detalhe-${t.id_transacao}">
+        ${iconeDaCategoria(t.categoria)}
+        <span class="mov__texto">
+          <strong>${esc(tituloDe(t))}</strong>
+          <small>${esc(t.categoria.nome_categoria)} · ${esc(t.conta.nome)}</small>
+        </span>
+        <span class="mov__estado">${etiquetaDaSituacao(situacao)}</span>
+        <span class="mov__valor ${ganho ? 'mov__valor--entrou' : ''}">${formatarMoeda(ganho ? t.valor_transacao : -t.valor_transacao, { sinal: true })}</span>
+        <i class="fa-solid fa-chevron-down mov__seta" aria-hidden="true"></i>
+      </button>
+      <div class="mov__detalhe" id="detalhe-${t.id_transacao}" ${aberta ? '' : 'hidden'}>${detalhe(t, situacao)}</div>
+    </li>`;
 }
 
-// ---- FILTROS ----
-//
-// Os filtros trabalham sobre a lista que já está na memória: escolher um
-// filtro não chama a API de novo. Para o tamanho de um TCC isso é o mais
-// simples; com milhares de transações, o filtro iria para o servidor.
+function desenhar() {
+  const lista = el('lista');
+  const todas = filtradas();
+  const somar = (itens) => itens.reduce((total, t) => total + Number(t.valor_transacao), 0);
 
-const filtroTipo = document.getElementById('filtroTipo');
-const filtroStatus = document.getElementById('filtroStatus');
-const filtroConta = document.getElementById('filtroConta');
-const filtroCategoria = document.getElementById('filtroCategoria');
-const filtroOrdem = document.getElementById('filtroOrdem');
-const filtroNome = document.getElementById('filtroNome');
-const filtroDia = document.getElementById('filtroDia');
-const contagemFiltro = document.getElementById('contagemFiltro');
+  el('limpar').hidden = !haFiltro();
 
-function transacoesFiltradas() {
-  const tipo = filtroTipo.value;
-  const status = filtroStatus.value;
-  const conta = filtroConta.value;
-  const categoria = filtroCategoria.value;
-  const dia = filtroDia.value;
-
-  const lista = transacoes.filter((t) => {
-    if (tipo !== 'todos' && t.categoria.tipo !== tipo) return false;
-    // Pago / pendente / atrasado só existem em gastos.
-    if (status !== 'todos' && (t.categoria.tipo !== 'despesa' || statusTransacao(t) !== status)) return false;
-    if (conta !== 'todas' && t.conta.id_conta !== Number(conta)) return false;
-    if (categoria !== 'todas' && t.categoria.id_categoria !== Number(categoria)) return false;
-    if (dia && dataDe(t) !== dia) return false;
-    return true;
-  });
-
-  // ORDEM: a data decide a ordem dos dias (mais recentes ou mais
-  // antigas). Dentro de um mesmo dia, A-Z / Z-A ordena pelo nome. É assim
-  // que A-Z combina com os outros filtros sem desmanchar o agrupamento
-  // por dia. localeCompare em 'pt-BR' põe "Água" junto do "A", e não
-  // depois do "Z".
-  const recentes = filtroOrdem.value === 'recentes';
-  const nome = filtroNome.value;
-
-  return lista.sort((a, b) => {
-    if (dataDe(a) !== dataDe(b)) {
-      return (dataDe(a) < dataDe(b) ? -1 : 1) * (recentes ? -1 : 1);
-    }
-
-    if (nome !== 'padrao') {
-      const comparacao = tituloDe(a).localeCompare(tituloDe(b), 'pt-BR', { sensitivity: 'base' });
-      if (comparacao !== 0) return nome === 'az' ? comparacao : -comparacao;
-    }
-
-    return recentes ? b.id_transacao - a.id_transacao : a.id_transacao - b.id_transacao;
-  });
-}
-
-// Categorias do filtro acompanham o tipo: escolhendo "Ganhos", só
-// aparecem categorias de ganho.
-function preencherFiltroCategoria() {
-  const atual = filtroCategoria.value;
-  const lista = categorias.filter((c) => filtroTipo.value === 'todos' || c.tipo === filtroTipo.value);
-
-  filtroCategoria.innerHTML =
-    '<option value="todas">Todas</option>' +
-    lista.map((c) => `<option value="${c.id_categoria}">${escapar(c.nome_categoria)}</option>`).join('');
-
-  // Se a categoria escolhida não existe no tipo novo, volta para "Todas".
-  filtroCategoria.value = lista.some((c) => String(c.id_categoria) === atual) ? atual : 'todas';
-}
-
-function preencherFiltroConta() {
-  const atual = filtroConta.value;
-
-  filtroConta.innerHTML =
-    '<option value="todas">Todas</option>' +
-    contas.map((c) => `<option value="${c.id_conta}">${escapar(c.nome)}</option>`).join('');
-
-  filtroConta.value = contas.some((c) => String(c.id_conta) === atual) ? atual : 'todas';
-}
-
-filtroTipo.addEventListener('change', () => {
-  // Status é coisa de gasto: com "Ganhos", o filtro de status não se aplica.
-  filtroStatus.disabled = filtroTipo.value === 'receita';
-  if (filtroStatus.disabled) filtroStatus.value = 'todos';
-
-  preencherFiltroCategoria();
-  desenharLista();
-});
-
-[filtroStatus, filtroConta, filtroCategoria, filtroOrdem, filtroNome, filtroDia].forEach((campo) =>
-  campo.addEventListener('change', desenharLista)
-);
-
-function limparFiltros() {
-  filtroTipo.value = 'todos';
-  filtroStatus.value = 'todos';
-  filtroStatus.disabled = false;
-  filtroConta.value = 'todas';
-  filtroOrdem.value = 'recentes';
-  filtroNome.value = 'padrao';
-  filtroDia.value = '';
-  preencherFiltroCategoria();
-  filtroCategoria.value = 'todas';
-  desenharLista();
-}
-
-document.getElementById('limparFiltros').addEventListener('click', limparFiltros);
-
-// ---- DESENHAR A LISTA ----
-
-const listaVazia = `
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center gap-2 py-16">
-    <i class="fa-solid fa-receipt text-3xl text-gray-300"></i>
-    <p class="text-sm text-gray-400">Nenhuma transação registrada ainda</p>
-  </div>`;
-
-const semResultado = `
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center gap-2 py-16">
-    <i class="fa-solid fa-filter text-3xl text-gray-300"></i>
-    <p class="text-sm text-gray-400">Nenhuma transação com esses filtros</p>
-    <button type="button" data-limpar class="mt-2 text-sm text-blue-600 font-medium hover:underline">Limpar filtros</button>
-  </div>`;
-
-function desenharLista() {
   if (transacoes.length === 0) {
-    listaTransacoes.innerHTML = listaVazia;
-    contagemFiltro.textContent = '';
-    return;
-  }
-
-  const lista = transacoesFiltradas();
-
-  contagemFiltro.textContent =
-    lista.length === transacoes.length
-      ? `${transacoes.length} ${transacoes.length === 1 ? 'transação' : 'transações'}`
-      : `Mostrando ${lista.length} de ${transacoes.length} transações`;
-
-  if (lista.length === 0) {
-    listaTransacoes.innerHTML = semResultado;
-    return;
-  }
-
-  // Agrupa mantendo a ordem que a lista já tem.
-  const grupos = new Map();
-  lista.forEach((t) => {
-    const rotulo = rotuloDoDia(t.data_transacao);
-    if (!grupos.has(rotulo)) grupos.set(rotulo, []);
-    grupos.get(rotulo).push(t);
-  });
-
-  let html = '';
-  grupos.forEach((doDia, rotulo) => {
-    html += `
-      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 mt-6 first:mt-0">${rotulo}</p>
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 space-y-1">
-        ${doDia.map(linhaTransacao).join('')}
+    el('contagem').textContent = '';
+    el('somaEntrou').textContent = el('somaSaiu').textContent = '';
+    el('mostrarMais').hidden = true;
+    lista.innerHTML = `
+      <div class="cartao vazio">
+        <span class="icone icone--folha" aria-hidden="true"><i class="fa-solid fa-right-left"></i></span>
+        <h2>Nada registrado ainda</h2>
+        <p>Comece anotando um gasto ou um ganho. Leva menos de um minuto.</p>
+        <button type="button" class="botao" data-registrar="despesa"><i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar agora</button>
       </div>`;
+    return;
+  }
+
+  el('contagem').textContent =
+    todas.length === transacoes.length
+      ? plural(transacoes.length, 'transação', 'transações')
+      : `Mostrando ${todas.length} de ${plural(transacoes.length, 'transação', 'transações')}`;
+
+  // As somas acompanham o filtro. Dinheiro guardado em meta não é gasto, e
+  // transferência entre contas não é ganho nem gasto.
+  const entrou = somar(todas.filter(ehGanho));
+  const saiu = somar(todas.filter(ehGasto));
+  el('somaEntrou').innerHTML = entrou ? `Entrou <strong class="numero verde">${formatarMoeda(entrou)}</strong>` : '';
+  el('somaSaiu').innerHTML = saiu ? `Saiu <strong class="numero">${formatarMoeda(saiu)}</strong>` : '';
+
+  if (todas.length === 0) {
+    el('mostrarMais').hidden = true;
+    lista.innerHTML = `
+      <div class="cartao vazio">
+        <span class="icone" aria-hidden="true"><i class="fa-solid fa-filter"></i></span>
+        <h2>Nenhuma transação com esses filtros</h2>
+        <p>Tente tirar um dos filtros, ou limpe todos de uma vez.</p>
+        <button type="button" class="botao botao--linha" data-limpar>Limpar filtros</button>
+      </div>`;
+    return;
+  }
+
+  // Da mais nova para a mais antiga; no mesmo dia, a registrada por último primeiro.
+  todas.sort((a, b) => (dataDe(a) !== dataDe(b) ? dataDe(b).localeCompare(dataDe(a)) : b.id_transacao - a.id_transacao));
+
+  const visiveis = todas.slice(0, quantasMostrar);
+  el('mostrarMais').hidden = todas.length <= quantasMostrar;
+
+  // Um grupo por dia.
+  const dias = new Map();
+  visiveis.forEach((t) => {
+    if (!dias.has(dataDe(t))) dias.set(dataDe(t), []);
+    dias.get(dataDe(t)).push(t);
   });
 
-  listaTransacoes.innerHTML = html;
+  lista.innerHTML = [...dias]
+    .map(([dia, doDia]) => `<h2 class="dia__titulo">${rotuloDoDia(dia)}</h2><ul class="movs">${doDia.map(linha).join('')}</ul>`)
+    .join('');
 }
 
-// Um único "ouvinte" de clique na lista inteira, em vez de um por linha:
-// a lista é redesenhada o tempo todo, e assim nada precisa ser religado.
-listaTransacoes.addEventListener('click', (evento) => {
-  const botaoPagar = evento.target.closest('[data-pagar]');
-  if (botaoPagar) {
-    alterarPagamento(Number(botaoPagar.dataset.pagar), botaoPagar.dataset.pago === 'true', botaoPagar);
-    return;
-  }
+// ---- AÇÕES ----
 
-  if (evento.target.closest('[data-limpar]')) {
-    limparFiltros();
-    return;
-  }
+async function alterarPagamento(botao) {
+  const id = Number(botao.dataset.pagar);
+  const pago = botao.dataset.pago === 'true';
+  const t = transacoes.find((x) => x.id_transacao === id);
 
-  const botaoAbrir = evento.target.closest('[data-abrir]');
-  if (botaoAbrir) {
-    const id = Number(botaoAbrir.dataset.abrir);
-    if (abertas.has(id)) abertas.delete(id);
-    else abertas.add(id);
-    desenharLista();
-  }
-});
-
-async function carregarTransacoes() {
-  const { ok, dados } = await chamarApi('/api/usuario/' + Sessao.idUsuario() + '/transacao');
+  const soltar = ocupar(botao);
+  const { ok, dados } = await chamarApi(`/api/transacao/${id}/pagamento`, { method: 'PATCH', body: JSON.stringify({ pago }) });
 
   if (!ok) {
-    mostrarMensagem(dados.erro || 'Não foi possível carregar as transações.', 'erro');
+    soltar();
+    return avisar(dados.erro || 'Não foi possível atualizar o pagamento.', 'erro');
+  }
+
+  const valor = formatarMoeda(t.valor_transacao);
+  avisar(
+    pago
+      ? `"${tituloDe(t)}" marcado como pago. ${valor} saíram de "${t.conta.nome}".`
+      : `Pagamento de "${tituloDe(t)}" desmarcado. ${valor} voltaram para "${t.conta.nome}".`
+  );
+  anunciarMudanca();
+}
+
+function limparFiltros() {
+  document.querySelector('[name="fTipo"][value="todos"]').checked = true;
+  el('fBusca').value = '';
+  ['fSituacao', 'fMes'].forEach((id) => (el(id).value = 'todos'));
+  ['fConta', 'fCategoria'].forEach((id) => (el(id).value = 'todas'));
+  aoFiltrar();
+}
+
+function aoFiltrar() {
+  quantasMostrar = POR_VEZ;
+  preencherOpcoes();
+  filtrosNoEndereco();
+  desenhar();
+}
+
+document.querySelectorAll('[name="fTipo"]').forEach((radio) => radio.addEventListener('change', aoFiltrar));
+['fSituacao', 'fMes', 'fConta', 'fCategoria'].forEach((id) => el(id).addEventListener('change', aoFiltrar));
+el('fBusca').addEventListener('input', aoFiltrar);
+el('limpar').addEventListener('click', limparFiltros);
+el('mostrarMais').addEventListener('click', () => {
+  quantasMostrar += POR_VEZ;
+  desenhar();
+});
+
+// Um ouvinte só para a lista inteira: as linhas são refeitas a cada filtro.
+el('lista').addEventListener('click', (evento) => {
+  const pagar = evento.target.closest('[data-pagar]');
+  if (pagar) return alterarPagamento(pagar);
+
+  if (evento.target.closest('[data-limpar]')) return limparFiltros();
+
+  const abrir = evento.target.closest('[data-abrir]');
+  if (abrir) {
+    const id = Number(abrir.dataset.abrir);
+    const detalheDaLinha = el('detalhe-' + id);
+    const abrindo = detalheDaLinha.hidden;
+    abrindo ? abertas.add(id) : abertas.delete(id);
+    detalheDaLinha.hidden = !abrindo;
+    abrir.setAttribute('aria-expanded', String(abrindo));
+  }
+});
+
+// ---- BUSCAR ----
+
+let primeiraVez = true;
+
+async function carregar() {
+  const { ok, dados } = await chamarApi(`/api/usuario/${ID_USUARIO}/transacao`);
+
+  if (!ok) {
+    avisar(dados.erro || 'Não foi possível carregar as transações.', 'erro');
     return;
   }
 
   transacoes = dados;
-  desenharLista();
-}
+  preencherOpcoes();
 
-// ---- MARCAR COMO PAGO ----
-
-async function alterarPagamento(id, pago, botao) {
-  const t = transacoes.find((x) => x.id_transacao === id);
-  botao.disabled = true;
-
-  const { ok, dados } = await chamarApi(`/api/transacao/${id}/pagamento`, {
-    method: 'PATCH',
-    body: JSON.stringify({ pago }),
-  });
-
-  if (!ok) {
-    botao.disabled = false;
-    mostrarMensagem(dados.erro || 'Não foi possível atualizar o pagamento.', 'erro');
-    return;
+  // Os filtros do endereço só podem ser lidos depois que as listas de mês,
+  // conta e categoria existem.
+  if (primeiraVez) {
+    filtrosDoEndereco();
+    preencherOpcoes();
+    primeiraVez = false;
   }
 
-  // Conta o que aconteceu com o saldo, para o número não mudar sem explicação.
-  const valor = formatarMoeda(t.valor_transacao);
-  mostrarMensagem(
-    pago
-      ? `"${tituloDe(t)}" marcado como pago. ${valor} saíram da conta "${t.conta.nome}".`
-      : `Pagamento de "${tituloDe(t)}" desmarcado. ${valor} voltaram para a conta "${t.conta.nome}".`,
-    'sucesso'
-  );
-
-  // O saldo mudou: recarrega a lista e as contas.
-  carregarTransacoes();
-  carregarContas();
+  desenhar();
 }
 
-// ---- CONTAS E CATEGORIAS ----
-
-async function carregarContas() {
-  const { ok, dados } = await chamarApi('/api/usuario/' + Sessao.idUsuario() + '/conta');
-
-  if (!ok) return;
-
-  contas = dados;
-
-  const total = contas.reduce((soma, c) => soma + Number(c.saldo), 0);
-  const previsto = contas.reduce((soma, c) => soma + Number(c.saldo_previsto), 0);
-  saldoTotal.textContent = formatarMoeda(total);
-  // Valor alto não sai do card: diminui a letra (auth.js). Refeito quando a
-  // fonte Inter termina de carregar, porque ela muda a largura do texto.
-  caberNaLargura(saldoTotal);
-  document.fonts.ready.then(() => caberNaLargura(saldoTotal));
-  saldoTotal.classList.toggle('text-red-600', total < 0);
-  saldoTotal.classList.toggle('text-gray-900', total >= 0);
-
-  // O previsto só aparece quando é diferente: com tudo pago e nenhum
-  // ganho futuro, os dois números são iguais.
-  saldoPrevisto.textContent = previsto !== total ? `Previsto: ${formatarMoeda(previsto)}` : '';
-
-  // Contas importadas do banco recebem transações só pela sincronização,
-  // então não aparecem para lançamento manual. Elas continuam somando no
-  // saldo total acima.
-  selectConta.innerHTML = contas
-    .filter((c) => !c.id_conexao)
-    .map((c) => `<option value="${c.id_conta}">${escapar(c.nome)}</option>`)
-    .join('');
-
-  preencherFiltroConta();
-  atualizarResumo();
-}
-
-async function carregarCategorias() {
-  const { ok, dados } = await chamarApi('/api/categoria');
-  if (ok) categorias = dados;
-  preencherCategorias();
-  preencherFiltroCategoria();
-}
-
-// Mostra só as categorias do tipo escolhido. Quem está lançando um gasto
-// não precisa ver "Salário" na lista.
-//
-// "Metas" também fica de fora: ela é lançada só pelo "Adicionar valor" da
-// tela de Metas, que soma o valor na meta junto (o servidor recusa à mão).
-function preencherCategorias() {
-  const doTipo = categorias.filter((c) => c.tipo === tipoSelecionado && !ehCategoriaSoDoSistema(c));
-
-  selectCategoria.innerHTML = doTipo
-    .map((c) => `<option value="${c.id_categoria}">${escapar(c.nome_categoria)}</option>`)
-    .join('');
-}
-
-// ---- NOVA CATEGORIA (atalho dentro do formulário) ----
-//
-// Criar a categoria sem sair do lançamento: ela nasce com o tipo que está
-// escolhido (gasto ou ganho) e já fica selecionada.
-
-const abrirNovaCategoria = document.getElementById('abrirNovaCategoria');
-const caixaNovaCategoria = document.getElementById('caixaNovaCategoria');
-const nomeNovaCategoria = document.getElementById('nomeNovaCategoria');
-const criarNovaCategoria = document.getElementById('criarNovaCategoria');
-const erroNovaCategoria = document.getElementById('erroNovaCategoria');
-
-function mostrarNovaCategoria(aberta) {
-  caixaNovaCategoria.classList.toggle('hidden', !aberta);
-  abrirNovaCategoria.setAttribute('aria-expanded', String(aberta));
-  erroNovaCategoria.classList.add('hidden');
-  nomeNovaCategoria.value = '';
-  document.getElementById('tipoNovaCategoria').textContent = tipoSelecionado === 'receita' ? 'ganho' : 'gasto';
-  if (aberta) nomeNovaCategoria.focus();
-}
-
-abrirNovaCategoria.addEventListener('click', () => {
-  mostrarNovaCategoria(caixaNovaCategoria.classList.contains('hidden'));
-});
-
-async function criarCategoriaRapida() {
-  const nome = nomeNovaCategoria.value.trim();
-
-  if (!nome) {
-    erroNovaCategoria.textContent = 'Dê um nome para a categoria.';
-    erroNovaCategoria.classList.remove('hidden');
-    return;
-  }
-
-  criarNovaCategoria.disabled = true;
-
-  const { ok, dados } = await chamarApi('/api/categoria', {
-    method: 'POST',
-    body: JSON.stringify({ nome_categoria: nome, tipo: tipoSelecionado }),
-  });
-
-  criarNovaCategoria.disabled = false;
-
-  if (!ok) {
-    erroNovaCategoria.textContent = dados.erro || 'Não foi possível criar a categoria.';
-    erroNovaCategoria.classList.remove('hidden');
-    return;
-  }
-
-  categorias.push(dados);
-  categorias.sort((a, b) => a.nome_categoria.localeCompare(b.nome_categoria, 'pt-BR'));
-  preencherCategorias();
-  preencherFiltroCategoria();
-  selectCategoria.value = dados.id_categoria;
-  mostrarNovaCategoria(false);
-}
-
-criarNovaCategoria.addEventListener('click', criarCategoriaRapida);
-
-// Enter no campo cria a categoria, em vez de enviar o formulário inteiro
-// da transação (que é o que o Enter faria por padrão).
-nomeNovaCategoria.addEventListener('keydown', (evento) => {
-  if (evento.key === 'Enter') {
-    evento.preventDefault();
-    criarCategoriaRapida();
-  }
-});
-
-// Atualiza o texto recolhido do <details>, para dar a informação sem
-// obrigar a abrir: "Nubank · hoje".
-function atualizarResumo() {
-  const conta = contas.find((c) => c.id_conta === Number(selectConta.value));
-  const data = campoData.value;
-
-  // textContent (e não innerHTML) escapa sozinho e preserva os elementos.
-  resumoConta.textContent = conta ? conta.nome : 'Conta';
-  resumoData.textContent = !data || data === hojeTexto() ? 'hoje' : formatarData(data);
-}
-
-// "Já está pago" vem marcado para data de hoje ou de antes, e desmarcado
-// para data futura. A pessoa pode trocar depois de escolher a data.
-function sugerirPago() {
-  caixaPago.checked = !campoData.value || campoData.value <= hojeTexto();
-}
-
-// ---- ALTERNÂNCIA GASTO / GANHO ----
-
-function selecionarTipo(tipo) {
-  tipoSelecionado = tipo;
-
-  const ativoDespesa = tipo === 'despesa';
-
-  botaoDespesa.className = ativoDespesa
-    ? 'py-3 rounded-xl border-2 border-red-500 bg-red-50 text-red-600 font-semibold transition'
-    : 'py-3 rounded-xl border-2 border-gray-200 text-gray-500 font-semibold transition hover:border-gray-300';
-
-  botaoReceita.className = ativoDespesa
-    ? 'py-3 rounded-xl border-2 border-gray-200 text-gray-500 font-semibold transition hover:border-gray-300'
-    : 'py-3 rounded-xl border-2 border-green-500 bg-green-50 text-green-600 font-semibold transition';
-
-  // Ganho não tem "pago": ele entra no saldo no dia dele.
-  campoPago.classList.toggle('hidden', !ativoDespesa);
-
-  // A nova categoria nasce do tipo escolhido: trocou o tipo, o atalho fecha.
-  mostrarNovaCategoria(false);
-  preencherCategorias();
-}
-
-botaoDespesa.addEventListener('click', () => selecionarTipo('despesa'));
-botaoReceita.addEventListener('click', () => selecionarTipo('receita'));
-selectConta.addEventListener('change', atualizarResumo);
-campoData.addEventListener('change', () => {
-  atualizarResumo();
-  sugerirPago();
-});
-
-// ---- ABRIR O PAINEL ----
-
-// tipo: 'despesa' (gasto, o mais comum) ou 'receita' (ganho).
-function abrirNovaTransacao(tipo = 'despesa') {
-  if (selectConta.options.length === 0) {
-    mostrarMensagem('Crie uma conta antes de registrar transações.', 'erro');
-    return;
-  }
-
-  formTransacao.reset();
-  campoData.value = hojeTexto();
-  selecionarTipo(tipo);
-  sugerirPago();
-  atualizarResumo();
-  painel.abrir();
-}
-
-document.getElementById('novaTransacao').addEventListener('click', () => abrirNovaTransacao('despesa'));
-
-// ---- SALVAR ----
-//
-// Não existe mais a checagem de "saldo insuficiente": o dinheiro das
-// contas manuais é informado pela própria pessoa, e o saldo pode ficar
-// negativo.
-
-formTransacao.addEventListener('submit', async function (evento) {
-  evento.preventDefault();
-  esconderMensagem();
-
-  const valor = Number(document.getElementById('valorTransacao').value);
-
-  if (!Number.isFinite(valor) || valor <= 0) {
-    mostrarMensagem('Informe um valor maior que zero.', 'erro');
-    return;
-  }
-
-  const corpo = {
-    valor_transacao: valor,
-    data_transacao: campoData.value,
-    descricao: document.getElementById('descricaoTransacao').value,
-    id_categoria: Number(selectCategoria.value),
-    id_conta: Number(selectConta.value),
-  };
-
-  if (tipoSelecionado === 'despesa') {
-    corpo.pago = caixaPago.checked;
-  }
-
-  salvarTransacao.disabled = true;
-
-  // Antes de gravar: se o gasto deixa a categoria perto do limite (ou
-  // acima dele), a pessoa confirma. Cancelar deixa o painel aberto com
-  // tudo o que ela digitou, para trocar o valor ou desistir.
-  if (tipoSelecionado === 'despesa' && !(await confirmarLimite(corpo))) {
-    salvarTransacao.disabled = false;
-    return;
-  }
-
-  const { ok, dados } = await chamarApi('/api/transacao', {
-    method: 'POST',
-    body: JSON.stringify(corpo),
-  });
-
-  salvarTransacao.disabled = false;
-
-  if (!ok) {
-    mostrarMensagem(dados.erro || 'Não foi possível registrar a transação.', 'erro');
-    return;
-  }
-
-  painel.fechar();
-
-  // Recarrega os dois: a lista ganhou uma linha e o saldo pode ter mudado.
-  carregarTransacoes();
-  carregarContas();
-});
-
-// ---- CONFIRMAÇÃO DE LIMITE DE GASTO ----
-//
-// Antes de registrar um gasto, a tela confere o limite da categoria e
-// calcula como ele FICARIA com este gasto. Se passar de 70% (ou estourar),
-// abre um pop-up perguntando se a pessoa quer registrar mesmo assim.
-//
-// Devolve true para seguir com o registro e false se a pessoa cancelou.
-//
-// É só um aviso: quem decide é a pessoa. O servidor não recusa gasto
-// acima do limite — o dinheiro é dela, e o gasto pode já ter acontecido.
-
-// Mesmo número de PERCENTUAL_ATENCAO em src/controllers/limiteController.js.
-// Se mudar lá, mude aqui também.
-const PERCENTUAL_ATENCAO = 70;
-
-async function confirmarLimite(corpo) {
-  // O limite é do mês atual: um gasto lançado para outro mês não mexe nele.
-  const data = corpo.data_transacao || hojeTexto();
-  if (data.slice(0, 7) !== hojeTexto().slice(0, 7)) return true;
-
-  const { ok, dados } = await chamarApi('/api/usuario/' + Sessao.idUsuario() + '/limite');
-
-  // Sem conseguir conferir, o lançamento não fica travado por causa do aviso.
-  if (!ok) return true;
-
-  const limite = dados.find((l) => l.id_categoria === corpo.id_categoria);
-  if (!limite) return true;
-
-  // Em centavos, para fugir dos erros de arredondamento do JavaScript.
-  const limiteCentavos = Math.round(limite.valor_limite * 100);
-  const depoisCentavos = Math.round(limite.gasto_mes * 100) + Math.round(corpo.valor_transacao * 100);
-  const pct = Math.round((depoisCentavos / limiteCentavos) * 100);
-
-  if (pct < PERCENTUAL_ATENCAO) return true;
-
-  const estoura = depoisCentavos > limiteCentavos;
-  const sobra = Math.abs(limiteCentavos - depoisCentavos) / 100;
-
-  return confirmar({
-    titulo: estoura
-      ? `Este gasto passa do limite de ${limite.nome_categoria}`
-      : `Você está perto do limite de ${limite.nome_categoria}`,
-    mensagem:
-      `Este mês você já gastou ${formatarMoeda(limite.gasto_mes)} de ${formatarMoeda(limite.valor_limite)}. ` +
-      `Com este gasto de ${formatarMoeda(corpo.valor_transacao)}, vai para ${formatarMoeda(depoisCentavos / 100)} (${pct}% do limite).`,
-    aviso: estoura
-      ? `Você vai passar ${formatarMoeda(sobra)} do limite do mês.`
-      : `Depois dele, restam ${formatarMoeda(sobra)} para o resto do mês.`,
-    textoConfirmar: 'Registrar mesmo assim',
-    tom: 'alerta',
-  });
-}
-
-// /transacoes?novo=despesa (ou =receita) abre o formulário já no tipo
-// certo. É por onde chegam os botões "Registrar gasto" e "Registrar
-// ganho" do Início: um clique e a pessoa já está digitando o valor.
-async function iniciar() {
-  carregarTransacoes();
-
-  // O formulário precisa das contas e das categorias antes de abrir.
-  await Promise.all([carregarContas(), carregarCategorias()]);
-
-  const pedido = new URLSearchParams(location.search).get('novo');
-  if (pedido !== 'despesa' && pedido !== 'receita') return;
-
-  // Limpa o endereço: recarregar a página não deve abrir o painel de novo.
-  history.replaceState(null, '', location.pathname);
-  abrirNovaTransacao(pedido);
-}
-
-iniciar();
+carregar();
+document.addEventListener('verdanz:mudou', carregar);

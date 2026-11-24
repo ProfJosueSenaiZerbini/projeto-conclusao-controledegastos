@@ -1,13 +1,9 @@
-// Ferramentas pequenas usadas por TODAS as telas da versão nova.
+// Ferramentas pequenas usadas por TODAS as telas.
 //
 // Este arquivo vem depois do /js/auth.js, que continua sendo o lugar único
 // da sessão (Sessao), das chamadas à API (chamarApi) e das regras de data e
 // de situação de uma transação (statusTransacao, ehGasto...). Aqui ficam só
 // as coisas de TELA: avisos, janelas, leitura de campos.
-
-// Todos os endereços da versão nova começam com /novo. Num lugar só: se um
-// dia ela virar a versão principal, basta trocar esta linha por ''.
-const RAIZ = '/novo';
 
 // ---- TEXTO ----
 

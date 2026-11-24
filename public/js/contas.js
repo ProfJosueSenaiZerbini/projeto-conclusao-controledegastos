@@ -1,415 +1,390 @@
+// Contas: os lugares onde o dinheiro está, e a conexão com o banco.
+//
+// Dois tipos de conta, com regras diferentes (decididas no servidor):
+//   - MANUAL: a pessoa cria, renomeia, corrige o saldo e exclui.
+//   - IMPORTADA do banco: só muda pela sincronização. Para tirar, é
+//     preciso desconectar o banco.
 
-const listaContas = document.getElementById('listaContas');
-const totalGeral = document.getElementById('totalGeral');
-const formConta = document.getElementById('formConta');
-const salvarConta = document.getElementById('salvarConta');
-const tituloPainel = document.getElementById('tituloPainel');
-const campoSaldo = document.getElementById('campoSaldo');
+const el = (id) => document.getElementById(id);
 
-const painel = criarPainel('painelConta', 'fundoPainel');
-document.getElementById('fecharPainel').addEventListener('click', painel.fechar);
+let contas = [];
 
-// Escapa caracteres perigosos antes de jogar texto no HTML.
-// Sem isso, alguém chamado <script>... executaria código na própria tela.
-function escapar(texto) {
-  const div = document.createElement('div');
-  div.textContent = texto;
-  return div.innerHTML;
-}
+// ---- CONTAS ----
 
-function cartaoConta(conta) {
-  // Conta importada de um banco: mostra de onde veio e não tem os botões
-  // de editar e excluir. Quem atualiza essa conta é o banco, pela
-  // sincronização (o servidor também recusa, caso alguém tente pela API).
+function cartaoDaConta(conta) {
   const importada = Boolean(conta.id_conexao);
-
-  const icone = importada
-    ? `<div class="w-11 h-11 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
-         <i class="fa-solid fa-building-columns"></i>
-       </div>`
-    : `<div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
-         <i class="fa-regular fa-credit-card"></i>
-       </div>`;
+  const negativo = Number(conta.saldo) < 0;
 
   const acoes = importada
-    ? ''
-    : `<div class="flex gap-1">
-          <button data-editar="${conta.id_conta}" title="Editar"
-                  class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
-            <i class="fa-solid fa-pen text-xs"></i>
-          </button>
-          <button data-excluir="${conta.id_conta}" title="Excluir"
-                  class="w-8 h-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-            <i class="fa-solid fa-trash text-xs"></i>
-          </button>
-        </div>`;
+    ? `<span class="capsula capsula--ceu"><i class="fa-solid fa-building-columns" aria-hidden="true"></i> ${esc(conta.conexao?.banco || 'Banco')}</span>`
+    : `<div class="fila" style="gap:.125rem">
+         <button type="button" class="botao-icone" data-editar="${conta.id_conta}" aria-label="Editar a conta ${esc(conta.nome)}" title="Editar"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+         <button type="button" class="botao-icone" data-excluir="${conta.id_conta}" aria-label="Excluir a conta ${esc(conta.nome)}" title="Excluir"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+         <button type="button" class="botao-icone" data-transferir="${conta.id_conta}" aria-label="Transferir dinheiro da conta ${esc(conta.nome)}" title="Transferir para outra conta"><i class="fa-solid fa-right-left" aria-hidden="true"></i></button>
+       </div>`;
 
-  const selo = importada
-    ? `<span class="inline-flex items-center gap-1.5 mt-3 w-fit text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-lg">
-         <i class="fa-solid fa-building-columns"></i> ${escapar(conta.conexao?.banco || 'Banco')}
-       </span>`
-    : '';
+  // O previsto só aparece quando é diferente do saldo de hoje.
+  const previsto =
+    Number(conta.saldo_previsto) !== Number(conta.saldo)
+      ? `<p class="suave pequeno">Depois de pagar o que falta: ${formatarMoeda(conta.saldo_previsto)}</p>`
+      : '';
 
   return `
-    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-      <div class="flex justify-between items-start mb-4">
-        ${icone}
+    <article class="cartao conta">
+      <div class="conta__topo">
+        <span class="icone ${importada ? 'icone--ceu' : 'icone--folha'}" aria-hidden="true"><i class="fa-solid ${importada ? 'fa-building-columns' : 'fa-wallet'}"></i></span>
         ${acoes}
       </div>
-      <p class="text-gray-500 text-sm">${escapar(conta.nome)}</p>
-      <h3 class="text-2xl font-bold ${Number(conta.saldo) < 0 ? 'text-red-600' : 'text-gray-900'} mt-1">${formatarMoeda(conta.saldo)}</h3>
-      ${linhaPrevisto(conta)}
-      ${selo}
-    </div>`;
+      <h3>${esc(conta.nome)}</h3>
+      <p class="numero ${negativo ? 'alerta-texto' : ''}">${formatarMoeda(conta.saldo)}</p>
+      ${previsto}
+      ${importada ? '<p class="fraco pequeno">Atualizada pelo banco.</p>' : ''}
+    </article>`;
 }
 
-// "Previsto: R$ 300,00" — quanto a conta terá depois de pagar os gastos
-// não pagos e receber os ganhos já lançados (cálculo em src/saldo.js).
-// Só aparece quando é diferente do saldo de hoje.
-function linhaPrevisto(conta) {
-  if (Number(conta.saldo_previsto) === Number(conta.saldo)) return '';
-  return `<p class="text-xs text-gray-400 mt-1">Previsto: ${formatarMoeda(conta.saldo_previsto)}</p>`;
-}
-
-const cartaoNovaConta = `
-  <button id="novaConta"
-          class="border-2 border-dashed border-gray-200 rounded-2xl p-5 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-300 hover:text-blue-500 transition-colors min-h-[150px]">
-    <i class="fa-solid fa-plus text-2xl"></i>
-    <span class="text-sm font-medium">Nova conta</span>
+const BOTAO_NOVA_CONTA = `
+  <button type="button" class="novo" id="novaConta">
+    <span class="icone" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>
+    Nova conta
   </button>`;
 
 async function carregarContas() {
-  const { ok, dados } = await chamarApi('/api/usuario/' + Sessao.idUsuario() + '/conta');
+  const { ok, dados } = await chamarApi(`/api/usuario/${ID_USUARIO}/conta`);
 
   if (!ok) {
-    mostrarMensagem(dados.erro || 'Não foi possível carregar suas contas.', 'erro');
+    avisar(dados.erro || 'Não foi possível carregar suas contas.', 'erro');
     return;
   }
 
-  const total = dados.reduce((soma, c) => soma + Number(c.saldo), 0);
-  totalGeral.textContent = formatarMoeda(total);
-  // Valor alto não sai do card: diminui a letra (auth.js). Refeito quando a
-  // fonte Inter termina de carregar, porque ela muda a largura do texto.
-  caberNaLargura(totalGeral);
-  document.fonts.ready.then(() => caberNaLargura(totalGeral));
+  contas = dados;
 
-  listaContas.innerHTML = dados.map(cartaoConta).join('') + cartaoNovaConta;
+  const total = contas.reduce((soma, c) => soma + Number(c.saldo), 0);
+  const previsto = contas.reduce((soma, c) => soma + Number(c.saldo_previsto), 0);
+  el('totalGeral').textContent = formatarMoeda(total);
+  caberNaLargura(el('totalGeral'), 22);
+  el('totalLegenda').textContent =
+    plural(contas.length, 'conta', 'contas') +
+    (previsto !== total ? ` · depois de pagar o que falta, ficam ${formatarMoeda(previsto)}` : '');
 
-  document.getElementById('novaConta').addEventListener('click', abrirNova);
+  el('listaContas').innerHTML = contas.map(cartaoDaConta).join('') + BOTAO_NOVA_CONTA;
+}
 
-  listaContas.querySelectorAll('[data-editar]').forEach((botao) => {
-    botao.addEventListener('click', () => {
-      const conta = dados.find((c) => c.id_conta === Number(botao.dataset.editar));
-      abrirEdicao(conta);
+el('listaContas').addEventListener('click', (evento) => {
+  if (evento.target.closest('#novaConta')) return abrirFolhaConta(null);
+
+  const editar = evento.target.closest('[data-editar]');
+  if (editar) return abrirFolhaConta(contas.find((c) => c.id_conta === Number(editar.dataset.editar)));
+
+  const excluir = evento.target.closest('[data-excluir]');
+  if (excluir) return excluirConta(contas.find((c) => c.id_conta === Number(excluir.dataset.excluir)));
+
+  const transferir = evento.target.closest('[data-transferir]');
+  if (transferir) abrirTransferencia(Number(transferir.dataset.transferir));
+});
+
+// ---- TRANSFERIR ENTRE CONTAS ----
+//
+// Só entre contas MANUAIS: o Verdanz não consegue mexer no dinheiro de
+// verdade de um banco conectado. No servidor, a transferência vira uma
+// saída na origem e uma entrada no destino (contaController.js), e as duas
+// ficam fora das somas de ganhos e gastos.
+
+const contasManuais = () => contas.filter((c) => !c.id_conexao);
+const opcaoDaConta = (c) => `<option value="${c.id_conta}">${esc(c.nome)} · ${formatarMoeda(c.saldo)}</option>`;
+
+async function abrirTransferencia(idOrigem) {
+  const manuais = contasManuais();
+
+  if (manuais.length < 2) {
+    const criar = await confirmar({
+      titulo: 'Você precisa de outra conta',
+      mensagem: 'Para transferir, é preciso ter pelo menos duas contas criadas por você (bancos conectados não entram). Crie a conta que vai receber o dinheiro.',
+      textoConfirmar: 'Criar uma conta',
+      perigo: false,
     });
+    if (criar) abrirFolhaConta(null);
+    return;
+  }
+
+  el('formTransferir').reset();
+  erroNoCampo(el('transValor'), '');
+  erroNoCampo(el('transDestino'), '');
+
+  el('transOrigem').innerHTML = manuais.map(opcaoDaConta).join('');
+  el('transOrigem').value = idOrigem;
+  preencherDestino();
+
+  abrirJanela(el('folhaTransferir'));
+  el('transValor').focus();
+}
+
+// O destino é qualquer conta manual MENOS a de origem.
+function preencherDestino() {
+  const idOrigem = Number(el('transOrigem').value);
+  const anterior = Number(el('transDestino').value);
+  const outras = contasManuais().filter((c) => c.id_conta !== idOrigem);
+
+  el('transDestino').innerHTML = outras.map(opcaoDaConta).join('');
+  if (outras.some((c) => c.id_conta === anterior)) el('transDestino').value = anterior;
+
+  const origem = contas.find((c) => c.id_conta === idOrigem);
+  el('transValorAjuda').textContent = `Disponível hoje em "${origem.nome}": ${formatarMoeda(origem.saldo)}.`;
+}
+
+el('transOrigem').addEventListener('change', preencherDestino);
+
+el('formTransferir').addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+
+  const campoValor = el('transValor');
+  const valor = lerValor(campoValor);
+  const origem = contas.find((c) => c.id_conta === Number(el('transOrigem').value));
+  const destino = contas.find((c) => c.id_conta === Number(el('transDestino').value));
+
+  if (!valor) {
+    erroNoCampo(campoValor, 'Digite um valor maior que zero, como 100,00.');
+    return campoValor.focus();
+  }
+
+  // Transferir é mover dinheiro que existe: o servidor confere de novo.
+  if (Math.round(valor * 100) > Math.round(Number(origem.saldo) * 100)) {
+    erroNoCampo(campoValor, `"${origem.nome}" tem ${formatarMoeda(origem.saldo)} hoje. Escolha um valor menor ou outra conta.`);
+    return campoValor.focus();
+  }
+  erroNoCampo(campoValor, '');
+
+  const soltar = ocupar(el('salvarTransferencia'), 'Transferindo...');
+  const { ok, dados } = await chamarApi('/api/conta/transferencia', {
+    method: 'POST',
+    body: JSON.stringify({ id_origem: origem.id_conta, id_destino: destino.id_conta, valor }),
   });
+  soltar();
 
-  listaContas.querySelectorAll('[data-excluir]').forEach((botao) => {
-    botao.addEventListener('click', () => {
-      const conta = dados.find((c) => c.id_conta === Number(botao.dataset.excluir));
-      excluirConta(conta);
-    });
+  if (!ok) return erroNoCampo(campoValor, dados.erro || 'Não foi possível transferir.');
+
+  el('folhaTransferir').close();
+  avisar(`${formatarMoeda(valor)} transferidos de "${origem.nome}" para "${destino.nome}".`);
+  anunciarMudanca();
+});
+
+// conta = null -> criar; conta = {...} -> editar
+function abrirFolhaConta(conta) {
+  el('formConta').reset();
+  erroNoCampo(el('nomeConta'), '');
+  erroNoCampo(el('saldoConta'), '');
+
+  el('idConta').value = conta ? conta.id_conta : '';
+  el('tituloFolhaConta').textContent = conta ? 'Editar conta' : 'Nova conta';
+  el('salvarConta').textContent = conta ? 'Salvar' : 'Criar conta';
+
+  if (conta) {
+    el('nomeConta').value = conta.nome;
+    // Ao editar, a pessoa informa o saldo DE HOJE. O servidor soma de volta
+    // os ganhos com data futura antes de gravar (ver src/saldo.js).
+    el('saldoConta').value = (Number(conta.saldo) < 0 ? '-' : '') + valorNoCampo(Math.abs(conta.saldo));
+  }
+
+  abrirJanela(el('folhaConta'));
+  el('nomeConta').focus();
+}
+
+el('formConta').addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+
+  const nome = el('nomeConta').value.trim();
+  const saldo = lerSaldo(el('saldoConta'));
+
+  erroNoCampo(el('nomeConta'), nome ? '' : 'Dê um nome para a conta.');
+  erroNoCampo(el('saldoConta'), saldo === null ? 'Use só números, como 1.500,50.' : '');
+  if (!nome) return el('nomeConta').focus();
+  if (saldo === null) return el('saldoConta').focus();
+
+  const id = el('idConta').value;
+  const soltar = ocupar(el('salvarConta'), 'Salvando...');
+  const { ok, dados } = await chamarApi(id ? '/api/conta/' + id : '/api/conta', {
+    method: id ? 'PUT' : 'POST',
+    body: JSON.stringify({ nome, saldo }),
   });
-}
+  soltar();
 
-function abrirNova() {
-  formConta.reset();
-  document.getElementById('idConta').value = '';
-  tituloPainel.textContent = 'Nova conta';
-  salvarConta.textContent = 'Criar conta';
-  campoSaldo.classList.remove('hidden');
-  painel.abrir();
-}
+  if (!ok) return avisar(dados.erro || 'Não foi possível salvar a conta.', 'erro');
 
-function abrirEdicao(conta) {
-  document.getElementById('idConta').value = conta.id_conta;
-  document.getElementById('nomeConta').value = conta.nome;
-  tituloPainel.textContent = 'Editar conta';
-  salvarConta.textContent = 'Salvar';
-
-  // O campo já vem com o saldo atual, para a pessoa só corrigir o valor.
-  // Serve principalmente para a Carteira, que nasce zerada no cadastro.
-  document.getElementById('saldoConta').value = Number(conta.saldo).toFixed(2);
-  campoSaldo.classList.remove('hidden');
-  painel.abrir();
-}
+  el('folhaConta').close();
+  avisar(id ? 'Conta atualizada.' : `Conta "${nome}" criada.`);
+  anunciarMudanca();
+});
 
 async function excluirConta(conta) {
-  const confirmou = await confirmar({
-    titulo: `Excluir "${conta.nome}"?`,
+  const sim = await confirmar({
+    titulo: `Excluir a conta "${conta.nome}"?`,
     mensagem: 'Essa ação não pode ser desfeita.',
     aviso: 'Todas as transações dessa conta serão apagadas junto.',
     textoConfirmar: 'Excluir conta',
   });
-
-  if (!confirmou) return;
+  if (!sim) return;
 
   const { ok, dados } = await chamarApi('/api/conta/' + conta.id_conta, { method: 'DELETE' });
+  if (!ok) return avisar(dados.erro || 'Não foi possível excluir a conta.', 'erro');
 
- if (!ok) {
-    mostrarMensagem(dados.erro || 'Não foi possível excluir a conta.', 'erro');
-    return;
-  }
-
-  esconderMensagem();
-  carregarContas();
+  avisar(`Conta "${conta.nome}" excluída.`);
+  anunciarMudanca();
 }
-
-formConta.addEventListener('submit', async function (evento) {
-  evento.preventDefault();
-  esconderMensagem();
-
-  const id = document.getElementById('idConta').value;
-  const nome = document.getElementById('nomeConta').value.trim();
-  const saldo = document.getElementById('saldoConta').value;
-
-  if (!nome) {
-    mostrarMensagem('Dê um nome para a conta.', 'erro');
-    return;
-  }
-
-  // Saldo negativo é aceito: o dinheiro das contas manuais é informado
-  // pela própria pessoa (quem está no cheque especial, por exemplo).
-
-  salvarConta.disabled = true;
-
-  const editando = Boolean(id);
-  const { ok, dados } = await chamarApi(editando ? '/api/conta/' + id : '/api/conta', {
-    method: editando ? 'PUT' : 'POST',
-    body: JSON.stringify({ nome, saldo }),
-  });
-
-  salvarConta.disabled = false;
-
-  if (!ok) {
-    mostrarMensagem(dados.erro || 'Não foi possível salvar a conta.', 'erro');
-    return;
-  }
-
-  painel.fechar();
-  carregarContas();
-});
 
 // ---- BANCOS CONECTADOS ----
 //
-// O fluxo de conexão passa por três lugares:
-//   1. Aqui: "Conectar banco" pede ao servidor o endereço da tela do banco.
-//   2. Na tela do BANCO (outro site): a pessoa autoriza ou recusa.
-//   3. Aqui de novo: o banco devolve a pessoa para /contas com um código
-//      na URL, e esta tela pede ao servidor para concluir e importar.
+// O banco é simulado, mas o caminho imita o Open Finance de verdade:
+//   1. o Verdanz pede o consentimento e recebe o endereço da tela do banco;
+//   2. a pessoa autoriza lá e volta para cá com um código na URL;
+//   3. o servidor troca o código pelo acesso e importa as contas.
+// O acesso (token) nunca passa pelo navegador.
 
-const listaConexoes = document.getElementById('listaConexoes');
-const botaoConectar = document.getElementById('conectarBanco');
-
-// "3 contas", "1 transação": evita o "1 transações" na mensagem.
-function plural(quantidade, singular, varios) {
-  return `${quantidade} ${quantidade === 1 ? singular : varios}`;
-}
-
-// Data e hora no padrão brasileiro: "08/10/2026, 14:32".
-function formatarDataHora(iso) {
+function dataEHora(iso) {
   return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-// Transforma o resumo da importação numa frase para a pessoa.
 function mostrarResumo(resumo, primeiraVez) {
   let texto;
-
   if (primeiraVez) {
-    texto =
-      `Banco conectado! ${plural(resumo.contas.length, 'conta', 'contas')} e ` +
-      `${plural(resumo.transacoes_novas, 'transação importada', 'transações importadas')}.`;
+    texto = `Banco conectado! ${plural(resumo.contas.length, 'conta', 'contas')} e ${plural(resumo.transacoes_novas, 'transação importada', 'transações importadas')}.`;
   } else if (resumo.transacoes_novas === 0) {
     texto = 'Tudo em dia: nenhuma transação nova no banco.';
   } else {
     texto = `${plural(resumo.transacoes_novas, 'transação nova importada', 'transações novas importadas')}.`;
   }
 
-  // Se o saldo de alguma conta não bate com o banco, a tela avisa em vez
-  // de esconder. Isso não deveria acontecer, mas se acontecer, a pessoa
-  // precisa saber.
   if (!resumo.saldos_conferem) {
-    mostrarMensagem(texto + ' Atenção: o saldo de alguma conta não bateu com o informado pelo banco.', 'erro');
-    return;
+    return avisar(texto + ' Atenção: o saldo de alguma conta não bateu com o informado pelo banco.', 'erro');
   }
-
-  mostrarMensagem(texto, 'sucesso');
+  avisar(texto);
 }
 
-function cartaoConexao(conexao) {
+function cartaoDaConexao(conexao) {
   const situacao = conexao.expirada
-    ? '<span class="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-lg">autorização expirada</span>'
-    : '<span class="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-lg">conectado</span>';
+    ? '<span class="capsula capsula--coral">Autorização vencida</span>'
+    : '<span class="capsula capsula--folha"><i class="fa-solid fa-check" aria-hidden="true"></i> Conectado</span>';
 
   const sincronizacao = conexao.ultima_sincronizacao
-    ? 'Última sincronização: ' + formatarDataHora(conexao.ultima_sincronizacao)
-    : 'Ainda não sincronizado';
+    ? 'Atualizado em ' + dataEHora(conexao.ultima_sincronizacao)
+    : 'Ainda não atualizado';
 
-  // Com a autorização vencida, sincronizar não funciona: o botão passa a
-  // reconectar, o que renova a autorização sem perder as contas.
-  const botaoPrincipal = conexao.expirada
-    ? `<button data-reconectar class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold transition hover:bg-blue-700">
-         Reconectar
-       </button>`
-    : `<button data-sincronizar="${conexao.id_conexao}" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold transition hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
-         <i class="fa-solid fa-rotate mr-1"></i> Sincronizar
-       </button>`;
+  const principal = conexao.expirada
+    ? '<button type="button" class="botao botao--p" data-conectar>Conectar de novo</button>'
+    : `<button type="button" class="botao botao--p" data-sincronizar="${conexao.id_conexao}"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Atualizar agora</button>`;
 
   return `
-    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div class="flex items-center gap-4">
-        <div class="w-11 h-11 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">
-          <i class="fa-solid fa-building-columns"></i>
-        </div>
+    <article class="cartao fila fila--entre">
+      <div class="cartao__titulo">
+        <span class="icone icone--ceu" aria-hidden="true"><i class="fa-solid fa-building-columns"></i></span>
         <div>
-          <p class="font-semibold text-gray-900 flex items-center gap-2 flex-wrap">${escapar(conexao.banco)} ${situacao}</p>
-          <p class="text-xs text-gray-500 mt-1">
-            ${plural(conexao._count.contas, 'conta importada', 'contas importadas')} · ${sincronizacao}
-          </p>
-          <p class="text-xs text-gray-400 mt-0.5">Autorização válida até ${formatarData(conexao.acesso_expira_em)}</p>
+          <h3 class="fila" style="gap:.5rem">${esc(conexao.banco)} ${situacao}</h3>
+          <p class="suave pequeno">${plural(conexao._count.contas, 'conta importada', 'contas importadas')} · ${sincronizacao}</p>
+          <p class="fraco pequeno">Autorização válida até ${formatarData(conexao.acesso_expira_em)}</p>
         </div>
       </div>
-      <div class="flex gap-2 flex-shrink-0">
-        ${botaoPrincipal}
-        <button data-desconectar="${conexao.id_conexao}"
-                class="px-4 py-2 rounded-xl text-gray-500 text-sm font-semibold transition hover:bg-red-50 hover:text-red-500">
-          Desconectar
-        </button>
+      <div class="fila">
+        ${principal}
+        <button type="button" class="botao botao--quieto botao--p" data-desconectar="${conexao.id_conexao}">Desconectar</button>
       </div>
-    </div>`;
+    </article>`;
 }
+
+let conexoes = [];
 
 async function carregarConexoes() {
   const { ok, dados } = await chamarApi('/api/conexao-bancaria');
+  conexoes = ok ? dados : [];
 
-  if (!ok) {
-    listaConexoes.innerHTML = '';
-    return;
-  }
-
-  listaConexoes.innerHTML = dados.length
-    ? dados.map(cartaoConexao).join('')
-    : '<p class="text-sm text-gray-400">Nenhum banco conectado ainda.</p>';
-
-  // Por enquanto só existe um banco, e ele só pode ser conectado uma vez.
-  botaoConectar.classList.toggle('hidden', dados.length > 0);
-
-  listaConexoes.querySelectorAll('[data-sincronizar]').forEach((botao) => {
-    botao.addEventListener('click', () => sincronizarConexao(botao));
-  });
-
-  listaConexoes.querySelectorAll('[data-reconectar]').forEach((botao) => {
-    botao.addEventListener('click', conectarBanco);
-  });
-
-  listaConexoes.querySelectorAll('[data-desconectar]').forEach((botao) => {
-    botao.addEventListener('click', () => {
-      const conexao = dados.find((c) => c.id_conexao === Number(botao.dataset.desconectar));
-      desconectarBanco(conexao);
-    });
-  });
+  el('listaConexoes').innerHTML = conexoes.length
+    ? conexoes.map(cartaoDaConexao).join('')
+    : `<div class="cartao fila fila--entre">
+         <div class="cartao__titulo">
+           <span class="icone icone--ceu" aria-hidden="true"><i class="fa-solid fa-building-columns"></i></span>
+           <p class="suave">Nenhum banco conectado ainda. Você autoriza no site do banco e pode desconectar quando quiser.</p>
+         </div>
+         <button type="button" class="botao botao--linha" data-conectar><i class="fa-solid fa-link" aria-hidden="true"></i> Conectar um banco</button>
+       </div>`;
 }
 
-// Passo 1: pede ao servidor o endereço da tela do banco e vai até lá.
-async function conectarBanco() {
-  esconderMensagem();
-  botaoConectar.disabled = true;
-
+async function conectarBanco(botao) {
+  const soltar = ocupar(botao, 'Abrindo o banco...');
+  // Depois de autorizar, o banco devolve a pessoa para esta tela (/contas).
   const { ok, dados } = await chamarApi('/api/conexao-bancaria', { method: 'POST' });
 
   if (!ok) {
-    botaoConectar.disabled = false;
-    mostrarMensagem(dados.erro || 'Não foi possível conectar ao banco.', 'erro');
-    return;
+    soltar();
+    return avisar(dados.erro || 'Não foi possível conectar ao banco.', 'erro');
   }
 
+  // Sai do Verdanz e vai para a tela de autorização do banco.
   window.location.href = dados.url;
 }
 
-// Passo 3: a pessoa voltou do banco. A URL traz o resultado:
-//   /contas?code=...&state=...           autorizou
-//   /contas?error=access_denied&state=... recusou
-async function tratarRetornoDoBanco() {
-  const parametros = new URLSearchParams(window.location.search);
-  const code = parametros.get('code');
-  const state = parametros.get('state');
-  const recusou = parametros.get('error');
+async function sincronizar(botao) {
+  const soltar = ocupar(botao, 'Atualizando...');
+  const { ok, dados } = await chamarApi(`/api/conexao-bancaria/${botao.dataset.sincronizar}/sincronizar`, { method: 'POST' });
+  soltar();
 
-  if (!code && !recusou) return;
-
-  // Tira o código da barra de endereço logo de cara: ele não deve ficar
-  // no histórico do navegador nem ser reenviado se a página recarregar.
-  history.replaceState(null, '', '/contas');
-
-  if (recusou) {
-    mostrarMensagem('Conexão cancelada: o acesso foi recusado no banco.', 'erro');
-    return;
-  }
-
-  mostrarMensagem('Importando suas contas do banco...', 'sucesso');
-
-  const { ok, dados } = await chamarApi('/api/conexao-bancaria/finalizar', {
-    method: 'POST',
-    body: JSON.stringify({ code, state }),
-  });
-
-  if (!ok) {
-    mostrarMensagem(dados.erro || 'Não foi possível concluir a conexão.', 'erro');
-    return;
-  }
-
-  mostrarResumo(dados.resumo, true);
+  if (ok) mostrarResumo(dados, false);
+  else avisar(dados.erro || 'Não foi possível atualizar.', 'erro');
+  anunciarMudanca();
 }
 
-async function sincronizarConexao(botao) {
-  esconderMensagem();
-  botao.disabled = true;
-  botao.innerHTML = '<i class="fa-solid fa-rotate fa-spin mr-1"></i> Sincronizando...';
-
-  const { ok, dados } = await chamarApi(`/api/conexao-bancaria/${botao.dataset.sincronizar}/sincronizar`, {
-    method: 'POST',
-  });
-
-  if (ok) {
-    mostrarResumo(dados, false);
-  } else {
-    mostrarMensagem(dados.erro || 'Não foi possível sincronizar.', 'erro');
-  }
-
-  carregarContas();
-  carregarConexoes();
-}
-
-async function desconectarBanco(conexao) {
-  const confirmou = await confirmar({
+async function desconectar(conexao) {
+  const sim = await confirmar({
     titulo: `Desconectar o ${conexao.banco}?`,
-    mensagem: 'As contas importadas e todas as transações delas serão removidas do Verdanz.',
+    mensagem: 'As contas importadas e todas as transações delas saem do Verdanz.',
     aviso: 'Nada muda no banco. Você pode conectar de novo depois e importar tudo outra vez.',
     textoConfirmar: 'Desconectar',
   });
-
-  if (!confirmou) return;
+  if (!sim) return;
 
   const { ok, dados } = await chamarApi('/api/conexao-bancaria/' + conexao.id_conexao, { method: 'DELETE' });
+  if (!ok) return avisar(dados.erro || 'Não foi possível desconectar o banco.', 'erro');
 
-  if (!ok) {
-    mostrarMensagem(dados.erro || 'Não foi possível desconectar o banco.', 'erro');
-    return;
-  }
+  avisar(`${conexao.banco} desconectado.`);
+  anunciarMudanca();
+}
 
-  mostrarMensagem(`${conexao.banco} desconectado.`, 'sucesso');
+el('listaConexoes').addEventListener('click', (evento) => {
+  const conectar = evento.target.closest('[data-conectar]');
+  if (conectar) return conectarBanco(conectar);
+
+  const atualizar = evento.target.closest('[data-sincronizar]');
+  if (atualizar) return sincronizar(atualizar);
+
+  const sairDoBanco = evento.target.closest('[data-desconectar]');
+  if (sairDoBanco) desconectar(conexoes.find((c) => c.id_conexao === Number(sairDoBanco.dataset.desconectar)));
+});
+
+// Volta da tela do banco: /contas?code=...&state=...  (ou ?error=...)
+async function tratarVoltaDoBanco() {
+  const parametros = new URLSearchParams(location.search);
+  const code = parametros.get('code');
+  const recusou = parametros.get('error');
+  if (!code && !recusou) return;
+
+  // Limpa o endereço: recarregar a página não pode reenviar o código.
+  history.replaceState(null, '', location.pathname);
+
+  if (recusou) return avisar('Conexão cancelada: o acesso foi recusado no banco.', 'erro');
+
+  avisar('Importando suas contas do banco...');
+  const { ok, dados } = await chamarApi('/api/conexao-bancaria/finalizar', {
+    method: 'POST',
+    body: JSON.stringify({ code, state: parametros.get('state') }),
+  });
+
+  if (!ok) return avisar(dados.erro || 'Não foi possível concluir a conexão.', 'erro');
+  mostrarResumo(dados.resumo, true);
+}
+
+// ---- COMEÇAR ----
+
+function carregar() {
   carregarContas();
   carregarConexoes();
 }
 
-botaoConectar.addEventListener('click', conectarBanco);
-
-// Primeiro trata a volta do banco (se for o caso), porque ela importa
-// contas novas. Só depois carrega as listas, já com o que foi importado.
-async function iniciar() {
-  await tratarRetornoDoBanco();
-  carregarContas();
-  carregarConexoes();
-}
-
-iniciar();
+tratarVoltaDoBanco().then(carregar);
+document.addEventListener('verdanz:mudou', carregar);
+window.addEventListener('resize', () => caberNaLargura(el('totalGeral'), 22));

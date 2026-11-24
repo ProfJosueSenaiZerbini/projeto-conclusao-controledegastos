@@ -1,67 +1,57 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- O endereço desta tela carrega o token de confirmação. Sem esta
-         linha, o navegador poderia enviar o endereço completo para os
-         sites de onde a página carrega arquivos (o CDN do Tailwind). -->
-    <meta name="referrer" content="no-referrer">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Confirmar e-mail | Verdanz</title>
     <link rel="icon" href="/img/VerdanzIcone.png">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="/js/tema.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="/css/verdanz.css" rel="stylesheet">
-    <style>body { font-family: 'Nunito Sans', sans-serif; }</style>
 </head>
+<body class="acesso" data-pagina="confirmar-email">
 
-<body class="min-h-screen bg-gradient-to-br from-[#eef9ed] via-white to-[#e8f3ff]">
-    <main class="min-h-screen flex items-center justify-center px-6">
+    <!-- Lado verde: some no celular, onde só o formulário importa. -->
+    <section class="acesso__lado" aria-label="Sobre o Verdanz">
+        <a class="marca marca--escura " href="/" title="Página inicial do Verdanz">
+                <img src="/img/VerdanzIcone.png" alt="">
+                <strong>Verdan<span>z</span></strong>
+            </a>
+        <div>
+            <h2>Só falta confirmar.</h2>
+            <ul>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> Você pediu para trocar o e-mail da conta</li>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> A troca só vale depois deste passo</li>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> Depois, entre com o e-mail novo</li>
+            </ul>
+        </div>
+        <p class="pequeno">Seu dinheiro, seu futuro.</p>
+    </section>
 
-        <div class="w-full max-w-md bg-white/90 backdrop-blur-sm
-                    rounded-3xl p-8 md:p-10
-                    shadow-[0_20px_60px_rgba(0,0,0,0.08)]
-                    border border-gray-100">
-
-            <!-- LOGO -->
-            <div class="flex items-center justify-center gap-3 mb-8">
-                <img src="/img/VerdanzIcone.png" alt="" class="w-12 h-12 object-contain">
-                <h1 class="text-3xl font-bold text-[#071b3a]">
-                    Verdan<span class="text-green-500">z</span>
-                </h1>
+    <main class="acesso__form">
+        <div class="acesso__caixa">
+            <a class="marca marca--escura acesso__marca-celular" href="/" title="Página inicial do Verdanz">
+                <img src="/img/VerdanzIcone.png" alt="">
+                <strong>Verdan<span>z</span></strong>
+            </a>
+            <div>
+                <h1>Confirmar o e-mail novo</h1>
+                <p class="suave" id="subtitulo">Conferindo o link...</p>
             </div>
 
-            <div class="text-center mb-8">
-                <h2 class="text-2xl font-bold text-[#071b3a]">Confirmar e-mail</h2>
-                <p class="text-gray-500 mt-2" id="subtitulo">Verificando o link...</p>
-            </div>
+            <p class="numero" id="emailNovo" style="font-size:1.25rem; white-space:normal; overflow-wrap:anywhere" hidden></p>
+            <div id="recado" aria-live="polite"></div>
 
-            <div id="mensagem" class="hidden mb-5 px-4 py-3 rounded-xl text-sm"></div>
-
-            <!-- Só aparece se o link for válido. Não adianta mostrar o
-                 botão de um link que já expirou. -->
-            <button type="button" id="botaoConfirmar" class="hidden w-full py-3.5
-                       rounded-xl
-                       bg-gradient-to-r from-green-500 to-blue-500
-                       text-white font-bold text-lg
-                       shadow-lg shadow-green-200
-                       transition hover:scale-[1.02] hover:shadow-xl
-                       disabled:opacity-60 disabled:cursor-not-allowed
-                       disabled:hover:scale-100">
-                Confirmar meu novo e-mail
-            </button>
-
-            <div class="text-center mt-7">
-                <a href="/login" id="linkVoltar" class="text-sm font-bold text-green-600 hover:text-green-700">
-                    Voltar para o login
-                </a>
-            </div>
-
+            <button type="button" class="botao botao--largo" id="botaoConfirmar" hidden>Confirmar meu e-mail novo</button>
+            <a class="botao botao--linha" id="linkVoltar" href="/entrar" hidden>Entrar</a>
         </div>
     </main>
 
     <script src="/js/auth.js"></script>
-    <script src="/js/confirmar-email.js"></script>
+    <script src="/js/base.js"></script>
+    <script src="/js/acesso.js"></script>
 </body>
 </html>

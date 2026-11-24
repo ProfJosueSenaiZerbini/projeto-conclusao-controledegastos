@@ -5,7 +5,7 @@ Aplicação web de gestão financeira pessoal, desenvolvida como Trabalho de Con
 ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js&logoColor=white)
 ![Prisma](https://img.shields.io/badge/ORM-Prisma%20v6-2D3748?logo=prisma&logoColor=white)
 ![MySQL](https://img.shields.io/badge/Banco%20de%20Dados-MySQL-4479A1?logo=mysql&logoColor=white)
-![Tailwind](https://img.shields.io/badge/CSS-Tailwind-06B6D4?logo=tailwindcss&logoColor=white)
+![CSS](https://img.shields.io/badge/Front--end-HTML%20%2B%20CSS%20%2B%20JS-1E6B45)
 
 ## Equipe
 
@@ -44,7 +44,7 @@ O Verdanz organiza a vida financeira do usuário em torno de quatro pilares:
 | Autenticação | JWT (`jsonwebtoken`) |
 | Hash de senha | bcrypt |
 | Ambiente de desenvolvimento | Nodemon |
-| Front-end | HTML, CSS, JavaScript + Tailwind CSS |
+| Front-end | HTML, CSS e JavaScript puros (sem framework), fonte Lexend e ícones Font Awesome |
 | Modelagem do banco | brModelo |
 | Testes de API | Insomnia / Postman |
 
@@ -68,7 +68,7 @@ projeto-conclusao-controledegastos/
 │   └── prisma.js             # Instância única do Prisma Client
 ├── public/                   # Código que roda no NAVEGADOR (servido como estático)
 │   ├── js/                   # Scripts de cada tela + utilitários compartilhados
-│   ├── css/                  # Estilos próprios
+│   ├── css/                  # verdanz.css (o visual inteiro) e inicial.css
 │   └── img/                  # Imagens e logos
 └── Docs/                     # Documentação do projeto
     ├── Diagramas/            # Diagramas conceitual, lógico e de classes (brModelo)
@@ -167,13 +167,15 @@ Pronto. O mesmo servidor entrega a API **e** as telas em `http://localhost:3000`
 | Endereço | O que é |
 | --- | --- |
 | `http://localhost:3000/` | Página inicial |
-| `http://localhost:3000/cadastro` | Criar conta |
-| `http://localhost:3000/login` | Entrar |
-| `http://localhost:3000/dashboard` | Resumo financeiro |
+| `http://localhost:3000/criar-conta` | Criar conta |
+| `http://localhost:3000/entrar` | Entrar |
+| `http://localhost:3000/inicio` | Início (resumo do mês) |
 | `http://localhost:3000/api/...` | API em JSON |
 
-As telas internas (dashboard, contas, transações, metas) exigem sessão: sem estar
-logado, elas redirecionam para `/login`. Crie uma conta em `/cadastro` antes de testá-las.
+As telas internas (início, transações, contas, metas, meu perfil, configurações) exigem
+sessão: sem estar logado, elas levam para `/entrar`. Crie uma conta em `/criar-conta`
+antes de testá-las. Os endereços da primeira versão do site (`/login`, `/cadastro`,
+`/dashboard` e os que começam com `/novo`) levam para as telas equivalentes.
 
 ### 6. Testar a conexão bancária (banco simulado)
 
@@ -191,7 +193,7 @@ O banco tem 3 clientes fictícios, com 3 meses de extrato cada. Para testar:
    | Bruno Lima | 735.102.648-35 | Conta corrente |
    | Carla Mendes | 219.384.057-14 | Conta corrente |
 
-2. Em **Contas**, clique em **Conectar banco**. Você vai para a tela do banco.
+2. Em **Contas**, clique em **Conectar um banco**. Você vai para a tela do banco.
 3. Clique em **Autorizar**. De volta ao Verdanz, as contas aparecem com o selo
    "Banco Simulado" e as transações já categorizadas em **Transações**.
 

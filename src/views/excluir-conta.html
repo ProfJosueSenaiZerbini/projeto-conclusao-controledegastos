@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-    <link href="/novo/css/verdanz.css" rel="stylesheet">
+    <link href="/css/verdanz.css" rel="stylesheet">
 </head>
 <!-- Chega pelo link do e-mail. Página isolada, sem o menu: funciona mesmo
      em outro aparelho, sem estar logado. Quem prova que é o dono é o link. -->
@@ -18,7 +18,7 @@
 
     <!-- Lado verde: some no celular, onde só o conteúdo importa. -->
     <section class="acesso__lado" aria-label="Sobre o Verdanz">
-        <a class="marca marca--escura" href="/novo" title="Página inicial do Verdanz">
+        <a class="marca marca--escura" href="/" title="Página inicial do Verdanz">
             <img src="/img/VerdanzIcone.png" alt="">
             <strong>Verdan<span>z</span></strong>
         </a>
@@ -35,7 +35,7 @@
 
     <main class="acesso__form">
         <div class="acesso__caixa">
-            <a class="marca marca--escura acesso__marca-celular" href="/novo" title="Página inicial do Verdanz">
+            <a class="marca marca--escura acesso__marca-celular" href="/" title="Página inicial do Verdanz">
                 <img src="/img/VerdanzIcone.png" alt="">
                 <strong>Verdan<span>z</span></strong>
             </a>
@@ -71,7 +71,7 @@
 
                 <div class="pilha--p">
                     <button type="button" class="botao botao--perigo botao--largo" id="botaoExcluir" disabled>Excluir minha conta para sempre</button>
-                    <a class="botao botao--linha botao--largo" href="/novo/inicio">Desistir e manter minha conta</a>
+                    <a class="botao botao--linha botao--largo" href="/inicio">Desistir e manter minha conta</a>
                 </div>
             </div>
 
@@ -81,15 +81,15 @@
                 <h1 id="tituloFim" tabindex="-1">Conta excluída com sucesso</h1>
                 <p id="textoFim"></p>
                 <p class="exclusao__volte"><i class="fa-solid fa-seedling" aria-hidden="true"></i> Volte sempre! As portas do Verdanz continuam abertas.</p>
-                <a class="botao botao--linha" href="/novo">Ir para a página inicial</a>
+                <a class="botao botao--linha" href="/">Ir para a página inicial</a>
             </div>
 
-            <a class="botao botao--linha" id="linkVoltar" href="/novo/entrar" hidden>Entrar no Verdanz</a>
+            <a class="botao botao--linha" id="linkVoltar" href="/entrar" hidden>Entrar no Verdanz</a>
         </div>
     </main>
 
     <script src="/js/auth.js"></script>
-    <script src="/novo/js/base.js"></script>
-    <script src="/novo/js/acesso.js"></script>
+    <script src="/js/base.js"></script>
+    <script src="/js/acesso.js"></script>
 </body>
 </html>

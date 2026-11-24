@@ -108,7 +108,7 @@ function balaoDoDia(chave, lista) {
       const ganho = t.categoria.tipo === 'receita';
       return `
         <li>
-          <a class="balao__item" href="${RAIZ}/transacoes?situacao=${situacao === 'previsto' ? 'todos' : situacao}">
+          <a class="balao__item" href="/transacoes?situacao=${situacao === 'previsto' ? 'todos' : situacao}">
             ${iconeDaCategoria(t.categoria, 'icone--p')}
             <span class="balao__texto">
               <strong>${esc(tituloDe(t))}</strong>
@@ -384,7 +384,7 @@ function mostrarCategorias(doMes, limites) {
         <div class="cat">
           <div class="cat__topo"><span>${nome}</span><span class="numero">${formatarMoeda(c.valor)}</span></div>
           <div class="barra" role="img" aria-label="${pct}% dos gastos do mês"><span style="width:${pct}%"></span></div>
-          <small>${pct}% dos gastos do mês${c === sugerida ? ` · <a href="${RAIZ}/metas?limite=${c.categoria.id_categoria}">Definir um limite</a>` : ''}</small>
+          <small>${pct}% dos gastos do mês${c === sugerida ? ` · <a href="/metas?limite=${c.categoria.id_categoria}">Definir um limite</a>` : ''}</small>
         </div>`;
     })
     .join('');
@@ -397,7 +397,7 @@ function mostrarMetas(metas) {
   const caixa = el('metas');
 
   if (ativas.length === 0) {
-    caixa.innerHTML = `<div class="vazio"><p>Uma meta ajuda a guardar dinheiro com um objetivo: uma viagem, uma reserva, um presente.</p><a class="botao botao--linha" href="${RAIZ}/metas?nova=meta">Criar uma meta</a></div>`;
+    caixa.innerHTML = `<div class="vazio"><p>Uma meta ajuda a guardar dinheiro com um objetivo: uma viagem, uma reserva, um presente.</p><a class="botao botao--linha" href="/metas?nova=meta">Criar uma meta</a></div>`;
     return;
   }
 
@@ -457,7 +457,7 @@ function mostrarDica() {
 
   el('dicaTitulo').textContent = dica.titulo;
   el('dicaTexto').textContent = dica.texto;
-  el('dicaLink').href = `${RAIZ}/meu-perfil#${chave}`;
+  el('dicaLink').href = `/meu-perfil#${chave}`;
   el('dicaLink').textContent = `Ferramentas de ${PERFIS[chave].nome}`;
 }
 

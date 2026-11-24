@@ -133,7 +133,7 @@ async function solicitarExclusao(req, res) {
       }),
     ]);
 
-    const link = `${urlDoSite()}/novo/excluir-conta?token=${token}`;
+    const link = `${urlDoSite()}/excluir-conta?token=${token}`;
 
     // Sem await, como nos outros e-mails: o envio demora vários segundos e o
     // token já está gravado. Uma falha aparece no terminal do servidor.
@@ -230,7 +230,7 @@ async function confirmarExclusao(req, res) {
       texto:
         `Olá, ${usuario.nome_usuario}!\n\n` +
         `Sua conta do Verdanz e todos os seus dados foram excluídos, como você pediu.\n` +
-        `Se um dia quiser voltar, é só criar uma conta nova em ${urlDoSite()}/novo.\n\n` +
+        `Se um dia quiser voltar, é só criar uma conta nova em ${urlDoSite()}/criar-conta.\n\n` +
         `Obrigado por ter usado o Verdanz. Volte sempre!`,
     }).catch((erro) => {
       console.error('Falha ao enviar o aviso de conta excluída:', erro);

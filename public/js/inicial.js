@@ -1,4 +1,4 @@
-// Página inicial da versão nova. Quatro coisas pequenas:
+// Página inicial. Quatro coisas pequenas:
 //
 //   1. quem já está com a sessão aberta vê "Abrir o Verdanz" no lugar de
 //      "Entrar" e "Criar conta";
@@ -10,7 +10,7 @@
 
 if (Sessao.token() && Sessao.idUsuario()) {
   document.querySelectorAll('[data-link-criar]').forEach((link) => {
-    link.href = '/novo/inicio';
+    link.href = '/inicio';
     link.dataset.logado = 'sim'; // no celular, este botão continua no topo
     // Mantém a seta do botão, se ele tiver uma.
     const seta = link.querySelector('i');

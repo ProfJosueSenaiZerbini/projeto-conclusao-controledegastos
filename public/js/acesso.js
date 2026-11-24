@@ -29,7 +29,7 @@ document.querySelectorAll('[data-olho]').forEach((botao) => {
 
 // Depois de entrar: quem ainda não escolheu perfil passa pela pesquisa.
 function irParaDentro() {
-  window.location.href = RAIZ + (PerfisSalvos.ler().length > 0 ? '/inicio' : '/perfil');
+  window.location.href = PerfisSalvos.ler().length > 0 ? '/inicio' : '/perfil';
 }
 
 async function entrar(email, senha) {
@@ -120,7 +120,7 @@ const TELAS = {
 
         // Já entra direto, sem pedir e-mail e senha de novo.
         const login = await entrar(dados.email, dados.senha);
-        window.location.href = RAIZ + (login.ok ? '/perfil' : '/entrar');
+        window.location.href = login.ok ? '/perfil' : '/entrar';
       } catch (erro) {
         mostrarRecado('perigo', 'Sem conexão com o servidor. Tente de novo em instantes.');
       } finally {
@@ -163,7 +163,7 @@ const TELAS = {
     function linkInvalido(texto) {
       el('formRedefinir').hidden = true;
       mostrarRecado('perigo', texto || 'Este link não vale mais. Peça um novo.');
-      el('linkVoltar').href = RAIZ + '/esqueci-senha';
+      el('linkVoltar').href = '/esqueci-senha';
       el('linkVoltar').textContent = 'Pedir um link novo';
     }
 

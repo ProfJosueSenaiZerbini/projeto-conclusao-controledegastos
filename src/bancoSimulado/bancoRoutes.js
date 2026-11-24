@@ -45,7 +45,7 @@ const PRAZO = {
 // No Open Finance real, cada app registra esses endereços antes de
 // poder pedir acesso. Sem a lista, alguém poderia criar um pedido que
 // devolvesse o código de autorização para um site falso.
-const REDIRECIONAMENTOS_PERMITIDOS = ['/contas', '/novo/contas'];
+const REDIRECIONAMENTOS_PERMITIDOS = ['/contas'];
 
 // Os crachás carregam o código interno do cliente (CLI-001), nunca o
 // CPF: eles passam pelo navegador e ficam guardados no app.

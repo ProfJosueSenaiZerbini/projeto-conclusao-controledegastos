@@ -1,97 +1,63 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Esqueci a senha | Verdanz</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Esqueci minha senha | Verdanz</title>
     <link rel="icon" href="/img/VerdanzIcone.png">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="/js/tema.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="/css/verdanz.css" rel="stylesheet">
-    <style>body { font-family: 'Nunito Sans', sans-serif; }</style>
 </head>
+<body class="acesso" data-pagina="esqueci-senha">
 
-<body class="min-h-screen bg-gradient-to-br from-[#eef9ed] via-white to-[#e8f3ff]">
-    <main class="min-h-screen flex items-center justify-center px-6">
-
-        <div class="w-full max-w-md bg-white/90 backdrop-blur-sm
-                    rounded-3xl p-8 md:p-10
-                    shadow-[0_20px_60px_rgba(0,0,0,0.08)]
-                    border border-gray-100">
-
-            <!-- LOGO -->
-            <div class="flex items-center justify-center gap-3 mb-8">
-                <img src="/img/VerdanzIcone.png" alt="" class="w-12 h-12 object-contain">
-                <h1 class="text-3xl font-bold text-[#071b3a]">
-                    Verdan<span class="text-green-500">z</span>
-                </h1>
-            </div>
-
-            <!-- TÍTULO -->
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-[#071b3a]">
-                    Esqueceu a senha?
-                </h2>
-                <p class="text-gray-500 mt-2">
-                    Informe o e-mail da sua conta e enviaremos um link para você criar uma senha nova.
-                </p>
-            </div>
-
-            <!-- MENSAGEM DE ERRO / SUCESSO -->
-            <div id="mensagem" class="hidden mb-5 px-4 py-3 rounded-xl text-sm"></div>
-
-            <!-- FORMULÁRIO -->
-            <form id="formEsqueci" class="space-y-5">
-                <div>
-                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
-                        E-mail
-                    </label>
-                    <input type="email" id="email" placeholder="Digite seu e-mail" class="w-full px-4 py-3.5
-                               rounded-xl
-                               border border-gray-200
-                               bg-gray-50
-                               outline-none
-                               transition
-                               focus:border-green-500
-                               focus:ring-2
-                               focus:ring-green-100">
-                </div>
-
-                <button type="submit" id="botaoEnviar" class="w-full py-3.5
-                           rounded-xl
-                           bg-gradient-to-r
-                           from-green-500
-                           to-blue-500
-                           text-white
-                           font-bold
-                           text-lg
-                           shadow-lg
-                           shadow-green-200
-                           transition
-                           hover:scale-[1.02]
-                           hover:shadow-xl
-                           disabled:opacity-60
-                           disabled:cursor-not-allowed
-                           disabled:hover:scale-100">
-                    Enviar link
-                </button>
-            </form>
-
-            <!-- VOLTAR -->
-            <div class="text-center mt-7">
-                <a href="/login" class="text-sm font-bold text-green-600 hover:text-green-700">
-                    Voltar para o login
-                </a>
-            </div>
-
+    <!-- Lado verde: some no celular, onde só o formulário importa. -->
+    <section class="acesso__lado" aria-label="Sobre o Verdanz">
+        <a class="marca marca--escura " href="/" title="Página inicial do Verdanz">
+                <img src="/img/VerdanzIcone.png" alt="">
+                <strong>Verdan<span>z</span></strong>
+            </a>
+        <div>
+            <h2>Acontece com todo mundo.</h2>
+            <ul>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> Você recebe um link no seu e-mail</li>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> Por ele, escolhe uma senha nova</li>
+                <li><i class="fa-solid fa-check" aria-hidden="true"></i> Seus dados continuam como estavam</li>
+            </ul>
         </div>
+        <p class="pequeno">Seu dinheiro, seu futuro.</p>
+    </section>
 
+    <main class="acesso__form">
+        <div class="acesso__caixa">
+            <a class="voltar" href="/entrar"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar para Entrar</a>
+            <a class="marca marca--escura acesso__marca-celular" href="/" title="Página inicial do Verdanz">
+                <img src="/img/VerdanzIcone.png" alt="">
+                <strong>Verdan<span>z</span></strong>
+            </a>
+            <div>
+                <h1>Esqueci minha senha</h1>
+                <p class="suave">Digite o e-mail da sua conta. Vamos mandar um link para você escolher uma senha nova.</p>
+            </div>
+
+            <div id="recado" aria-live="polite"></div>
+
+            <form id="formEsqueci" class="pilha" novalidate>
+                <div class="campo">
+                    <label for="email">E-mail</label>
+                    <input class="entrada" type="email" id="email" autocomplete="email" inputmode="email" aria-describedby="emailErro">
+                    <p class="erro" id="emailErro" hidden></p>
+                </div>
+                <button type="submit" class="botao botao--largo" id="botaoEnviar">Enviar o link</button>
+            </form>
+        </div>
     </main>
 
     <script src="/js/auth.js"></script>
-    <script src="/js/esqueci-senha.js"></script>
-
+    <script src="/js/base.js"></script>
+    <script src="/js/acesso.js"></script>
 </body>
-
 </html>

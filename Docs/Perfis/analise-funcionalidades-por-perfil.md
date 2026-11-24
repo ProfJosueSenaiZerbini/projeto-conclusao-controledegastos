@@ -7,7 +7,7 @@ Este documento explica **por que** cada perfil do Verdanz tem as ferramentas que
 | `public/js/perfil-calculos.js` | As contas (INSS, 13º, seguro-desemprego, etc.) e os valores oficiais de 2026 |
 | `public/js/perfil-conteudo.js` | Contexto, dicas e meta sugerida de cada perfil |
 | `public/js/meu-perfil.js` | A tela: abas, ferramentas e o botão "Criar esta meta" |
-| `public/js/dica-perfil.js` | A dica do perfil no cartão "Dicas para você" do dashboard |
+| `public/js/inicio.js` (`mostrarDica`) | A dica do perfil, que muda a cada dia, na tela de Início |
 | `Docs/Testes/teste-calculos-perfil.js` | 32 testes dos cálculos (`node Docs/Testes/teste-calculos-perfil.js`) |
 
 ---

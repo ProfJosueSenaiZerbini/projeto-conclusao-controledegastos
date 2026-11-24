@@ -173,13 +173,13 @@ Por que vira transação: `Conta.saldo` é a soma das transações. Se o saldo b
 - **`valor_atual` não é editado direto** pelo `PUT`, e o `valor_alvo` não pode ficar menor que o que já foi guardado — senão parte do dinheiro sumiria sem voltar para conta nenhuma.
 - **A categoria "Metas" não aparece no formulário de transações**, e o servidor recusa lançá-la à mão.
 - **Excluir a meta não devolve o dinheiro** à conta: as transações "Meta: ..." continuam no histórico. A tela avisa antes de excluir.
-- **Dinheiro guardado não é gasto.** A transação "Metas" é despesa (para o saldo bater), mas fica de fora de toda soma de GASTOS nas telas: card "Despesas" e "Gastos por categoria" do dashboard e as médias de `/meu-perfil`. Use `ehGasto(t)` / `ehDinheiroGuardado(t)` de `auth.js` em vez de `t.categoria.tipo === 'despesa'` quando o assunto for "quanto a pessoa gastou". Sem isso, quanto mais ela guarda, maiores ficam as reservas sugeridas e menor o "quanto tempo o dinheiro dura".
+- **Dinheiro guardado não é gasto.** A transação "Metas" é despesa (para o saldo bater), mas fica de fora de toda soma de GASTOS nas telas: o "Saiu" do mês e o "Para onde foi" do Início, e as médias de `/meu-perfil`. Use `ehGasto(t)` / `ehDinheiroGuardado(t)` de `auth.js` em vez de `t.categoria.tipo === 'despesa'` quando o assunto for "quanto a pessoa gastou". Sem isso, quanto mais ela guarda, maiores ficam as reservas sugeridas e menor o "quanto tempo o dinheiro dura".
 - A categoria entra pelo seed (bancos novos) e pela migration `categoria_metas` (bancos que já existiam). Nos dois casos fica com o id 13.
 - **Quanto guardar por mês não é gravado.** `calcularPlanoMeta` (`public/js/meta-calculos.js`) divide o que falta pelos meses **completos** até a data, arredondando para cima, e calcula de novo a cada abertura da tela. O valor por ano só aparece em metas de 12 meses ou mais. Ao mudar a conta, rode `node Docs/Testes/teste-calculos-meta.js`.
 
 ## Regra: transferência entre contas
 
-`POST /api/conta/transferencia` com `{ id_origem, id_destino, valor }` (`transferir` em `contaController.js`), pelo botão de transferir no cartão de cada conta em `/novo/contas`.
+`POST /api/conta/transferencia` com `{ id_origem, id_destino, valor }` (`transferir` em `contaController.js`), pelo botão de transferir no cartão de cada conta em `/contas`.
 
 - Vira **duas transações** num `$transaction` só: "Transferência enviada" (despesa, já paga) na origem e "Transferência recebida" (receita) no destino, as duas com a data de hoje. Mesmo motivo das Metas: o histórico tem que explicar o saldo.
 - Só entre contas **manuais** e diferentes. Como guardar numa meta, **exige saldo de hoje** na origem (a condição vai no `WHERE` do `updateMany`).
@@ -188,10 +188,10 @@ Por que vira transação: `Conta.saldo` é a soma das transações. Se o saldo b
 
 ## Regra: resetar os dados e excluir a conta
 
-Seção "Zona de perigo" de `/novo/configuracoes`. Regras em `src/controllers/exclusaoController.js`. As duas ações pedem a **senha**, conferida no servidor.
+Seção "Zona de perigo" de `/configuracoes`. Regras em `src/controllers/exclusaoController.js`. As duas ações pedem a **senha**, conferida no servidor.
 
 - **Resetar** (`POST /api/usuario/:id/resetar`): num `$transaction` só, apaga contas (com as transações), bancos conectados, limites, categorias personalizadas e metas, e cria uma Carteira zerada (ninguém fica sem conta). O login continua. A tela também limpa os perfis e as anotações de Meu perfil no navegador.
-- **Excluir** é em três passos, como a troca de e-mail: `POST /api/usuario/:id/excluir-conta` confere a senha e manda o link (token `excluir_conta`, 30 minutos) para o e-mail da conta → a página `/novo/excluir-conta?token=` mostra o que será apagado (`.../excluir-conta/verificar`) → só depois de marcar "Entendi" e confirmar, `POST /api/usuario/excluir-conta` apaga tudo e manda um e-mail de despedida.
+- **Excluir** é em três passos, como a troca de e-mail: `POST /api/usuario/:id/excluir-conta` confere a senha e manda o link (token `excluir_conta`, 30 minutos) para o e-mail da conta → a página `/excluir-conta?token=` mostra o que será apagado (`.../excluir-conta/verificar`) → só depois de marcar "Entendi" e confirmar, `POST /api/usuario/excluir-conta` apaga tudo e manda um e-mail de despedida.
 - **Não existe mais `DELETE /api/usuario/:id`.** Com ele, uma sessão aberta bastava para apagar a conta, sem senha nem e-mail.
 
 ## Regra: categorias personalizadas
@@ -204,7 +204,7 @@ Seção "Zona de perigo" de `/novo/configuracoes`. Regras em `src/controllers/ex
 - **Excluir:** sem transações, apaga direto. Com transações, `DELETE /api/categoria/:id?mover_para=ID` move-as antes para uma categoria do **mesmo tipo** (o saldo não muda), tudo num `$transaction`. A tela usa "Outras despesas" / "Outras receitas".
 - **Categorias do sistema** não são editadas nem excluídas por ninguém.
 - **Excluir usuário** (e resetar os dados) apaga as contas primeiro (`apagarDadosFinanceiros` em `exclusaoController.js`): o MySQL não garante a ordem das cascatas, e a categoria personalizada não pode sair antes das transações dela.
-- Telas: seção "Categorias" em Configurações e o atalho "Nova categoria" no formulário de Transações.
+- Telas: seção "Categorias" em Configurações e o atalho "Nova categoria" no formulário de registrar gasto/ganho (`casca.js`).
 
 ## Regra: limite de gasto por categoria
 
@@ -214,21 +214,21 @@ Seção "Zona de perigo" de `/novo/configuracoes`. Regras em `src/controllers/ex
 - **O gasto do mês não é gravado**: é a soma das despesas da categoria com `data_transacao` no mês atual, **pagas ou não** (decisão: conta a pagar já é dinheiro comprometido), incluindo as importadas. Renova sozinho no dia 1.
 - A API devolve `gasto_mes`, `restante`, `percentual` e `situacao` (`ok` < 70% ≤ `atencao` < 100% ≤ `estourado`) já calculados — as telas não repetem a regra.
 - Só categorias de **despesa**, e nunca "Metas" (dinheiro guardado não é gasto).
-- Telas: seção "Limites de gasto" e modo "Gastar menos" no painel da tela de Metas; barras com limite e botão "Definir limite" (`/metas?limite=ID`) no bloco "Gastos por categoria" do dashboard.
-- **Pop-up ANTES de registrar** (`confirmarLimite` em `transacoes.js`): se o gasto deixa a categoria em 70% ou mais do limite do mês, a tela pergunta "Registrar mesmo assim?" (`confirmar({ tom: 'alerta' })` do `modal.js`). Cancelar mantém o painel aberto com o que foi digitado. É só aviso: o servidor **não** recusa gasto acima do limite. O 70% está repetido em `PERCENTUAL_ATENCAO` no `limiteController.js` e no `transacoes.js` — mudar nos dois.
+- Telas: seção "Gastar menos" da tela de Metas (com a janela "Novo limite de gasto"); no bloco "Para onde foi" do Início, a categoria que mais gasta e ainda não tem limite ganha o link "Definir um limite" (`/metas?limite=ID_DA_CATEGORIA`).
+- **Janela ANTES de registrar** (`confirmarLimite` em `casca.js`, no formulário que abre de qualquer tela): se o gasto deixa a categoria em 70% ou mais do limite do mês, a tela pergunta e oferece "Registrar mesmo assim" (`confirmar` do `base.js`). "Voltar" mantém o formulário aberto com o que foi digitado. É só aviso: o servidor **não** recusa gasto acima do limite. O 70% está repetido em `PERCENTUAL_ATENCAO` no `limiteController.js` e em `PERCENTUAL_DE_ATENCAO` no `casca.js` — mudar nos dois.
 
 ---
 
 ## Regra: notificações do sininho
 
-O sininho aparece ao lado do avatar em todas as telas internas (`public/js/notificacoes.js`, que cria o botão sozinho). As regras ficam em `src/notificacoes.js`.
+O sininho aparece no topo de todas as telas internas (`montarSino` em `public/js/casca.js`, que cria o botão sozinho). As regras ficam em `src/notificacoes.js`.
 
 - **Nenhum aviso é gravado no banco.** `GET /api/usuario/:id/notificacao` calcula a lista na hora. Pagou a conta, o aviso some sozinho.
 - **Avisos:** conta não paga que vence em até 3 dias ou está atrasada; meta em andamento que termina em até 30 dias ou já venceu; saldo de hoje negativo; limite em `atencao` ou `estourado`. Os prazos estão em `DIAS_AVISO_CONTA` e `DIAS_AVISO_META`. Ao mudar uma regra, rode `node Docs/Testes/teste-notificacoes.js`.
 - **O limite usa `limitesComSituacao`** (`limiteController.js`), a mesma função da rota de limites.
 - **Só no navegador (`localStorage`):** os tipos de aviso escolhidos em Configurações (`notif_contas`, `notif_metas`, `notif_saldo`, `notif_limites`) e os avisos já vistos (`notificacoes_vistas_<id>`). Por isso, valem só naquele navegador.
 - **A `chave` de cada aviso muda quando ele piora** (a conta que atrasa, o limite que estoura, o mês que vira), para o número do sininho contar de novo.
-- **E-mail ainda não existe.** A opção `notif_resumo` de Configurações continua sem efeito. O e-mail vai precisar de preferências no banco, porque o servidor não lê o `localStorage`, de uma verificação diária e de um registro do que já foi enviado.
+- **Resumo por e-mail ainda não existe** (Configurações não oferece essa opção). Ele vai precisar de preferências no banco, porque o servidor não lê o `localStorage`, de uma verificação diária e de um registro do que já foi enviado.
 
 ---
 
@@ -385,7 +385,7 @@ O logotipo do Verdanz é **uma imagem pronta, que já existe em `public/img/`**.
 
 **Nunca invente um substituto.** Não desenhe a marca com `<div>` e CSS, não use a letra "V" dentro de um quadrado colorido, não gere SVG, emoji ou qualquer outro placeholder — nem em mockups, protótipos, telas de exemplo ou arquivos temporários. Um desenho improvisado não é a marca do projeto e polui a identidade visual.
 
-Antes de escrever a tela, confira o nome atual do arquivo na pasta `public/img/` e copie a forma de uso de uma tela que já existe (`src/views/login.html` é a referência). Os nomes dos arquivos de imagem podem mudar; a pasta, não.
+Antes de escrever a tela, confira o nome atual do arquivo na pasta `public/img/` e copie a forma de uso de uma tela que já existe (`src/views/entrar.html` é a referência). Os nomes dos arquivos de imagem podem mudar; a pasta, não.
 
 Como referenciar:
 
@@ -398,38 +398,29 @@ As imagens da pasta são grandes (centenas de KB). Se em algum momento elas fore
 
 ---
 
-## Menu e visual comum das telas
+## Front-end: como as telas são montadas
 
-O diferencial do Verdanz é a navegação fácil para todas as idades (ver `PRODUCT.md`).
-
-- **O menu é montado por `public/js/menu.js`**, a partir da lista `ITENS_MENU`. Para mudar um item do menu, mude só essa lista; as telas têm apenas `<nav id="menuPrincipal">`. O mesmo script cria a barra fixa de baixo no celular (4 destinos + "Mais") e o botão "Sair". Ele é carregado antes do `layout.js`.
-- **`public/css/verdanz.css`** guarda o visual "App Acolhedor" escolhido pelo grupo: fundo creme (`bg-[#f7f1e8]`), cartões brancos com cantos de 24px e borda areia, azul `#1f5fd6` só no que é clicável, fonte Nunito Sans. Ele ajusta as classes do Tailwind que as telas já usam (como o `tema.css` faz no modo escuro), então um cartão novo com `bg-white rounded-2xl border border-gray-100` já sai no visual certo.
-- **Atalhos por endereço:** `/transacoes?novo=despesa` (ou `=receita`) abre o formulário de transação já no tipo; `/metas?nova=meta` abre o de meta nova. Os botões "Registrar gasto" e "Registrar ganho" do cartão de saldo do Início usam os dois primeiros.
-- "Planejamento" aparece no menu com o selo "Em breve" até a tela existir (troque `emBreve: true` por um `href` quando ela ficar pronta).
-
----
-
-## Versão nova do site (teste), em `/novo`
-
-Um front-end refeito do zero, que roda ao lado do site atual para comparação. Usa a mesma API, o mesmo banco e o mesmo login (as duas versões compartilham a sessão do navegador). O site atual, em `/`, não depende de nada daqui.
+O site tem um front-end só. A versão refeita do zero foi testada em `/novo`, ao lado da primeira, e virou a principal em 23/11/2026. A primeira versão (com Tailwind) foi removida; ela continua no histórico do git.
 
 | Onde | O que tem |
 |---|---|
-| `src/routes/novoRoutes.js` | As rotas das telas (`/novo`, `/novo/entrar`, `/novo/inicio`...). Montado em `index.js` antes dos arquivos estáticos |
-| `src/views/novo/` | As 13 telas em HTML |
-| `public/novo/css/verdanz.css` | O sistema visual inteiro: cores (variáveis CSS), botões, cartões, menu, janelas. Sem Tailwind |
-| `public/novo/css/inicial.css` | Só a arrumação da página inicial |
-| `public/novo/js/base.js` | Ferramentas de tela usadas por todas as páginas (avisos, janelas de confirmação, leitura de valores em dinheiro) |
-| `public/novo/js/casca.js` | O que é igual em todas as telas de dentro: menu (lista `ITENS_DO_MENU`), barra do celular, sino e o formulário de registrar gasto/ganho, que abre de qualquer tela |
-| `public/novo/js/<tela>.js` | A parte de cada tela |
+| `src/routes/viewRoutes.js` | As rotas das telas (`/`, `/entrar`, `/inicio`...) e os desvios dos endereços antigos |
+| `src/views/` | As 14 telas em HTML |
+| `public/css/verdanz.css` | O sistema visual inteiro: cores (variáveis CSS, com o tema escuro), botões, cartões, menu, janelas. Sem Tailwind |
+| `public/css/inicial.css` | Só a arrumação da página inicial |
+| `public/js/auth.js` | Regras compartilhadas: sessão (`Sessao`), chamadas à API (`chamarApi`), formatação, `statusTransacao`, `ehGasto`... |
+| `public/js/tema.js` | Tema e tamanho da letra, aplicados no `<head>` antes de a tela aparecer |
+| `public/js/base.js` | Ferramentas de tela usadas por todas as páginas (avisos, janelas de confirmação, leitura de valores em dinheiro) |
+| `public/js/casca.js` | O que é igual em todas as telas de dentro: menu (lista `ITENS_DO_MENU`), barra do celular, sino e o formulário de registrar gasto/ganho, que abre de qualquer tela |
+| `public/js/<tela>.js` | A parte de cada tela (`inicio.js`, `transacoes.js`, `contas.js`...). `acesso.js` cuida das telas de entrar, criar conta, senha, e-mail e exclusão |
 
-- **As regras continuam num lugar só.** A versão nova carrega os mesmos `/js/auth.js`, `/js/tema.js`, `/js/meta-calculos.js`, `/js/perfil-calculos.js`, `/js/perfil-conteudo.js` e `/js/perfil-perguntas.js`. Não copie regra de cálculo para dentro de `public/novo/`.
+- **As regras ficam num lugar só.** Cálculos e regras ficam em `auth.js`, `meta-calculos.js`, `perfil-calculos.js`, `perfil-conteudo.js` e `perfil-perguntas.js`. Não copie regra de cálculo para o script de uma tela.
+- **O menu é a lista `ITENS_DO_MENU` em `casca.js`.** O menu lateral, a barra de baixo do celular (4 destinos + "Mais") e a folha "Mais" saem dela. As telas de dentro só têm os lugares vazios (`#lateral`, `#topoAcoes`) e dizem quem são em `<body data-pagina="inicio">`. "Planejamento" aparece com o selo "Em breve" até a tela existir (troque `emBreve: true` por uma `pagina` quando ela ficar pronta).
 - **Visual "guia do jardim":** fundo verde bem claro, menu verde-escuro, grandes áreas verde-maçã (classe `.lobo`) e etiquetas em cápsula. Cor forte é sempre FUNDO de etiqueta com letra escura, nunca cor de texto. Fonte Lexend. Tudo em `rem`, para o tamanho da letra de Configurações valer na tela inteira.
 - **Janelas usam `<dialog>`** do navegador (`abrirJanela`, `confirmar` em `base.js`), não divs com `hidden`.
 - **Depois de gravar algo**, a tela chama `anunciarMudanca()`; quem escuta `verdanz:mudou` busca os dados de novo.
-- **Endereços com atalho:** `?novo=gasto` ou `?novo=ganho` em qualquer tela de dentro abre o formulário; `/novo/metas?nova=meta` e `?limite=ID`; os filtros de `/novo/transacoes` ficam na URL (`?situacao=pendente&mes=2026-11`).
-- **Mudança no servidor por causa dela:** `POST /api/conexao-bancaria` aceita `{ "retorno": "/novo/contas" }`, para o banco simulado devolver a pessoa à tela nova. Só os endereços das listas em `clienteBanco.js` e `bancoRoutes.js` são aceitos.
-- **Limitação conhecida:** os links enviados por e-mail (trocar senha, confirmar e-mail) ainda apontam para as telas antigas.
+- **Endereços com atalho:** `?novo=gasto` ou `?novo=ganho` em qualquer tela de dentro abre o formulário (os links da página inicial usam isso); `/metas?nova=meta` e `/metas?limite=ID_DA_CATEGORIA`; os filtros de `/transacoes` ficam na URL (`?situacao=pendente&mes=2026-11`).
+- **Endereços antigos continuam funcionando:** `/login` → `/entrar`, `/cadastro` → `/criar-conta`, `/dashboard` → `/inicio`, e qualquer `/novo/...` → o mesmo endereço sem o `/novo` (mantendo o `?token=` dos e-mails). O desvio nunca leva para fora do site (`levarPara` em `viewRoutes.js`).
 
 ---
 

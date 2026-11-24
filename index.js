@@ -5,7 +5,6 @@ const path = require('path');
 const { conferirEmail } = require('./src/email');
 
 const viewRoutes = require('./src/routes/viewRoutes');
-const novoRoutes = require('./src/routes/novoRoutes');
 const usuarioRoutes = require('./src/routes/usuarioRoutes');
 const contaRoutes = require('./src/routes/contaRoutes');
 const categoriaRoutes = require('./src/routes/categoriaRoutes');
@@ -24,11 +23,6 @@ app.use(express.json());
 // Arquivos estáticos (imagens, css, js do navegador).
 // Tudo dentro de public/ fica acessível direto pela URL:
 // public/img/Verdanz.png  ->  http://localhost:3000/img/Verdanz.png
-// Versão nova do site (teste), em /novo. Vem ANTES dos arquivos estáticos:
-// existe uma pasta public/novo, e sem esta ordem o Express redirecionaria
-// /novo para /novo/ em vez de entregar a página inicial nova.
-app.use('/novo', novoRoutes);
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Telas (HTML)

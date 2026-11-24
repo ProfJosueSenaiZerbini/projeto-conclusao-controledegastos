@@ -13,8 +13,9 @@
 // só depois ficaria escura (um "piscar" bem visível).
 //
 // Como funciona: quando o tema é escuro, a tag <html> ganha a classe
-// "escuro". O arquivo /css/tema.css troca as cores só quando essa classe
-// existe. Nenhuma tela precisou ser reescrita.
+// "escuro". O /css/verdanz.css guarda as cores em variáveis e troca os
+// valores delas só quando essa classe existe. Nenhuma tela precisa saber
+// qual tema está valendo.
 
 (function () {
   // Pergunta ao navegador se o sistema operacional está no modo escuro.
@@ -36,14 +37,8 @@
     return preferencia('tema', 'claro');
   }
 
-  // Telas com visual próprio, que não têm versão escura no tema.css (a
-  // pesquisa de perfil, com as cores verdes do modelo do grupo), marcam
-  // <html data-sem-tema>. Nelas vale só o tamanho da letra.
-  const semTema = document.documentElement.hasAttribute('data-sem-tema');
-
   // tema: 'claro', 'escuro' ou 'sistema'. Sem parâmetro, usa o salvo.
   function aplicarTema(tema) {
-    if (semTema) return;
     tema = tema || temaSalvo();
     const escuro = tema === 'escuro' || (tema === 'sistema' && midiaEscura.matches);
     document.documentElement.classList.toggle('escuro', escuro);
@@ -60,7 +55,7 @@
   // Para quem tem dificuldade de enxergar letras pequenas.
   //
   // Funciona mudando o tamanho da fonte da tag <html>. Isso basta porque
-  // o Tailwind mede quase tudo em "rem" — uma unidade que é sempre um
+  // o verdanz.css mede tudo em "rem" — uma unidade que é sempre um
   // múltiplo do tamanho do <html>. Assim, uma única linha aumenta textos,
   // ícones e espaçamentos juntos, mantendo a proporção.
   //

@@ -25,8 +25,8 @@ TCC do curso Técnico em Desenvolvimento de Sistemas (SENAI), apresentado a uma 
 ## Capabilities and Constraints
 
 - Node.js + Express servindo as telas (`src/views/*.html`) e a API; scripts de tela em `public/js/`, estilos em `public/css/`.
-- Front-end em HTML, CSS e JavaScript puro com Tailwind via CDN e Font Awesome. Sem etapa de build.
-- Tema claro/escuro já existe (`public/js/tema.js`, `public/css/tema.css`), salvo no `localStorage`.
+- Front-end em HTML, CSS e JavaScript puro, sem framework nem etapa de build. Todo o visual fica em `public/css/verdanz.css` (variáveis CSS, medidas em `rem`); fonte Lexend e ícones Font Awesome.
+- Tema claro/escuro e tamanho da letra já existem (`public/js/tema.js` + variáveis do `verdanz.css`), salvos no `localStorage`.
 - A tela "Planejamento" ainda não existe; o item aparece no menu marcado como "Em breve".
 - Mudanças visuais não podem ser bruscas nem depender de conceitos difíceis: precisam ser defendidas pelo grupo perante a banca.
 
@@ -34,7 +34,7 @@ TCC do curso Técnico em Desenvolvimento de Sistemas (SENAI), apresentado a uma 
 
 - Nome Verdanz, slogan "Seu dinheiro, seu futuro".
 - Logo e ícone são imagens prontas em `public/img/` (`Verdanz.png`, `VerdanzIcone.png`). Nunca desenhar um substituto.
-- Identidade atual: azul como cor de ação e verde da marca (o "z" do nome, a folha).
+- Identidade atual: visual "guia do jardim": fundo verde bem claro, menu verde-escuro, grandes áreas verde-maçã e etiquetas em cápsula. Cor forte é sempre fundo de etiqueta com letra escura, nunca cor de texto.
 
 ## Evidence on Hand
 

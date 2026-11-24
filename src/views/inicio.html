@@ -11,12 +11,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-    <link href="/novo/css/verdanz.css" rel="stylesheet">
+    <link href="/css/verdanz.css" rel="stylesheet">
 </head>
 <body class="app" data-pagina="inicio">
     <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-    <!-- O menu é montado pelo /novo/js/casca.js -->
+    <!-- O menu é montado pelo /js/casca.js -->
     <aside class="lateral" id="lateral" aria-label="Menu"></aside>
 
     <div class="palco">
@@ -89,7 +89,7 @@
                                 <p class="suave pequeno" id="aPagarResumo">&nbsp;</p>
                             </div>
                         </div>
-                        <a class="ver" href="/novo/transacoes?situacao=pendente">Ver todas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="ver" href="/transacoes?situacao=pendente">Ver todas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                     </div>
                     <ul id="aPagarLista"></ul>
                 </section>
@@ -103,7 +103,7 @@
                                 <p class="suave pequeno">Gastos do mês, por categoria</p>
                             </div>
                         </div>
-                        <a class="ver" href="/novo/metas#limites">Limites <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="ver" href="/metas#limites">Limites <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                     </div>
                     <div id="categorias"></div>
                 </section>
@@ -116,7 +116,7 @@
                             <span class="icone icone--ceu" aria-hidden="true"><i class="fa-solid fa-flag"></i></span>
                             <h2 id="tituloMetas">Suas metas</h2>
                         </div>
-                        <a class="ver" href="/novo/metas">Ver metas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="ver" href="/metas">Ver metas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                     </div>
                     <div id="metas"></div>
                 </section>
@@ -127,7 +127,7 @@
                             <span class="icone" aria-hidden="true"><i class="fa-solid fa-right-left"></i></span>
                             <h2 id="tituloUltimas">Últimas transações</h2>
                         </div>
-                        <a class="ver" href="/novo/transacoes">Ver todas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="ver" href="/transacoes">Ver todas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                     </div>
                     <ul id="ultimas"></ul>
                 </section>
@@ -139,19 +139,19 @@
                     <h2 id="dicaTitulo" style="font-size: 1.25rem">Descubra o seu perfil</h2>
                     <p id="dicaTexto">Responda a algumas perguntas rápidas e receba ferramentas feitas para a sua realidade: CLT, autônomo, estudante, aposentado e mais.</p>
                 </div>
-                <a class="botao botao--escuro" id="dicaLink" href="/novo/perfil">Descobrir meu perfil</a>
+                <a class="botao botao--escuro" id="dicaLink" href="/perfil">Descobrir meu perfil</a>
             </section>
 
         </main>
     </div>
 
-    <!-- Regras compartilhadas com a versão antiga (sessão, API, datas, perfis) -->
+    <!-- Regras (sessão, API, datas, perfis) -->
     <script src="/js/auth.js"></script>
     <script src="/js/perfil-perguntas.js"></script>
     <script src="/js/perfil-conteudo.js"></script>
-    <!-- Versão nova -->
-    <script src="/novo/js/base.js"></script>
-    <script src="/novo/js/casca.js"></script>
-    <script src="/novo/js/inicio.js"></script>
+    <!-- Ferramentas de tela, menu e a parte desta tela -->
+    <script src="/js/base.js"></script>
+    <script src="/js/casca.js"></script>
+    <script src="/js/inicio.js"></script>
 </body>
 </html>
