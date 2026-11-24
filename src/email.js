@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 
-// Envio de e-mails do sistema (confirmação de cadastro e redefinição de senha).
+// Envio de e-mails do sistema: redefinir a senha, trocar o e-mail e
+// excluir a conta.
 //
 // Um site não entrega e-mail sozinho: ele entrega a mensagem para um
 // servidor SMTP (o "correio"), e é esse servidor que leva até a caixa de
@@ -8,9 +9,9 @@ const nodemailer = require('nodemailer');
 // código: SMTP_PASS é uma senha, e o código vai para o GitHub.
 //
 // Sem SMTP configurado, o e-mail NÃO é enviado — o conteúdo aparece no
-// terminal do servidor. Isso ajuda a testar sem conta de e-mail, mas foi
-// exatamente o que fez a versão antiga "funcionar" sem nada chegar. Por
-// isso agora o servidor avisa em voz alta, ao iniciar, que está nesse modo.
+// terminal do servidor. Isso ajuda a testar sem conta de e-mail, mas
+// também pode parecer que tudo funcionou sem nada chegar. Por isso o
+// servidor avisa em voz alta, ao iniciar, que está nesse modo.
 
 const smtpConfigurado = Boolean(
   process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS

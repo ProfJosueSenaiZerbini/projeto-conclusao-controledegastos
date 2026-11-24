@@ -1,8 +1,8 @@
 const crypto = require('crypto');
 
-// Ferramentas compartilhadas pelos fluxos que mandam link por e-mail:
-// redefinir senha e trocar e-mail. Antes viviam dentro do senhaController;
-// saíram de lá quando um segundo fluxo passou a precisar das mesmas regras.
+// Ferramentas compartilhadas pelos três fluxos que mandam link por e-mail:
+// redefinir a senha, trocar o e-mail e excluir a conta. Ficam num arquivo
+// só para os três seguirem exatamente as mesmas regras.
 //
 // Duplicar código de segurança é pior que duplicar código comum: se um dia
 // o prazo ou o algoritmo mudar e só uma cópia for corrigida, a outra vira

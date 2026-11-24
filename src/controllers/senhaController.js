@@ -137,6 +137,19 @@ async function redefinirSenha(req, res) {
         data: { senha: senhaHash },
       });
 
+      // Trocar a senha cancela os pedidos de troca de e-mail e de exclusão
+      // que estiverem abertos. É o que o e-mail de aviso da troca de e-mail
+      // promete: se alguém descobriu a senha e pediu para levar a conta para
+      // o e-mail dele, a senha nova derruba o link que ele recebeu.
+      await tx.tokenUsuario.updateMany({
+        where: {
+          id_usuario: registro.id_usuario,
+          tipo: { in: ['trocar_email', 'excluir_conta'] },
+          usado_em: null,
+        },
+        data: { usado_em: new Date() },
+      });
+
       return true;
     });
 

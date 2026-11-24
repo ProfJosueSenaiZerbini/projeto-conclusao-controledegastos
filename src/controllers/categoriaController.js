@@ -63,7 +63,7 @@ async function buscarCategoriaDoUsuario(id_categoria, id_usuario) {
 
 // GET /api/categoria
 //
-// Devolve as 13 categorias do sistema mais as personalizadas de quem está
+// Devolve as 15 categorias do sistema mais as personalizadas de quem está
 // pedindo. As personalizadas vêm com `total_transacoes`, que a tela usa
 // para avisar antes de excluir e para travar a troca de tipo.
 async function listarCategorias(req, res) {

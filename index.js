@@ -20,6 +20,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Sem corpo JSON na requisição, o Express 5 deixa req.body vazio
+// (undefined), e um "const { nome } = req.body" quebraria com erro 500.
+// Com um objeto vazio no lugar, cada rota responde com a sua mensagem de
+// campo obrigatório.
+app.use((req, res, next) => {
+  req.body = req.body || {};
+  next();
+});
+
 // Arquivos estáticos (imagens, css, js do navegador).
 // Tudo dentro de public/ fica acessível direto pela URL:
 // public/img/Verdanz.png  ->  http://localhost:3000/img/Verdanz.png

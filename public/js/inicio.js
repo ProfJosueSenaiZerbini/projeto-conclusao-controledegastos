@@ -53,7 +53,7 @@ function mostrarSaldo(contas) {
 
   el('saldoContas').innerHTML = contas
     .slice(0, 4)
-    .map((c) => `<span class="capsula"><i class="fa-solid ${c.id_conexao ? 'fa-building-columns' : 'fa-wallet'}" aria-hidden="true"></i> ${esc(c.nome)} <strong>${formatarMoeda(c.saldo)}</strong></span>`)
+    .map((c) => `<span class="capsula" title="${esc(c.nome)}"><i class="fa-solid ${c.id_conexao ? 'fa-building-columns' : 'fa-wallet'}" aria-hidden="true"></i> <span class="capsula__nome">${esc(c.nome)}</span> <strong>${formatarMoeda(c.saldo)}</strong></span>`)
     .join('');
 }
 

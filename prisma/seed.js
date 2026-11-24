@@ -30,8 +30,8 @@ const categorias = [
   // ---- METAS ----
   // Usada só pelo sistema: quando a pessoa guarda dinheiro numa meta, sai
   // uma transação desta categoria da conta escolhida (ver metaController).
-  // Fica por último para ter o mesmo id (13) num banco novo e num banco
-  // que recebeu a categoria pela migration "categoria_metas".
+  // O código procura esta categoria pelo NOME (e id_usuario vazio), nunca
+  // pelo número do id.
   { nome_categoria: 'Metas', tipo: 'despesa' },
 
   // ---- TRANSFERÊNCIA ENTRE CONTAS ----

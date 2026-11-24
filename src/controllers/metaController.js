@@ -62,7 +62,8 @@ async function buscarContaDeOrigem(id_conta, id_usuario) {
     return { status: 403, erro: 'Acesso negado a conta de outro usuário' };
   }
 
-  // Conta importada só muda pelo banco (regra do CLAUDE.md).
+  // Conta importada só muda pelo banco: o Verdanz não move dinheiro de
+  // verdade dentro de um banco.
   if (conta.id_conexao) {
     return {
       status: 400,
@@ -227,9 +228,10 @@ async function criarMeta(req, res) {
     }
 
     // Uma meta com prazo no passado nasce impossível de cumprir.
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    if (dataLimite < hoje) {
+    // hojeSemHorario() tem o mesmo formato da data que chega do formulário
+    // ("2026-11-24" vira meia-noite em UTC); comparar com a meia-noite do
+    // relógio do Brasil daria 3 horas de diferença.
+    if (dataLimite < hojeSemHorario()) {
       return res.status(400).json({ erro: 'A data limite deve estar no futuro' });
     }
 

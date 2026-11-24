@@ -40,8 +40,7 @@ model Usuario {
 // TOKEN_USUARIO — links enviados por e-mail
 // ================================
 // Cada linha é um link de uso único mandado para o e-mail do usuário.
-// Hoje só existe o tipo 'redefinir_senha'; a confirmação de cadastro
-// vai usar esta mesma tabela com o tipo 'verificar_email'.
+// Tipos: 'redefinir_senha', 'trocar_email' e 'excluir_conta'.
 //
 // O banco guarda o HASH do token, nunca o token em si — pelo mesmo
 // motivo da senha: se alguém copiar o banco, não consegue usar os links.
@@ -116,7 +115,7 @@ model ConexaoBancaria {
 }
 
 // ================================
-// CATEGORIA — as 13 do sistema + as personalizadas
+// CATEGORIA — as 15 do sistema + as personalizadas
 // ================================
 // id_usuario vazio = categoria do SISTEMA (do seed, igual para todos).
 // id_usuario preenchido = categoria PERSONALIZADA, criada por um usuário
@@ -144,8 +143,8 @@ model Categoria {
 // ================================
 // TRANSACAO — um ganho ou um gasto
 // ================================
-// Dois campos foram removidos de propósito, por serem dependências
-// transitivas (3FN). NÃO reintroduzir:
+// Dois campos ficam de fora de propósito, por serem dependências
+// transitivas (3ª Forma Normal):
 //
 // - id_usuario: a conta já pertence a um usuário. Para listar as
 //   transações de alguém, passe pela conta:

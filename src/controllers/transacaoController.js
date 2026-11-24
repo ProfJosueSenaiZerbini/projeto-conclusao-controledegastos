@@ -28,7 +28,9 @@ async function criarTransacao(req, res) {
 
     // ---- VALIDAÇÕES (antes de encostar no banco) ----
 
-    const valor = Number(valor_transacao);
+    // Arredondado para centavos: a coluna guarda 2 casas, e o saldo da
+    // conta precisa receber exatamente o mesmo valor que a transação.
+    const valor = Math.round(Number(valor_transacao) * 100) / 100;
     if (!Number.isFinite(valor) || valor <= 0) {
       return res.status(400).json({ erro: 'O valor deve ser um número maior que zero' });
     }

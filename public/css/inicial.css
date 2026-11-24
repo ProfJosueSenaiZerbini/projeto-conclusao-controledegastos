@@ -57,7 +57,9 @@ body.inicial {
     font-weight: 500;
     text-decoration: none;
 }
-.inicial__topo nav a:hover { background: var(--papel-fundo); }
+@media (hover: hover) and (pointer: fine) {
+    .inicial__topo nav a:hover { background: var(--papel-fundo); }
+}
 .inicial__topo nav a:focus-visible { outline-color: var(--foco); }
 /* A marca e os links do topo ficam em cima do verde: letra sempre escura. */
 .inicial__topo .marca,
@@ -107,9 +109,13 @@ body.inicial {
     border-color: var(--sobre-cor);
     color: var(--sobre-cor);
 }
-.abertura__lobo .botao--linha:hover { background: rgb(22 36 28 / .1); }
-.abertura__lobo .botao--escuro,
-.abertura__lobo .botao--escuro:hover { color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+    .abertura__lobo .botao--linha:hover { background: rgb(22 36 28 / .1); }
+}
+.abertura__lobo .botao--escuro { color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+    .abertura__lobo .botao--escuro:hover { color: #fff; }
+}
 /* No tema escuro o botão escuro vira verde-maçã (verdanz.css), que sumiria
    em cima do verde: aqui ele fica escuro, com a letra clara. */
 html.escuro .abertura__lobo .botao--escuro { background: var(--sobre-cor); color: #fff; }
@@ -246,7 +252,9 @@ html.escuro .abertura__lobo .botao--escuro { background: var(--sobre-cor); color
     font-family: var(--fonte-titulo);
     font-weight: 600;
 }
-.perfis__botoes button:hover { background: rgb(22 36 28 / .1); }
+@media (hover: hover) and (pointer: fine) {
+    .perfis__botoes button:hover { background: rgb(22 36 28 / .1); }
+}
 .perfis__botoes button[aria-pressed="true"] {
     background: var(--sobre-cor);
     color: var(--lilas);
@@ -355,8 +363,12 @@ html.escuro .abertura__lobo .botao--escuro { background: var(--sobre-cor); color
 }
 .fim p { font-size: 1.25rem; color: #d7e6d8; }
 .fim .fila { margin-top: .75rem; }
-.fim .fim__entrar { border-color: #9fb8a5; color: #fff; }
-.fim .fim__entrar:hover { background: rgb(255 255 255 / .1); }
+/* "a." deixa este seletor mais forte que ".lobo--mata a.botao" (verdanz.css),
+   que pinta a letra de escuro: aqui o fundo é verde-escuro. */
+.fim a.fim__entrar { border-color: #9fb8a5; color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+    .fim .fim__entrar:hover { background: rgb(255 255 255 / .1); }
+}
 .fim :focus-visible { outline-color: var(--sol); }
 
 .rodape {

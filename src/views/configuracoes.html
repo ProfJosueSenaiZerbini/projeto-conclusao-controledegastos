@@ -120,7 +120,7 @@
                             <h3 id="tituloFormCategoria">Nova categoria</h3>
                             <div class="campo">
                                 <label for="nomeCategoria">Nome</label>
-                                <input class="entrada" id="nomeCategoria" maxlength="100" placeholder="Ex.: Pet, Academia" aria-describedby="nomeCategoriaErro">
+                                <input class="entrada" id="nomeCategoria" maxlength="50" placeholder="Ex.: Pet, Academia" aria-describedby="nomeCategoriaErro">
                                 <p class="erro" id="nomeCategoriaErro" hidden></p>
                             </div>
                             <fieldset class="pilha--p">
@@ -153,7 +153,7 @@
                         <h2 id="tituloSeguranca">Segurança</h2>
                         <div class="pilha--p">
                             <h3>Trocar a senha</h3>
-                            <p class="suave">Enviamos um link para <strong id="emailSeguranca">o seu e-mail</strong>. Por ele você escolhe a senha nova.</p>
+                            <p class="suave">Enviamos um link para <strong class="quebra" id="emailSeguranca">o seu e-mail</strong>. Por ele você escolhe a senha nova.</p>
                             <div><button type="button" class="botao botao--linha" id="enviarLinkSenha">Enviar link para trocar a senha</button></div>
                         </div>
                         <div class="pilha--p">
@@ -202,7 +202,7 @@
                 <button type="button" class="botao-icone" data-fechar aria-label="Fechar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             </div>
             <div class="folha__corpo">
-                <p class="suave">Hoje o seu e-mail é <strong id="emailAtual"></strong>. A troca só acontece depois que você clicar no link que vamos mandar para o e-mail novo.</p>
+                <p class="suave">Hoje o seu e-mail é <strong class="quebra" id="emailAtual"></strong>. A troca só acontece depois que você clicar no link que vamos mandar para o e-mail novo.</p>
 
                 <div class="campo">
                     <label for="emailNovo">E-mail novo</label>

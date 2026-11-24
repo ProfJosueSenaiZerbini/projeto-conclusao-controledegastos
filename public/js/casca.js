@@ -360,7 +360,7 @@ const Lancamento = {
             <div class="pilha--p" id="lancCaixaCategoria" hidden>
               <label for="lancNomeCategoria" class="pequeno">Nome da nova categoria de <span id="lancTipoCategoria">gasto</span></label>
               <div class="fila">
-                <input class="entrada" id="lancNomeCategoria" maxlength="100" style="flex:1; min-width: 10rem" aria-describedby="lancNomeCategoriaErro">
+                <input class="entrada" id="lancNomeCategoria" maxlength="50" style="flex:1; min-width: 10rem" aria-describedby="lancNomeCategoriaErro">
                 <button type="button" class="botao botao--escuro botao--p" id="lancCriarCategoria">Criar</button>
               </div>
               <p class="erro" id="lancNomeCategoriaErro" hidden></p>

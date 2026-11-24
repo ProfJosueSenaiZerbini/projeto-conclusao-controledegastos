@@ -52,8 +52,8 @@ async function conferirSenha(id_usuario, senha) {
 // A ORDEM importa:
 //   1. contas (levam junto as transações, pelo Cascade). Vêm primeiro
 //      porque uma categoria personalizada não pode sair enquanto tiver
-//      transação, e o MySQL não garante a ordem das cascatas (mesmo
-//      motivo de deletarUsuario em usuarioController.js);
+//      transação, e o MySQL não garante em que ordem as cascatas
+//      acontecem;
 //   2. bancos conectados (as contas importadas já saíram no passo 1);
 //   3. limites (inclusive os das categorias do sistema);
 //   4. categorias personalizadas (já sem transações);

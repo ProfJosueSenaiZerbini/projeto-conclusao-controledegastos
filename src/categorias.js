@@ -2,7 +2,7 @@
 //
 // Existem dois tipos de categoria na mesma tabela:
 //
-//   - do SISTEMA: id_usuario vazio. São as 13 do seed, iguais para todos.
+//   - do SISTEMA: id_usuario vazio. São as 15 do seed, iguais para todos.
 //   - PERSONALIZADA: id_usuario preenchido. Criada por um usuário e
 //     visível só para ele.
 //
