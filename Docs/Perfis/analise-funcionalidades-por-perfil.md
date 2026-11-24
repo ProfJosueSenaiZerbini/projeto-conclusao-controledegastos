@@ -118,7 +118,7 @@ Além da ferramenta, todo perfil tem **"Bom saber"** (direitos e alertas do cont
 
 ## 3. Decisões de projeto
 
-**Nada muda no banco de dados.** O escopo atual tem 5 entidades e o `CLAUDE.md` pede para não trazer de volta `Perfil` e `Funcionalidade` sem pedido explícito. Por isso:
+**Nada muda no banco de dados.** O escopo do banco foi reduzido de propósito, e `Perfil` e `Funcionalidade` ficaram de fora por decisão do grupo. Por isso:
 - os perfis continuam guardados no navegador (`PerfisSalvos`, como na tela de escolha);
 - o que a pessoa digita nas ferramentas (mesada, contas fixas, salário) também fica no navegador (`Preferencias`, uma chave por usuário);
 - as ferramentas só **leem** contas, transações e metas pela API que já existe, e a única escrita é criar a meta sugerida pela rota `POST /api/meta`.

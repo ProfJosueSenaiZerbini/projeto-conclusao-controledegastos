@@ -48,7 +48,7 @@ model Categoria {
 ```
 
 - **A 3FN continua valendo.** O `tipo` segue na categoria, e a `Transacao` não ganha nenhum campo.
-- **Surge um 5º relacionamento:** *Usuario 1:N Categoria*. O DER, o diagrama de classes e o `CLAUDE.md` (que hoje dizem "lista fixa" e "4 relacionamentos") precisam ser atualizados.
+- **Surge um 5º relacionamento:** *Usuario 1:N Categoria*. O DER e o diagrama de classes (que hoje dizem "lista fixa" e "4 relacionamentos") precisam ser atualizados.
 - **Nulos no `@@unique`:** no MySQL, um índice único aceita vários valores nulos. Por isso a regra "não repetir nome de categoria do sistema" precisa ser conferida no controller, e o seed continua com a guarda de duplicidade que já tem.
 
 ### 1.2 Pontos do código que quebram e precisam ser corrigidos antes
@@ -164,4 +164,4 @@ O **"quanto já gastei" não é gravado**. Ele é calculado na leitura, pelo mes
 5. **Mostrar os limites na tela de Metas e no bloco do dashboard.**
 6. **Adicionar os alertas:** aviso na tela, depois e-mail.
 
-> ⚠️ Os passos 2 e 4 mudam o schema e as rotas e afetam tanto o back-end quanto as views. Combinar com o grupo antes. Depois de implementar, atualizar o `CLAUDE.md`, o DER e o diagrama de classes.
+> ⚠️ Os passos 2 e 4 mudam o schema e as rotas e afetam tanto o back-end quanto as views. Combinar com o grupo antes. Depois de implementar, atualizar o DER e o diagrama de classes.
