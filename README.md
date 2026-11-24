@@ -29,10 +29,12 @@ Grande parte das pessoas não possui visibilidade real sobre suas finanças. Gas
 
 O Verdanz organiza a vida financeira do usuário em torno de quatro pilares:
 
-- **Contas** — registro de contas bancárias (corrente, poupança, carteira) e de contas de casa (luz, água, aluguel), com valores e vencimentos.
-- **Transações** — lançamento de receitas e despesas, sempre vinculadas a uma conta e classificadas por categoria.
-- **Categorias e subcategorias** — organização hierárquica dos gastos, permitindo tanto categorias amplas quanto detalhamento (Alimentação → Restaurante, Delivery, Supermercado).
-- **Metas financeiras** — definição de objetivos com valor-alvo, prazo e acompanhamento de progresso.
+- **Contas** — onde o dinheiro está (carteira, conta corrente, poupança), cada uma com seu saldo. As contas podem ser criadas à mão ou importadas de um banco simulado, que imita o Open Finance.
+- **Transações** — lançamento de ganhos e gastos, sempre vinculados a uma conta e a uma categoria. Um gasto pode ficar "a pagar" (com vencimento) e ser marcado como pago depois.
+- **Categorias e limites** — 15 categorias do sistema, mais as que cada pessoa cria. Para cada categoria de gasto dá para definir um limite por mês ("no máximo R$ 500 em Lazer").
+- **Metas financeiras** — objetivos com valor-alvo e prazo. O dinheiro guardado sai de uma conta, e a tela mostra quanto guardar por mês.
+
+Além disso, o Verdanz sugere um perfil financeiro (CLT, autônomo, estudante, doméstico, desempregado ou aposentado) e mostra ferramentas próprias de cada um, e avisa no sininho sobre contas a vencer, metas perto do prazo, saldo negativo e limites estourados.
 
 ## Tecnologias utilizadas
 
@@ -57,23 +59,26 @@ pastas `backend/` e `frontend/` separadas: o Express serve as telas e a API lado
 projeto-conclusao-controledegastos/
 ├── index.js                  # Ponto de entrada: sobe o Express
 ├── prisma/
-│   ├── schema.prisma         # Modelo das 5 entidades
-│   ├── seed.js               # Cria as 12 categorias fixas
-│   └── migrations/           # Histórico de alterações do banco
+│   ├── schema.prisma         # Modelo do banco (8 tabelas)
+│   ├── seed.js               # Cria as 15 categorias do sistema
+│   └── migrations/           # A migration que cria o banco
 ├── src/                      # Código que roda no SERVIDOR (Node)
 │   ├── controllers/          # Regras de negócio e acesso ao banco
 │   ├── routes/               # Endereços da API e das telas
 │   ├── middlewares/          # Autenticação (JWT) e verificação de dono
 │   ├── views/                # Telas em HTML
-│   └── prisma.js             # Instância única do Prisma Client
+│   ├── bancoSimulado/        # O banco de mentira usado na importação
+│   ├── prisma.js             # Instância única do Prisma Client
+│   └── *.js                  # Regras usadas por mais de um controller (saldo, categorias, e-mail...)
 ├── public/                   # Código que roda no NAVEGADOR (servido como estático)
 │   ├── js/                   # Scripts de cada tela + utilitários compartilhados
 │   ├── css/                  # verdanz.css (o visual inteiro) e inicial.css
 │   └── img/                  # Imagens e logos
 └── Docs/                     # Documentação do projeto
     ├── Diagramas/            # Diagramas conceitual, lógico e de classes (brModelo)
+    ├── Como o sistema funciona.md  # Guia de estudo: camadas, telas, API e regras
     ├── Scripts Banco Dados/  # Scripts SQL de criação do banco
-    ├── Testes/               # Casos de teste
+    ├── Testes/               # Casos de teste e testes automáticos dos cálculos
     ├── Trabalho Conclusão/   # Documento do TCC
     └── Wireframes/           # Wireframes do sistema
 ```
@@ -136,23 +141,28 @@ O `.env` está no `.gitignore` e nunca deve ser commitado.
 
 ### 4. Preparar o banco de dados
 
-Crie as tabelas a partir do schema do Prisma:
+Crie as tabelas a partir da migration do Prisma:
 
 ```bash
 npx prisma migrate dev
 ```
 
-Em seguida, popule as **12 categorias fixas** (8 de despesa e 4 de receita):
+Em seguida, cadastre as **15 categorias do sistema** (10 de despesa e 5 de receita;
+três delas, "Metas" e as duas de transferência, são usadas só pelo próprio sistema):
 
 ```bash
 npx prisma db seed
 ```
 
 > **Este passo é obrigatório.** Sem as categorias, a tabela fica vazia e não é possível
-> registrar nenhuma transação — o formulário abre sem opções para escolher. O seed só
-> roda sozinho dentro de um `npx prisma migrate dev` que cria uma migration nova; em
-> qualquer outra situação é preciso chamá-lo à mão. Ele é idempotente: rodar várias
-> vezes não duplica nada.
+> registrar nenhuma transação: o formulário abre sem opções para escolher. O seed é
+> idempotente: rodar várias vezes não duplica nada.
+
+> **Quem já tinha o banco montado antes de 24/11/2026:** as 11 migrations do
+> desenvolvimento foram juntadas numa só (`prisma/migrations/20261124000000_init`). O
+> banco que resulta é idêntico, mas o Prisma estranha o histórico antigo. Rode
+> `npx prisma migrate reset` uma vez: ele apaga o banco local, cria de novo com a
+> migration nova e roda o seed. Os dados de teste desse banco se perdem.
 
 ### 5. Iniciar o servidor
 
@@ -208,8 +218,19 @@ npx prisma db seed
 npm run dev
 ```
 
+## Testes automáticos
+
+As regras de cálculo que não dependem do banco têm testes que rodam direto no Node:
+
+```bash
+node Docs/Testes/teste-calculos-meta.js     # quanto guardar por mês numa meta
+node Docs/Testes/teste-calculos-perfil.js   # ferramentas de cada perfil (INSS, MEI...)
+node Docs/Testes/teste-notificacoes.js      # avisos do sininho
+```
+
 ## Documentação do projeto
 
+- [Como o sistema funciona](./Docs/Como%20o%20sistema%20funciona.md) — guia de estudo: camadas, como as telas falam com o servidor, regras e decisões
 - [Diagramas](./Docs/Diagramas) — diagrama conceitual, lógico e de classes
 - [Scripts do Banco de Dados](./Docs/Scripts%20Banco%20Dados) — scripts SQL de criação do banco
 - [Casos de Teste](./Docs/Testes) — planilha de casos de teste
